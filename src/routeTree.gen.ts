@@ -16,6 +16,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
 import { Route as DashboardHorariosRouteImport } from './routes/dashboard.horarios'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
+import { Route as DashboardAjustesRouteImport } from './routes/dashboard.ajustes'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
@@ -52,11 +53,17 @@ const DashboardClientesRoute = DashboardClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardAjustesRoute = DashboardAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/dashboard/ajustes'
     | '/dashboard/clientes'
     | '/dashboard/horarios'
     | '/dashboard/servicios'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/dashboard/ajustes'
     | '/dashboard/clientes'
     | '/dashboard/horarios'
     | '/dashboard/servicios'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/dashboard/ajustes'
     | '/dashboard/clientes'
     | '/dashboard/horarios'
     | '/dashboard/servicios'
@@ -166,10 +178,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardClientesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/ajustes': {
+      id: '/dashboard/ajustes'
+      path: '/ajustes'
+      fullPath: '/dashboard/ajustes'
+      preLoaderRoute: typeof DashboardAjustesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardAjustesRoute: typeof DashboardAjustesRoute
   DashboardClientesRoute: typeof DashboardClientesRoute
   DashboardHorariosRoute: typeof DashboardHorariosRoute
   DashboardServiciosRoute: typeof DashboardServiciosRoute
@@ -177,6 +197,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAjustesRoute: DashboardAjustesRoute,
   DashboardClientesRoute: DashboardClientesRoute,
   DashboardHorariosRoute: DashboardHorariosRoute,
   DashboardServiciosRoute: DashboardServiciosRoute,
