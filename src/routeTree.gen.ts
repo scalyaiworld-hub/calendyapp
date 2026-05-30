@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
+import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
@@ -40,17 +41,24 @@ const DashboardServiciosRoute = DashboardServiciosRouteImport.update({
   path: '/servicios',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardClientesRoute = DashboardClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard': typeof DashboardIndexRoute
 }
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -68,15 +77,22 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/dashboard/clientes'
     | '/dashboard/servicios'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard/servicios' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard/clientes'
+    | '/dashboard/servicios'
+    | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/dashboard/clientes'
     | '/dashboard/servicios'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
@@ -124,15 +140,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardServiciosRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/clientes': {
+      id: '/dashboard/clientes'
+      path: '/clientes'
+      fullPath: '/dashboard/clientes'
+      preLoaderRoute: typeof DashboardClientesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardClientesRoute: typeof DashboardClientesRoute
   DashboardServiciosRoute: typeof DashboardServiciosRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardClientesRoute: DashboardClientesRoute,
   DashboardServiciosRoute: DashboardServiciosRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
@@ -149,3 +174,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
