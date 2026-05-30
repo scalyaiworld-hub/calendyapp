@@ -18,6 +18,7 @@ import { Route as DashboardHorariosRouteImport } from './routes/dashboard.horari
 import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
 import { Route as DashboardAjustesRouteImport } from './routes/dashboard.ajustes'
 import { Route as DashboardAgendaRouteImport } from './routes/dashboard.agenda'
+import { Route as BSlugRouteImport } from './routes/b.$slug'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
@@ -64,11 +65,17 @@ const DashboardAgendaRoute = DashboardAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => DashboardRoute,
 } as any)
+const BSlugRoute = BSlugRouteImport.update({
+  id: '/b/$slug',
+  path: '/b/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/b/$slug': typeof BSlugRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/b/$slug': typeof BSlugRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/b/$slug': typeof BSlugRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/b/$slug'
     | '/dashboard/agenda'
     | '/dashboard/ajustes'
     | '/dashboard/clientes'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/b/$slug'
     | '/dashboard/agenda'
     | '/dashboard/ajustes'
     | '/dashboard/clientes'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/b/$slug'
     | '/dashboard/agenda'
     | '/dashboard/ajustes'
     | '/dashboard/clientes'
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  BSlugRoute: typeof BSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgendaRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/b/$slug': {
+      id: '/b/$slug'
+      path: '/b/$slug'
+      fullPath: '/b/$slug'
+      preLoaderRoute: typeof BSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -233,6 +253,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  BSlugRoute: BSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
