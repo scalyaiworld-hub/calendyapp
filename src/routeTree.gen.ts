@@ -12,6 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
+import { Route as DashboardHorariosRouteImport } from './routes/dashboard.horarios'
+import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
+import { Route as DashboardAjustesRouteImport } from './routes/dashboard.ajustes'
+import { Route as DashboardAgendaRouteImport } from './routes/dashboard.agenda'
+import { Route as BSlugRouteImport } from './routes/b.$slug'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
@@ -28,35 +35,121 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardServiciosRoute = DashboardServiciosRouteImport.update({
+  id: '/servicios',
+  path: '/servicios',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardHorariosRoute = DashboardHorariosRouteImport.update({
+  id: '/horarios',
+  path: '/horarios',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClientesRoute = DashboardClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAjustesRoute = DashboardAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAgendaRoute = DashboardAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const BSlugRoute = BSlugRouteImport.update({
+  id: '/b/$slug',
+  path: '/b/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/b/$slug': typeof BSlugRoute
+  '/dashboard/agenda': typeof DashboardAgendaRoute
+  '/dashboard/ajustes': typeof DashboardAjustesRoute
+  '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/servicios': typeof DashboardServiciosRoute
+  '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/dashboard': typeof DashboardRoute
+  '/b/$slug': typeof BSlugRoute
+  '/dashboard/agenda': typeof DashboardAgendaRoute
+  '/dashboard/ajustes': typeof DashboardAjustesRoute
+  '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/servicios': typeof DashboardServiciosRoute
+  '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/b/$slug': typeof BSlugRoute
+  '/dashboard/agenda': typeof DashboardAgendaRoute
+  '/dashboard/ajustes': typeof DashboardAjustesRoute
+  '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/servicios': typeof DashboardServiciosRoute
+  '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/b/$slug'
+    | '/dashboard/agenda'
+    | '/dashboard/ajustes'
+    | '/dashboard/clientes'
+    | '/dashboard/horarios'
+    | '/dashboard/servicios'
+    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard'
-  id: '__root__' | '/' | '/auth' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/b/$slug'
+    | '/dashboard/agenda'
+    | '/dashboard/ajustes'
+    | '/dashboard/clientes'
+    | '/dashboard/horarios'
+    | '/dashboard/servicios'
+    | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/b/$slug'
+    | '/dashboard/agenda'
+    | '/dashboard/ajustes'
+    | '/dashboard/clientes'
+    | '/dashboard/horarios'
+    | '/dashboard/servicios'
+    | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
+  BSlugRoute: typeof BSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +175,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/servicios': {
+      id: '/dashboard/servicios'
+      path: '/servicios'
+      fullPath: '/dashboard/servicios'
+      preLoaderRoute: typeof DashboardServiciosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/horarios': {
+      id: '/dashboard/horarios'
+      path: '/horarios'
+      fullPath: '/dashboard/horarios'
+      preLoaderRoute: typeof DashboardHorariosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clientes': {
+      id: '/dashboard/clientes'
+      path: '/clientes'
+      fullPath: '/dashboard/clientes'
+      preLoaderRoute: typeof DashboardClientesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/ajustes': {
+      id: '/dashboard/ajustes'
+      path: '/ajustes'
+      fullPath: '/dashboard/ajustes'
+      preLoaderRoute: typeof DashboardAjustesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/agenda': {
+      id: '/dashboard/agenda'
+      path: '/agenda'
+      fullPath: '/dashboard/agenda'
+      preLoaderRoute: typeof DashboardAgendaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/b/$slug': {
+      id: '/b/$slug'
+      path: '/b/$slug'
+      fullPath: '/b/$slug'
+      preLoaderRoute: typeof BSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface DashboardRouteChildren {
+  DashboardAgendaRoute: typeof DashboardAgendaRoute
+  DashboardAjustesRoute: typeof DashboardAjustesRoute
+  DashboardClientesRoute: typeof DashboardClientesRoute
+  DashboardHorariosRoute: typeof DashboardHorariosRoute
+  DashboardServiciosRoute: typeof DashboardServiciosRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAgendaRoute: DashboardAgendaRoute,
+  DashboardAjustesRoute: DashboardAjustesRoute,
+  DashboardClientesRoute: DashboardClientesRoute,
+  DashboardHorariosRoute: DashboardHorariosRoute,
+  DashboardServiciosRoute: DashboardServiciosRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
+  BSlugRoute: BSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
