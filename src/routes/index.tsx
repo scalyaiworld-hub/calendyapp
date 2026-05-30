@@ -43,9 +43,9 @@ function Header() {
           <a href="#pricing" className="hover:text-rose transition-colors">Precios</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Ingresar</Link>
+          <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground">Ingresar</Link>
           <Link
-            to="/"
+            to="/auth"
             className="px-4 py-2 rounded-md bg-rose text-warm-dark text-sm font-medium hover:opacity-90 transition"
           >
             Empezar gratis
@@ -75,7 +75,7 @@ function Hero() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
-            to="/"
+            to="/auth"
             className="px-8 py-4 rounded-md gradient-rose text-warm-dark font-semibold shadow-rose hover:scale-[1.02] transition"
           >
             Empieza gratis
@@ -198,7 +198,7 @@ function Pricing() {
               </li>
             ))}
           </ul>
-          <Link to="/" className="inline-block px-8 py-4 rounded-md gradient-rose text-warm-dark font-semibold hover:scale-[1.02] transition">
+          <Link to="/auth" className="inline-block px-8 py-4 rounded-md gradient-rose text-warm-dark font-semibold hover:scale-[1.02] transition">
             Empezar ahora
           </Link>
         </div>
