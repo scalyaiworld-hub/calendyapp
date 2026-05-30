@@ -10,14 +10,15 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,
 });
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/dashboard", label: "Resumen", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/dashboard/servicios", label: "Servicios", icon: Scissors },
   { to: "/dashboard/clientes", label: "Clientes", icon: Users },
   { to: "/dashboard/horarios", label: "Horarios", icon: Clock },
   { to: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
-] as const;
+];
 
 function DashboardLayout() {
   const { user, loading, signOut } = useAuth();
@@ -45,7 +46,7 @@ function DashboardLayout() {
           {NAV.map(({ to, label, icon: Icon, exact }) => (
             <Link
               key={to}
-              to={to}
+              to={to as any}
               activeOptions={{ exact: !!exact }}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               activeProps={{ className: "flex items-center gap-3 rounded-md px-3 py-2 text-sm bg-primary/10 text-primary font-medium" }}
@@ -82,7 +83,7 @@ function DashboardLayout() {
         {NAV.map(({ to, label, icon: Icon, exact }) => (
           <Link
             key={to}
-            to={to}
+            to={to as any}
             activeOptions={{ exact: !!exact }}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-muted-foreground whitespace-nowrap"
             activeProps={{ className: "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs bg-primary/10 text-primary whitespace-nowrap font-medium" }}
