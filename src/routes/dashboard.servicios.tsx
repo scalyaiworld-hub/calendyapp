@@ -46,6 +46,7 @@ function ServicesPage() {
         }).eq("id", s.id);
         if (error) throw error;
       } else {
+        if (!businessId) throw new Error("Sin negocio");
         const { error } = await supabase.from("services").insert({
           business_id: businessId, name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents,
         });
@@ -74,6 +75,7 @@ function ServicesPage() {
 
   const addCatalog = useMutation({
     mutationFn: async (selected: number[]) => {
+      if (!businessId) throw new Error("Sin negocio");
       const offset = services?.length ?? 0;
       const rows = selected.map((i, idx) => ({
         business_id: businessId,
