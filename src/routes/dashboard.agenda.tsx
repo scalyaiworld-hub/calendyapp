@@ -22,6 +22,16 @@ export const Route = createFileRoute("/dashboard/agenda")({
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function toLocalDateInput(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function fromLocalDateInput(s: string) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
 
 function AgendaPage() {
   const { data: business } = useMyBusiness();
@@ -157,10 +167,10 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [creatingClient, setCreatingClient] = useState(false);
-  const [dateStr, setDateStr] = useState(initialDate.toISOString().slice(0, 10));
+  const [dateStr, setDateStr] = useState(toLocalDateInput(initialDate));
   const [time, setTime] = useState("10:00");
 
-  useEffect(() => { if (open) setDateStr(initialDate.toISOString().slice(0, 10)); }, [open, initialDate]);
+  useEffect(() => { if (open) setDateStr(toLocalDateInput(initialDate)); }, [open, initialDate]);
 
   const { data: services } = useQuery({
     queryKey: ["services-active", businessId],
@@ -185,7 +195,7 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
       const svc = services?.find((s) => s.id === serviceId);
       if (!svc || !cid) throw new Error("Falta servicio o cliente");
       const [h, m] = time.split(":").map(Number);
-      const starts = new Date(`${dateStr}T00:00:00`);
+      const starts = fromLocalDateInput(dateStr);
       starts.setHours(h, m, 0, 0);
       const ends = new Date(starts.getTime() + svc.duration_minutes * 60000);
       const { error } = await supabase.from("appointments").insert({
