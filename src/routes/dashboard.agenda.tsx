@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -26,9 +28,9 @@ function AgendaPage() {
   const businessId = business?.id;
   const qc = useQueryClient();
   const [date, setDate] = useState(startOfDay(new Date()));
-  const [editing, setEditing] = useState<any | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const { data: appts } = useQuery({
+  const { data: appts, error: apptsError } = useQuery({
     queryKey: ["appts", businessId, date.toDateString()],
     enabled: !!businessId,
     queryFn: async () => {
@@ -41,7 +43,7 @@ function AgendaPage() {
         .lt("starts_at", end.toISOString())
         .order("starts_at");
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
@@ -72,16 +74,32 @@ function AgendaPage() {
 
       <div className="flex items-center justify-between gap-2">
         <Button variant="outline" size="sm" onClick={() => setDate(addDays(date, -1))}><ChevronLeft className="size-4" /></Button>
-        <div className="flex items-center gap-3">
-          <p className="font-display text-xl">
-            {DAY_NAMES_SHORT[date.getDay()]} {date.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
-          </p>
+        <div className="flex items-center gap-2 flex-wrap justify-center">
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" className="font-display text-lg sm:text-xl gap-2">
+                <CalendarIcon className="size-4" />
+                {DAY_NAMES_SHORT[date.getDay()]} {date.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => { if (d) { setDate(startOfDay(d)); setPickerOpen(false); } }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
           {!isToday && <Button variant="ghost" size="sm" onClick={() => setDate(startOfDay(new Date()))}>Hoy</Button>}
         </div>
         <Button variant="outline" size="sm" onClick={() => setDate(addDays(date, 1))}><ChevronRight className="size-4" /></Button>
       </div>
 
-      {!appts?.length ? (
+      {apptsError ? (
+        <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
+      ) : !appts?.length ? (
         <Card><CardContent className="pt-6 text-center text-muted-foreground">No hay citas este día.</CardContent></Card>
       ) : (
         <div className="space-y-2">
