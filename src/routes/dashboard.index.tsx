@@ -1,17 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { SPA_CATALOG } from "@/lib/spa-catalog";
-import { slugify, formatTime } from "@/lib/format";
-import { toast } from "sonner";
+import { formatTime } from "@/lib/format";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
@@ -20,91 +12,8 @@ export const Route = createFileRoute("/dashboard/")({
 function DashboardHome() {
   const { data: business, isLoading } = useMyBusiness();
   if (isLoading) return <p className="text-muted-foreground">Cargando…</p>;
-  if (!business) return <Onboarding />;
+  if (!business) return null; // layout already redirects to /onboarding
   return <Summary businessId={business.id} />;
-}
-
-function Onboarding() {
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [loadCatalog, setLoadCatalog] = useState(true);
-
-  const mut = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Sin sesión");
-      const slug = slugify(name) || `salon-${Math.random().toString(36).slice(2, 7)}`;
-      const { data: biz, error } = await supabase
-        .from("businesses")
-        .insert({ name, slug, phone: phone || null, owner_id: user.id })
-        .select()
-        .single();
-      if (error) throw error;
-
-      // Default schedule Mon-Sat 9-19
-      const rules = [1, 2, 3, 4, 5, 6].map((dow) => ({
-        business_id: biz.id,
-        day_of_week: dow,
-        start_time: "09:00",
-        end_time: "19:00",
-      }));
-      await supabase.from("availability_rules").insert(rules);
-
-      if (loadCatalog) {
-        const services = SPA_CATALOG.map((s, i) => ({
-          business_id: biz.id,
-          name: s.name,
-          duration_minutes: s.duration_minutes,
-          price_cents: s.price_cents,
-          description: s.category,
-          display_order: i,
-        }));
-        await supabase.from("services").insert(services);
-      }
-      return biz;
-    },
-    onSuccess: () => {
-      toast.success("Salón creado");
-      qc.invalidateQueries({ queryKey: ["my-business"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <div className="max-w-xl">
-      <h1 className="font-display text-3xl mb-2">Configura tu salón</h1>
-      <p className="text-muted-foreground mb-6">Solo nos tomará un minuto.</p>
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div>
-            <Label>Nombre del salón</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Spa Rosé" />
-            {name && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Tu página: /b/{slugify(name)}
-              </p>
-            )}
-          </div>
-          <div>
-            <Label>Teléfono (opcional)</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+51 999 999 999" />
-          </div>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <Checkbox checked={loadCatalog} onCheckedChange={(v) => setLoadCatalog(!!v)} />
-            Cargar catálogo sugerido de servicios spa ({SPA_CATALOG.length} servicios)
-          </label>
-          <Button
-            onClick={() => mut.mutate()}
-            disabled={!name || mut.isPending}
-            className="w-full"
-          >
-            {mut.isPending ? "Creando…" : "Crear mi salón"}
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
 }
 
 function Summary({ businessId }: { businessId: string }) {
