@@ -11,6 +11,8 @@ import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Check, ChevronLeft } from "lucide-react";
+import { PhoneInput } from "@/components/PhoneInput";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 export const Route = createFileRoute("/b/$slug")({
   head: ({ params }) => ({ meta: [{ title: `Reservar — ${params.slug}` }] }),
@@ -27,6 +29,7 @@ function BookingPage() {
   const [slot, setSlot] = useState<{ starts_at: Date; ends_at: Date } | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["public-biz", slug],
@@ -55,17 +58,28 @@ function BookingPage() {
     mutationFn: async () => {
       if (!business || !service || !slot) throw new Error("Faltan datos");
       // Upsert client by phone
-      const { data: existing } = await supabase.from("clients").select("id").eq("business_id", business.id).eq("phone", phone).is("deleted_at", null).maybeSingle();
+      const { data: existing } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("business_id", business.id)
+        .eq("phone", phone)
+        .eq("phone_country_code", countryCode)
+        .is("deleted_at", null)
+        .maybeSingle();
       let clientId = existing?.id;
       if (!clientId) {
-        const { data, error } = await supabase.from("clients").insert({ business_id: business.id, name, phone }).select().single();
+        const { data, error } = await supabase
+          .from("clients")
+          .insert({ business_id: business.id, name, phone, phone_country_code: countryCode })
+          .select()
+          .single();
         if (error) throw error;
         clientId = data.id;
       }
       const { error } = await supabase.from("appointments").insert({
         business_id: business.id, client_id: clientId, service_id: service.id,
         starts_at: slot.starts_at.toISOString(), ends_at: slot.ends_at.toISOString(),
-        source: "booking_page", status: "booked",
+        source: "booking_page", status: "pending",
       });
       if (error) throw error;
     },
@@ -162,7 +176,17 @@ function BookingPage() {
             </CardContent></Card>
             <div className="space-y-3">
               <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-              <div><Label>Teléfono</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+51 999 999 999" /></div>
+              <div>
+                <Label>WhatsApp</Label>
+                <div className="mt-1.5">
+                  <PhoneInput
+                    countryCode={countryCode}
+                    number={phone}
+                    onCountryCodeChange={setCountryCode}
+                    onNumberChange={setPhone}
+                  />
+                </div>
+              </div>
               <Button className="w-full" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
@@ -175,8 +199,8 @@ function BookingPage() {
             <div className="size-16 rounded-full bg-primary/10 grid place-items-center mx-auto">
               <Check className="size-8 text-primary" />
             </div>
-            <h2 className="font-display text-2xl">¡Reserva confirmada!</h2>
-            <p className="text-muted-foreground">Te esperamos. Si necesitas cambiar tu cita, llama al salón.</p>
+            <h2 className="font-display text-2xl">¡Reserva recibida!</h2>
+            <p className="text-muted-foreground">El salón confirmará tu cita por WhatsApp en breve.</p>
             <Button variant="outline" onClick={() => { setStep("service"); setServiceId(""); setSlot(null); setName(""); setPhone(""); }}>Reservar otra cita</Button>
           </div>
         )}
