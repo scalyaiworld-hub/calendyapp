@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PhoneInput, formatPhone } from "@/components/PhoneInput";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 export const Route = createFileRoute("/dashboard/clientes")({
   component: ClientsPage,
@@ -35,10 +37,28 @@ function ClientsPage() {
   const upsert = useMutation({
     mutationFn: async (c: any) => {
       if (c.id) {
-        const { error } = await supabase.from("clients").update({ name: c.name, phone: c.phone, email: c.email || null, notes: c.notes || null }).eq("id", c.id);
+        const { error } = await supabase
+          .from("clients")
+          .update({
+            name: c.name,
+            phone: c.phone,
+            phone_country_code: c.phone_country_code,
+            email: c.email || null,
+            notes: c.notes || null,
+          })
+          .eq("id", c.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("clients").insert({ business_id: business!.id, name: c.name, phone: c.phone, email: c.email || null, notes: c.notes || null });
+        const { error } = await supabase
+          .from("clients")
+          .insert({
+            business_id: business!.id,
+            name: c.name,
+            phone: c.phone,
+            phone_country_code: c.phone_country_code,
+            email: c.email || null,
+            notes: c.notes || null,
+          });
         if (error) throw error;
       }
     },
@@ -78,7 +98,9 @@ function ClientsPage() {
                 <li key={c.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{c.name}</p>
-                    <p className="text-sm text-muted-foreground truncate">{c.phone}{c.email ? ` · ${c.email}` : ""}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {formatPhone((c as any).phone_country_code, c.phone)}{c.email ? ` · ${c.email}` : ""}
+                    </p>
                     <p className="text-xs text-muted-foreground">{c.total_appointments} cita(s) · {c.no_show_count} no-show</p>
                   </div>
                   <div className="flex gap-1 shrink-0">
@@ -101,26 +123,43 @@ function ClientDialog({ initial, onSave, trigger }: { initial?: any; onSave: (c:
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initial?.name ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [countryCode, setCountryCode] = useState(initial?.phone_country_code ?? DEFAULT_COUNTRY_CODE);
   const [email, setEmail] = useState(initial?.email ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   return (
     <Dialog open={open} onOpenChange={(v) => {
       setOpen(v);
-      if (v && initial) { setName(initial.name); setPhone(initial.phone); setEmail(initial.email ?? ""); setNotes(initial.notes ?? ""); }
-      if (v && !initial) { setName(""); setPhone(""); setEmail(""); setNotes(""); }
+      if (v && initial) {
+        setName(initial.name);
+        setPhone(initial.phone);
+        setCountryCode(initial.phone_country_code ?? DEFAULT_COUNTRY_CODE);
+        setEmail(initial.email ?? "");
+        setNotes(initial.notes ?? "");
+      }
+      if (v && !initial) { setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setEmail(""); setNotes(""); }
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>{initial ? "Editar cliente" : "Nuevo cliente"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Teléfono</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          <div>
+            <Label>WhatsApp</Label>
+            <div className="mt-1.5">
+              <PhoneInput
+                countryCode={countryCode}
+                number={phone}
+                onCountryCodeChange={setCountryCode}
+                onNumberChange={setPhone}
+              />
+            </div>
+          </div>
           <div><Label>Email (opcional)</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div><Label>Notas</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         </div>
         <DialogFooter>
-          <Button onClick={() => { onSave({ name, phone, email, notes }); setOpen(false); }} disabled={!name || !phone}>Guardar</Button>
+          <Button onClick={() => { onSave({ name, phone, phone_country_code: countryCode, email, notes }); setOpen(false); }} disabled={!name || !phone}>Guardar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

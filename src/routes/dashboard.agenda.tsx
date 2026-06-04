@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2 } from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PhoneInput } from "@/components/PhoneInput";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 export const Route = createFileRoute("/dashboard/agenda")({
   component: AgendaPage,
@@ -71,6 +73,7 @@ function AgendaPage() {
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const isToday = date.toDateString() === new Date().toDateString();
+  const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
 
   return (
     <div className="space-y-6">
@@ -79,7 +82,18 @@ function AgendaPage() {
           <h1 className="font-display text-3xl mb-1">Agenda</h1>
           <p className="text-muted-foreground">Citas del día.</p>
         </div>
-        <NewApptDialog businessId={businessId!} initialDate={date} trigger={<Button><Plus className="size-4" /> Nueva cita</Button>} />
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard.writeText(bookingUrl);
+              toast.success("Link copiado", { description: bookingUrl });
+            }}
+          >
+            <Link2 className="size-4" /> Copiar link de reservas
+          </Button>
+          <NewApptDialog businessId={businessId!} initialDate={date} trigger={<Button><Plus className="size-4" /> Nueva cita</Button>} />
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2">
@@ -165,6 +179,7 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
   const [serviceId, setServiceId] = useState("");
   const [clientId, setClientId] = useState("");
   const [newClientName, setNewClientName] = useState("");
+  const [newClientCountry, setNewClientCountry] = useState(DEFAULT_COUNTRY_CODE);
   const [newClientPhone, setNewClientPhone] = useState("");
   const [creatingClient, setCreatingClient] = useState(false);
   const [dateStr, setDateStr] = useState(toLocalDateInput(initialDate));
@@ -188,7 +203,16 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
       let cid = clientId;
       if (creatingClient) {
         if (!newClientName || !newClientPhone) throw new Error("Faltan datos del cliente");
-        const { data, error } = await supabase.from("clients").insert({ business_id: businessId, name: newClientName, phone: newClientPhone }).select().single();
+        const { data, error } = await supabase
+          .from("clients")
+          .insert({
+            business_id: businessId,
+            name: newClientName,
+            phone: newClientPhone,
+            phone_country_code: newClientCountry,
+          })
+          .select()
+          .single();
         if (error) throw error;
         cid = data.id;
       }
@@ -210,7 +234,7 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
       qc.invalidateQueries({ queryKey: ["appts"] });
       qc.invalidateQueries({ queryKey: ["today-appts"] });
       setOpen(false);
-      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setCreatingClient(false);
+      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -240,7 +264,12 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
             {creatingClient ? (
               <div className="space-y-2">
                 <Input placeholder="Nombre" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
-                <Input placeholder="Teléfono" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} />
+                <PhoneInput
+                  countryCode={newClientCountry}
+                  number={newClientPhone}
+                  onCountryCodeChange={setNewClientCountry}
+                  onNumberChange={setNewClientPhone}
+                />
               </div>
             ) : (
               <Select value={clientId} onValueChange={setClientId}>

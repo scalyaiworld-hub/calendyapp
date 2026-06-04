@@ -1,108 +1,79 @@
-## Alcance
+# Plan de mejoras
 
-Construir el sistema completo de citas para el dueño del salón/spa + un catálogo precargado de servicios típicos de spa que pueden agregar con un click.
+Te propongo cinco bloques de cambios. Te explico cada uno simple y luego los detalles técnicos.
 
-## 1. Onboarding del negocio
+## 1. Login con Google + rediseño
 
-- Al entrar a `/dashboard` sin negocio creado → wizard de 1 paso: nombre, slug (auto-sugerido), teléfono, timezone (default `America/Lima`).
-- Crea fila en `businesses` y horario por defecto en `availability_rules` (lun–sáb 9:00–19:00).
-- Opción "Cargar catálogo sugerido de spa" → inserta los servicios precargados.
+**Qué cambia para el usuario:**
+- Pantalla de ingreso más limpia: botón grande de Google arriba, separador "o continúa con email", y debajo el formulario de email + contraseña.
+- Quien quiera puede entrar con su cuenta de Google en un clic.
 
-## 2. Catálogo precargado (Servicios sugeridos de spa)
+**Detalles técnicos:**
+- Habilitar el proveedor Google en el backend (`configure_social_auth providers: ["google"]`).
+- Usar el broker de Lovable: `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/dashboard" })`.
+- Rediseño de `src/routes/auth.tsx` con mejor jerarquía (logo, título grande, botón Google con ícono, divisor, formulario).
 
-Categorías y servicios típicos que se ofrecen con un click:
+## 2. Onboarding obligatorio en 3 pasos
 
-**Cabello**
-- Corte mujer (45min) / Corte hombre (30min) / Corte niño (30min)
-- Lavado + peinado (30min)
-- Brushing / Planchado (45min)
-- Tinte completo (120min) / Retoque de raíz (90min)
-- Mechas / Balayage (180min)
-- Tratamiento capilar / Botox capilar (60min)
-- Alisado / Keratina (180min)
+**Qué cambia para el usuario:**
+- En el primer ingreso aparece un asistente que no se puede saltar.
+- Paso 1: WhatsApp (selector de país con bandera + código, y campo aparte para el número).
+- Paso 2: Nombre del salón.
+- Paso 3: Servicios (con botón "Omitir por ahora").
+- Mientras no termine, cualquier ruta del dashboard lo devuelve al paso pendiente.
 
-**Uñas**
-- Manicure clásico (45min) / Manicure semipermanente (60min)
-- Pedicure clásico (60min) / Pedicure spa (75min)
-- Uñas acrílicas / gel (90min)
-- Nail art (30min adicional)
+**Detalles técnicos:**
+- Migración: agregar a `businesses` las columnas `whatsapp_country_code` (text, default '+51'), `whatsapp_number` (text), `onboarding_completed` (boolean, default false), `onboarding_step` (smallint, default 1).
+- Nueva ruta `src/routes/_authenticated/onboarding.tsx` (o `src/routes/dashboard.onboarding.tsx`) con un stepper de 3 pasos.
+- En `dashboard.tsx`, si `!business` o `!business.onboarding_completed`, redirigir a `/dashboard/onboarding`.
+- Componente `PhoneInput` reutilizable: dropdown con países comunes de LatAm + España + EEUU (bandera emoji + código), input numérico aparte. Guarda `country_code` y `number` separados.
+- El paso 3 reutiliza el `CatalogDialog` por rubro (ver bloque 5) y permite "Omitir por ahora" (marca `onboarding_completed = true` sin servicios).
 
-**Estética facial**
-- Limpieza facial profunda (60min)
-- Hidratación / Anti-edad (60min)
-- Microdermoabrasión (45min)
-- Depilación facial con cera (20min)
+## 3. Link público de reservas
 
-**Cuerpo / Spa**
-- Masaje relajante 60min / 90min
-- Masaje descontracturante (60min)
-- Drenaje linfático (60min)
-- Exfoliación corporal (45min)
-- Depilación con cera: piernas / axilas / bikini
+**Qué cambia para el usuario:**
+- En Agenda hay un botón "Copiar link de reservas". Al hacer clic, copia al portapapeles la URL pública del salón.
+- Cualquier cliente final que abra ese link ve los servicios activos, elige uno, ve solo los huecos libres según horarios y citas existentes, y reserva.
 
-**Pestañas y cejas**
-- Diseño de cejas (20min)
-- Tinte de cejas / pestañas (30min)
-- Lifting de pestañas (60min)
-- Extensiones de pestañas (120min)
+**Detalles técnicos:**
+- Botón en `src/routes/dashboard.agenda.tsx` que copia `${window.location.origin}/b/${business.slug}` con `navigator.clipboard.writeText` y `toast.success`.
+- Mejorar `src/routes/b.$slug.tsx` para que tenga el flujo completo: selección de servicio → selección de fecha → mostrar slots disponibles calculados con `src/lib/availability.ts` (cruzando `availability_rules` con `appointments` no canceladas y duración del servicio) → formulario simple (nombre + WhatsApp con prefijo separado) → crear `client` (o reusar por teléfono) y `appointment` con status `pending`.
+- Requiere policy pública (anon) de **INSERT** en `appointments` y `clients` solo cuando `business_id` corresponde a un negocio activo, y **SELECT** público sobre `businesses`, `services` activos y `availability_rules` por slug. Migración con grants + policies acotadas.
 
-Se muestran como tarjetas seleccionables → "Agregar al catálogo" inserta varios `services` de una vez con precio editable después.
+## 4. WhatsApp con prefijo separado en todos lados
 
-## 3. Dashboard del dueño (rutas anidadas bajo `/dashboard`)
+**Qué cambia para el usuario:**
+- Onboarding, ajustes del salón, alta de clientes y formulario público de reservas: siempre dos campos (prefijo país + número local). Nunca uno solo.
 
-```
-/dashboard               → resumen (citas de hoy, próximas, KPIs)
-/dashboard/agenda        → calendario semanal con citas
-/dashboard/servicios     → CRUD de servicios + botón "Catálogo sugerido"
-/dashboard/clientes      → CRUD de clientes
-/dashboard/horarios      → editar availability_rules por día
-/dashboard/ajustes       → datos del negocio + link a página pública
-```
+**Detalles técnicos:**
+- Componente `src/components/PhoneInput.tsx` reutilizable (controlado, recibe `countryCode`, `number` y `onChange`).
+- Lista de países en `src/lib/countries.ts` (~15 países LatAm + ES + US con bandera emoji + código).
+- Migración: agregar a `clients` `phone_country_code` (text) y mantener `phone` como el número local. Conservar `phone` existente como número (sin migración destructiva).
+- Actualizar `dashboard.ajustes.tsx`, `dashboard.clientes.tsx`, `dashboard.agenda.tsx` (NewApptDialog), `b.$slug.tsx` para usar `PhoneInput`.
 
-### Agenda
-- Vista semanal (7 días × franjas horarias) con citas como bloques de color.
-- Click en bloque vacío → modal "Nueva cita" (cliente nuevo o existente, servicio, fecha/hora sugerida).
-- Click en cita → ver / editar / cancelar / marcar como completada / no-show.
-- Filtros por estado.
+## 5. Plantillas de servicios por rubro
 
-### Servicios
-- Lista de servicios activos con precio, duración, toggle activo.
-- Crear / editar / archivar (soft delete con `deleted_at`).
-- Botón "Agregar del catálogo sugerido" → modal con las tarjetas de la sección 2.
+**Qué cambia para el usuario:**
+- Al crear el salón ya **no** se precargan servicios automáticamente.
+- En Servicios aparece una galería con plantillas agrupadas por rubro: Peluquería, Barbería, Spa, Uñas, Estética.
+- El usuario elige las que quiere, las importa con un clic, y puede editar nombre / duración / precio. También puede crear servicios desde cero (ya existe).
 
-### Clientes
-- Búsqueda por nombre / teléfono.
-- Historial de citas por cliente, total de citas, no-shows, última visita.
-
-## 4. Página pública de reservas `/b/:slug`
-
-- Renderiza nombre, logo, lista de servicios activos (precio + duración).
-- Flujo: elegir servicio → elegir fecha → elegir slot (usa `getAvailableSlots`) → datos del cliente (nombre + teléfono) → confirmar.
-- Inserta en `clients` (upsert por phone+business) y en `appointments` con `source = 'booking_page'`.
-- Pantalla de confirmación con resumen.
-
-## 5. Detalles técnicos
-
-- Todas las rutas privadas envueltas en chequeo de auth (redirect a `/auth`).
-- Reads en componentes con `useQuery`, mutaciones con `useMutation` + invalidate.
-- Modales con shadcn `Dialog`. Calendario con shadcn `Calendar` para selección de fecha.
-- Formato de precio: `price_cents` / 100 → moneda local del business (por ahora hardcode S/. para Perú).
-- Soft delete: filtrar siempre por `deleted_at IS NULL`.
-- El backend (tablas + RLS + constraint anti-doble-booking) ya está listo de migraciones previas.
-
-## 6. Fuera de alcance (siguientes iteraciones)
-
-- Chat IA con function calling.
-- WhatsApp / notificaciones automáticas.
-- Reportes y métricas avanzadas.
-- Pagos online.
-- Multi-staff (por ahora 1 negocio = 1 calendario).
+**Detalles técnicos:**
+- Reemplazar `src/lib/spa-catalog.ts` por `src/lib/service-templates.ts` con cinco rubros y ~10–15 servicios cada uno.
+- Quitar la pre-carga automática en `dashboard.index.tsx` (`Onboarding`) y del paso 3 del nuevo onboarding (cargar solo lo que el usuario seleccione).
+- Rediseñar `CatalogDialog` en `dashboard.servicios.tsx`: tabs por rubro, tarjetas seleccionables, contador de seleccionados, botón "Importar N servicios".
 
 ## Orden de implementación
 
-1. Onboarding + catálogo sugerido + CRUD servicios
-2. CRUD clientes
-3. Editor de horarios
-4. Agenda (vista + crear/editar cita)
-5. Página pública de reservas
-6. Dashboard resumen
+1. Migración: columnas de onboarding, columnas de WhatsApp en clients, policies públicas para reservas anon.
+2. Habilitar Google OAuth + rediseño de `/auth`.
+3. `PhoneInput` + `countries.ts`.
+4. Service templates (5 rubros) + rediseño de `CatalogDialog`.
+5. Onboarding stepper obligatorio + gate en `dashboard.tsx`.
+6. Botón "Copiar link" en Agenda + flujo público completo en `/b/$slug`.
+7. Reemplazar todos los inputs de teléfono por `PhoneInput`.
+
+## Preguntas antes de implementar
+
+- ¿El link público de reservas debe crear la cita como **pendiente** (tú la confirmas desde Agenda) o **confirmada** automáticamente?
+- Para el selector de país, ¿con LatAm + España + EEUU es suficiente o quieres lista mundial completa?

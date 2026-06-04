@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Pencil, Trash2, Plus, Sparkles } from "lucide-react";
-import { SPA_CATALOG, SPA_CATEGORIES } from "@/lib/spa-catalog";
+import { INDUSTRIES, SERVICE_TEMPLATES, type Industry } from "@/lib/service-templates";
 import { formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -74,17 +75,19 @@ function ServicesPage() {
   });
 
   const addCatalog = useMutation({
-    mutationFn: async (selected: number[]) => {
+    mutationFn: async (selected: { industry: Industry; name: string }[]) => {
       if (!businessId) throw new Error("Sin negocio");
       const offset = services?.length ?? 0;
-      const rows = selected.map((i, idx) => ({
-        business_id: businessId,
-        name: SPA_CATALOG[i].name,
-        duration_minutes: SPA_CATALOG[i].duration_minutes,
-        price_cents: SPA_CATALOG[i].price_cents,
-        description: SPA_CATALOG[i].category,
-        display_order: offset + idx,
-      }));
+      const rows = selected.map((sel, idx) => {
+        const t = SERVICE_TEMPLATES[sel.industry].find((s) => s.name === sel.name)!;
+        return {
+          business_id: businessId,
+          name: t.name,
+          duration_minutes: t.duration_minutes,
+          price_cents: t.price_cents,
+          display_order: offset + idx,
+        };
+      });
       const { error } = await supabase.from("services").insert(rows);
       if (error) throw error;
     },
@@ -101,7 +104,7 @@ function ServicesPage() {
           <p className="text-muted-foreground">Lo que ofreces a tus clientes.</p>
         </div>
         <div className="flex gap-2">
-          <CatalogDialog onAdd={(sel) => addCatalog.mutate(sel)} />
+          <CatalogDialog defaultIndustry={(business as any)?.industry as Industry | undefined} onAdd={(sel) => addCatalog.mutate(sel)} />
           <ServiceDialog onSave={(s) => upsert.mutate(s)} trigger={<Button><Plus className="size-4" /> Nuevo</Button>} />
         </div>
       </div>
@@ -176,46 +179,69 @@ function ServiceDialog({ initial, onSave, trigger }: { initial?: any; onSave: (s
   );
 }
 
-function CatalogDialog({ onAdd }: { onAdd: (sel: number[]) => void }) {
+function CatalogDialog({ defaultIndustry, onAdd }: { defaultIndustry?: Industry; onAdd: (sel: { industry: Industry; name: string }[]) => void }) {
   const [open, setOpen] = useState(false);
-  const [sel, setSel] = useState<Set<number>>(new Set());
+  const [tab, setTab] = useState<Industry>(defaultIndustry ?? "peluqueria");
+  const [sel, setSel] = useState<Set<string>>(new Set());
 
-  const toggle = (i: number) => {
+  const key = (ind: Industry, name: string) => `${ind}::${name}`;
+  const toggle = (ind: Industry, name: string) => {
+    const k = key(ind, name);
     const n = new Set(sel);
-    n.has(i) ? n.delete(i) : n.add(i);
+    n.has(k) ? n.delete(k) : n.add(k);
     setSel(n);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSel(new Set()); }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSel(new Set()); if (v && defaultIndustry) setTab(defaultIndustry); }}>
       <DialogTrigger asChild>
-        <Button variant="outline"><Sparkles className="size-4" /> Catálogo sugerido</Button>
+        <Button variant="outline"><Sparkles className="size-4" /> Plantillas</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Servicios sugeridos de spa</DialogTitle></DialogHeader>
-        <div className="space-y-5">
-          {SPA_CATEGORIES.map((cat) => (
-            <div key={cat}>
-              <h3 className="font-display text-lg mb-2">{cat}</h3>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Plantillas de servicios por rubro</DialogTitle>
+        </DialogHeader>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Industry)} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="flex-wrap h-auto justify-start">
+            {INDUSTRIES.map((ind) => (
+              <TabsTrigger key={ind.id} value={ind.id} className="gap-1.5">
+                <span>{ind.emoji}</span>
+                <span>{ind.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {INDUSTRIES.map((ind) => (
+            <TabsContent key={ind.id} value={ind.id} className="flex-1 overflow-y-auto mt-4">
               <div className="grid sm:grid-cols-2 gap-2">
-                {SPA_CATALOG.map((s, i) => s.category === cat && (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => toggle(i)}
-                    className={"text-left rounded-md border p-3 transition-colors " + (sel.has(i) ? "border-primary bg-primary/5" : "border-border hover:bg-accent")}
-                  >
-                    <p className="font-medium text-sm">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.duration_minutes} min · {formatPriceCents(s.price_cents)}</p>
-                  </button>
-                ))}
+                {SERVICE_TEMPLATES[ind.id].map((s) => {
+                  const k = key(ind.id, s.name);
+                  const checked = sel.has(k);
+                  return (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => toggle(ind.id, s.name)}
+                      className={"text-left rounded-md border p-3 transition-colors " + (checked ? "border-primary bg-primary/5" : "border-border hover:bg-accent")}
+                    >
+                      <p className="font-medium text-sm">{s.name}</p>
+                      <p className="text-xs text-muted-foreground">{s.duration_minutes} min · {formatPriceCents(s.price_cents)}</p>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            </TabsContent>
           ))}
-        </div>
+        </Tabs>
         <DialogFooter>
-          <Button disabled={sel.size === 0} onClick={() => { onAdd(Array.from(sel)); setOpen(false); }}>
-            Agregar {sel.size} servicio{sel.size === 1 ? "" : "s"}
+          <Button disabled={sel.size === 0} onClick={() => {
+            const list = Array.from(sel).map((k) => {
+              const [ind, name] = k.split("::");
+              return { industry: ind as Industry, name };
+            });
+            onAdd(list);
+            setOpen(false);
+          }}>
+            Importar {sel.size} servicio{sel.size === 1 ? "" : "s"}
           </Button>
         </DialogFooter>
       </DialogContent>

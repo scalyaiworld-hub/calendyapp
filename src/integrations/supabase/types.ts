@@ -165,37 +165,52 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
+          industry: string | null
           logo_url: string | null
           name: string
+          onboarding_completed: boolean
+          onboarding_step: number
           owner_id: string
           phone: string | null
           slug: string
           timezone: string
           updated_at: string
+          whatsapp_country_code: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          industry?: string | null
           logo_url?: string | null
           name: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
           owner_id: string
           phone?: string | null
           slug: string
           timezone?: string
           updated_at?: string
+          whatsapp_country_code?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          industry?: string | null
           logo_url?: string | null
           name?: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
           owner_id?: string
           phone?: string | null
           slug?: string
           timezone?: string
           updated_at?: string
+          whatsapp_country_code?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -211,6 +226,7 @@ export type Database = {
           no_show_count: number
           notes: string | null
           phone: string
+          phone_country_code: string | null
           total_appointments: number
           updated_at: string
         }
@@ -225,6 +241,7 @@ export type Database = {
           no_show_count?: number
           notes?: string | null
           phone: string
+          phone_country_code?: string | null
           total_appointments?: number
           updated_at?: string
         }
@@ -239,6 +256,7 @@ export type Database = {
           no_show_count?: number
           notes?: string | null
           phone?: string
+          phone_country_code?: string | null
           total_appointments?: number
           updated_at?: string
         }

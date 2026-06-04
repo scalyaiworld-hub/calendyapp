@@ -22,14 +22,25 @@ const NAV: NavItem[] = [
 
 function DashboardLayout() {
   const { user, loading, signOut } = useAuth();
-  const { data: business } = useMyBusiness();
+  const { data: business, isLoading: bizLoading } = useMyBusiness();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
 
-  if (loading || !user) {
+  // Force onboarding before any dashboard route renders
+  useEffect(() => {
+    if (loading || bizLoading || !user) return;
+    if (!business || !business.onboarding_completed) {
+      navigate({ to: "/onboarding", replace: true });
+    }
+  }, [loading, bizLoading, user, business, navigate]);
+
+  if (loading || !user || bizLoading) {
+    return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+  }
+  if (!business || !business.onboarding_completed) {
     return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
   }
 
