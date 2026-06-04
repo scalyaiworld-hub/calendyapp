@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { PhoneInput } from "@/components/PhoneInput";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 export const Route = createFileRoute("/dashboard/ajustes")({
   component: AjustesPage,
@@ -17,15 +19,28 @@ function AjustesPage() {
   const { data: business } = useMyBusiness();
   const qc = useQueryClient();
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [waCountry, setWaCountry] = useState(DEFAULT_COUNTRY_CODE);
+  const [waNumber, setWaNumber] = useState("");
 
   useEffect(() => {
-    if (business) { setName(business.name); setPhone(business.phone ?? ""); }
+    if (business) {
+      setName(business.name);
+      setWaCountry((business as any).whatsapp_country_code ?? DEFAULT_COUNTRY_CODE);
+      setWaNumber((business as any).whatsapp_number ?? business.phone ?? "");
+    }
   }, [business]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("businesses").update({ name, phone: phone || null }).eq("id", business!.id);
+      const { error } = await supabase
+        .from("businesses")
+        .update({
+          name,
+          whatsapp_country_code: waCountry,
+          whatsapp_number: waNumber || null,
+          phone: waNumber ? `${waCountry} ${waNumber}` : null,
+        })
+        .eq("id", business!.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Guardado"); },
@@ -45,7 +60,17 @@ function AjustesPage() {
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Teléfono</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          <div>
+            <Label>WhatsApp</Label>
+            <div className="mt-1.5">
+              <PhoneInput
+                countryCode={waCountry}
+                number={waNumber}
+                onCountryCodeChange={setWaCountry}
+                onNumberChange={setWaNumber}
+              />
+            </div>
+          </div>
           <Button onClick={() => save.mutate()} disabled={save.isPending || !name}>Guardar</Button>
         </CardContent>
       </Card>
