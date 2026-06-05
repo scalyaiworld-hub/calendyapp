@@ -6,6 +6,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  ArrowRight,
+  Calendar,
+  Link2,
+  Building2,
+  Users,
+  Palette,
+  Sparkles,
+  Check,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,13 +52,13 @@ function Index() {
 
 function Header() {
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/75 border-b border-border/60">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-8 rounded-md bg-primary grid place-items-center">
-            <span className="font-display font-bold text-primary-foreground text-lg">A</span>
+          <div className="size-8 rounded-lg bg-foreground grid place-items-center shadow-soft">
+            <span className="font-display font-semibold text-background text-base">A</span>
           </div>
-          <span className="font-display text-xl font-semibold tracking-tight">Agendy</span>
+          <span className="font-display text-lg font-semibold tracking-tight">Agendy</span>
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">Funciones</a>
@@ -55,12 +67,13 @@ function Header() {
           <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground">Ingresar</Link>
+          <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">Ingresar</Link>
           <Link
             to="/auth"
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition shadow-sm"
+            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition shadow-soft"
           >
             Empezar gratis
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>
@@ -71,43 +84,52 @@ function Header() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* Soft background accents */}
+      <div aria-hidden className="absolute inset-0 -z-10 bg-grid opacity-60" />
       <div
         aria-hidden
         className="absolute inset-0 -z-10 pointer-events-none"
         style={{
           backgroundImage:
-            "radial-gradient(ellipse 60% 50% at 50% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 60%), radial-gradient(ellipse 40% 30% at 90% 20%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
+            "radial-gradient(ellipse 50% 40% at 50% 10%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
         }}
       />
-      <div className="max-w-6xl mx-auto px-6 pt-20 pb-28 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card mb-8 shadow-sm">
-          <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">Para salones, spas y estéticas</span>
+      <div className="max-w-5xl mx-auto px-6 pt-24 md:pt-28 pb-24 md:pb-28 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card/80 backdrop-blur mb-8 shadow-soft">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
+            <span className="relative inline-flex rounded-full size-1.5 bg-primary" />
+          </span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-medium">Salones · Spas · Barberías</span>
         </div>
-        <h1 className="font-display text-5xl md:text-7xl lg:text-[5.5rem] leading-[1.02] tracking-tight mb-8 font-semibold">
+        <h1 className="font-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] leading-[0.98] tracking-[-0.04em] mb-8 font-semibold">
           Tu negocio
           <br />
-          <span className="text-primary">agenda solo.</span>
+          <span className="relative inline-block">
+            <span className="text-primary">agenda solo</span>
+            <span className="text-foreground">.</span>
+          </span>
         </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
           Convierte mensajes y clicks en citas confirmadas — sin cuaderno, sin perder
           clientes, sin responder a cada hora.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/auth"
-            className="px-8 py-4 rounded-lg bg-primary text-primary-foreground font-semibold shadow-rose hover:shadow-lg hover:-translate-y-0.5 transition"
+            className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-lg bg-foreground text-background font-medium hover:bg-foreground/90 hover:-translate-y-0.5 transition shadow-soft-lg"
           >
             Empieza gratis
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
-          <a href="#how" className="px-8 py-4 rounded-lg border border-border bg-card hover:bg-accent transition">
+          <a href="#how" className="px-7 py-3.5 rounded-lg border border-border bg-card/80 backdrop-blur hover:bg-accent transition font-medium">
             Ver cómo funciona
           </a>
         </div>
-        <p className="mt-8 text-xs uppercase tracking-widest text-muted-foreground">
-          Sin tarjeta · Configúralo en 10 minutos
-        </p>
+        <div className="mt-10 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> Sin tarjeta</span>
+          <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> 10 minutos</span>
+          <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> Cancela cuando quieras</span>
+        </div>
       </div>
     </section>
   );
@@ -121,12 +143,12 @@ function TrustStrip() {
     { n: "24/7", l: "Disponibilidad" },
   ];
   return (
-    <section className="border-y border-border bg-card/50">
-      <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-        {stats.map((s) => (
-          <div key={s.l} className="text-center">
-            <div className="font-display text-3xl md:text-4xl font-semibold text-foreground">{s.n}</div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mt-1">{s.l}</div>
+    <section className="border-y border-border bg-card/40">
+      <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
+        {stats.map((s, i) => (
+          <div key={s.l} className={`text-center px-4 ${i < 2 ? "pb-6 md:pb-0" : "pt-6 md:pt-0"}`}>
+            <div className="font-display text-4xl md:text-5xl font-semibold text-foreground tracking-tight">{s.n}</div>
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mt-2 font-medium">{s.l}</div>
           </div>
         ))}
       </div>
@@ -143,15 +165,15 @@ function Problem() {
   return (
     <section className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium">El problema</p>
+        <SectionLabel>El problema</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-16 max-w-2xl font-semibold tracking-tight">
           Hoy gestionas tu negocio como en los 90.
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {items.map((i) => (
-            <div key={i.n} className="bg-card border border-border rounded-xl p-8 hover:border-primary/40 hover:shadow-sm transition">
-              <div className="font-mono text-sm text-primary mb-4">{i.n}</div>
-              <h3 className="font-display text-2xl mb-3 font-semibold">{i.t}</h3>
+            <div key={i.n} className="bg-card border border-border rounded-2xl p-8 hover:border-foreground/20 hover:shadow-soft transition group">
+              <div className="font-mono text-xs text-muted-foreground mb-4 tracking-widest">{i.n} / 03</div>
+              <h3 className="font-display text-xl mb-3 font-semibold tracking-tight">{i.t}</h3>
               <p className="text-muted-foreground leading-relaxed">{i.d}</p>
             </div>
           ))}
@@ -163,28 +185,28 @@ function Problem() {
 
 function Features() {
   const features = [
-    { t: "Agenda inteligente", d: "Tu calendario se actualiza solo. Sin doble booking, jamás." },
-    { t: "Link de reservas", d: "Comparte un link y tus clientes agendan en 30 segundos." },
-    { t: "Multi-sucursal", d: "Gestiona varias sucursales y profesionales desde un solo lugar." },
-    { t: "Clientes guardados", d: "Cada cliente con su historial. Sin libreta, sin Excel." },
-    { t: "Marca personalizada", d: "Colores, tipografía y logo a tu medida en tu página pública." },
-    { t: "Cero fricción", d: "Diseñado para dueños de negocio, no para programadores." },
+    { i: Calendar, t: "Agenda inteligente", d: "Tu calendario se actualiza solo. Sin doble booking, jamás." },
+    { i: Link2, t: "Link de reservas", d: "Comparte un link y tus clientes agendan en 30 segundos." },
+    { i: Building2, t: "Multi-sucursal", d: "Gestiona varias sucursales y profesionales desde un solo lugar." },
+    { i: Users, t: "Clientes guardados", d: "Cada cliente con su historial. Sin libreta, sin Excel." },
+    { i: Palette, t: "Marca personalizada", d: "Colores, tipografía y logo a tu medida en tu página pública." },
+    { i: Sparkles, t: "Cero fricción", d: "Diseñado para dueños de negocio, no para programadores." },
   ];
   return (
     <section id="features" className="py-24 px-6 border-t border-border">
       <div className="max-w-6xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium">La solución</p>
+        <SectionLabel>La solución</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-16 max-w-2xl font-semibold tracking-tight">
           Todo lo que necesitas, <span className="text-primary">nada que no.</span>
         </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden border border-border">
-          {features.map((f) => (
-            <div key={f.t} className="bg-card p-8 hover:bg-accent/40 transition group">
-              <div className="size-10 rounded-lg bg-primary/10 border border-primary/20 grid place-items-center mb-5 group-hover:bg-primary/15 transition">
-                <div className="size-2 rounded-full bg-primary" />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden border border-border shadow-soft">
+          {features.map(({ i: Icon, t, d }) => (
+            <div key={t} className="bg-card p-8 hover:bg-accent/30 transition group relative">
+              <div className="size-11 rounded-xl bg-foreground/5 grid place-items-center mb-5 group-hover:bg-primary/10 group-hover:text-primary transition text-foreground/70">
+                <Icon className="size-5" strokeWidth={1.5} />
               </div>
-              <h3 className="font-display text-xl mb-2 font-semibold">{f.t}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{f.d}</p>
+              <h3 className="font-display text-lg mb-2 font-semibold tracking-tight">{t}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{d}</p>
             </div>
           ))}
         </div>
@@ -202,14 +224,17 @@ function HowItWorks() {
   return (
     <section id="how" className="py-24 px-6 border-t border-border">
       <div className="max-w-5xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium">Cómo funciona</p>
+        <SectionLabel>Cómo funciona</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-16 font-semibold tracking-tight">Tres pasos. Listo.</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {steps.map((s) => (
-            <div key={s.n} className="bg-card border border-border rounded-xl p-8 relative">
-              <div className="font-display text-6xl text-primary/20 font-semibold absolute top-4 right-6">{s.n}</div>
-              <h3 className="font-display text-2xl mb-2 font-semibold mt-6">{s.t}</h3>
-              <p className="text-muted-foreground">{s.d}</p>
+        <div className="grid md:grid-cols-3 gap-6 relative">
+          {steps.map((s, idx) => (
+            <div key={s.n} className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden hover:shadow-soft transition">
+              <div className="flex items-center justify-between mb-6">
+                <div className="size-9 rounded-full bg-foreground text-background grid place-items-center font-display text-sm font-semibold">{s.n}</div>
+                {idx < steps.length - 1 && <ArrowRight className="size-4 text-muted-foreground/40 hidden md:block" />}
+              </div>
+              <h3 className="font-display text-xl mb-2 font-semibold tracking-tight">{s.t}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{s.d}</p>
             </div>
           ))}
         </div>
@@ -245,86 +270,118 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
   return (
     <section id="pricing" className="py-24 px-6 border-t border-border">
       <div className="max-w-6xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium">Precio</p>
+        <SectionLabel>Precio</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">Empieza gratis. Crece cuando quieras.</h2>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-5 items-stretch">
           {/* Free plan */}
-          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Gratis</div>
-            <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
-              <span className="text-foreground">$0</span>
-              <span className="text-lg text-muted-foreground font-normal"> / mes</span>
-            </div>
-            <p className="text-muted-foreground mb-8 text-sm">Para empezar y probar sin compromiso.</p>
-            <ul className="text-left space-y-3 mb-10 text-sm">
-              {free.map((f) => (
-                <li key={f} className="flex items-center gap-3">
-                  <span className="size-5 rounded-full bg-muted text-foreground grid place-items-center text-xs">✓</span>
-                  <span className="text-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-semibold transition">
-              Crear cuenta gratis
-            </Link>
-          </div>
-
-          {/* Pro plan */}
-          <div className="bg-card border-2 border-primary rounded-2xl p-8 shadow-rose relative overflow-hidden flex flex-col">
-            <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs uppercase tracking-widest font-medium">
-              Recomendado
-            </div>
-            <div className="text-xs uppercase tracking-widest text-primary font-medium mb-3">Pro</div>
-            <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
-              <span className="text-foreground">$29</span>
-              <span className="text-lg text-muted-foreground font-normal"> USD / mes</span>
-            </div>
-            <p className="text-muted-foreground mb-8 text-sm">Para salones que ya están creciendo.</p>
-            <ul className="text-left space-y-3 mb-10 text-sm">
-              {pro.map((f) => (
-                <li key={f} className="flex items-center gap-3">
-                  <span className="size-5 rounded-full bg-primary/10 text-primary grid place-items-center text-xs">✓</span>
-                  <span className="text-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={onProClick}
-              className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition"
-            >
-              Preregistro
-            </button>
-          </div>
-
-          {/* Studio plan */}
-          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col relative overflow-hidden">
-            <div className="text-xs uppercase tracking-widest text-foreground font-medium mb-3">Studio</div>
-            <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
-              <span className="text-foreground">$99</span>
-              <span className="text-lg text-muted-foreground font-normal"> USD / mes</span>
-            </div>
-            <p className="text-muted-foreground mb-8 text-sm">Para cadenas y equipos grandes.</p>
-            <ul className="text-left space-y-3 mb-10 text-sm">
-              {studio.map((f) => (
-                <li key={f} className="flex items-center gap-3">
-                  <span className="size-5 rounded-full bg-foreground/10 text-foreground grid place-items-center text-xs">✓</span>
-                  <span className="text-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={onProClick}
-              className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-foreground bg-foreground text-background font-semibold hover:opacity-90 transition"
-            >
-              Hablar con ventas
-            </button>
-          </div>
+          <PricingCard
+            tier="Gratis"
+            price="$0"
+            period="/ mes"
+            tagline="Para empezar y probar sin compromiso."
+            features={free}
+            cta={
+              <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-medium transition">
+                Crear cuenta gratis
+              </Link>
+            }
+          />
+          <PricingCard
+            tier="Pro"
+            price="$29"
+            period="USD / mes"
+            tagline="Para salones que ya están creciendo."
+            features={pro}
+            highlight
+            cta={
+              <button
+                type="button"
+                onClick={onProClick}
+                className="group mt-auto inline-flex items-center justify-center gap-2 text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition shadow-soft"
+              >
+                Preregistro <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            }
+          />
+          <PricingCard
+            tier="Studio"
+            price="$99"
+            period="USD / mes"
+            tagline="Para cadenas y equipos grandes."
+            features={studio}
+            dark
+            cta={
+              <button
+                type="button"
+                onClick={onProClick}
+                className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-foreground text-background font-medium hover:bg-foreground/90 transition"
+              >
+                Hablar con ventas
+              </button>
+            }
+          />
         </div>
-        <p className="mt-6 text-xs text-muted-foreground text-center">Sin tarjeta para empezar · Cambia de plan cuando quieras</p>
+        <p className="mt-8 text-xs text-muted-foreground text-center inline-flex items-center justify-center gap-2 w-full">
+          <ShieldCheck className="size-3.5" /> Sin tarjeta para empezar · Cambia de plan cuando quieras
+        </p>
       </div>
     </section>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center gap-2 mb-5">
+      <span className="h-px w-6 bg-primary" />
+      <span className="text-[11px] uppercase tracking-[0.22em] text-primary font-semibold">{children}</span>
+    </div>
+  );
+}
+
+function PricingCard({
+  tier, price, period, tagline, features, cta, highlight, dark,
+}: {
+  tier: string; price: string; period: string; tagline: string;
+  features: string[]; cta: React.ReactNode; highlight?: boolean; dark?: boolean;
+}) {
+  const base = "rounded-2xl p-8 flex flex-col relative transition";
+  const variant = highlight
+    ? "bg-card border-2 border-primary shadow-soft-lg md:-translate-y-2"
+    : dark
+      ? "bg-foreground text-background border border-foreground"
+      : "bg-card border border-border hover:border-foreground/20";
+  const labelColor = highlight ? "text-primary" : dark ? "text-background/60" : "text-muted-foreground";
+  const taglineColor = dark ? "text-background/70" : "text-muted-foreground";
+  const checkBg = highlight
+    ? "bg-primary/10 text-primary"
+    : dark
+      ? "bg-background/10 text-background"
+      : "bg-foreground/5 text-foreground";
+  return (
+    <div className={`${base} ${variant}`}>
+      {highlight && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-[10px] uppercase tracking-[0.18em] font-semibold shadow-soft">
+          Recomendado
+        </div>
+      )}
+      <div className={`text-[11px] uppercase tracking-[0.22em] font-semibold mb-4 ${labelColor}`}>{tier}</div>
+      <div className="font-display text-5xl mb-2 font-semibold tracking-tight flex items-baseline gap-1.5">
+        <span>{price}</span>
+        <span className={`text-sm font-normal ${taglineColor}`}>{period}</span>
+      </div>
+      <p className={`mb-8 text-sm ${taglineColor}`}>{tagline}</p>
+      <ul className="text-left space-y-3 mb-10 text-sm">
+        {features.map((f) => (
+          <li key={f} className="flex items-start gap-3">
+            <span className={`mt-0.5 size-5 rounded-full grid place-items-center shrink-0 ${checkBg}`}>
+              <Check className="size-3" strokeWidth={2.5} />
+            </span>
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+      {cta}
+    </div>
   );
 }
 
@@ -338,20 +395,20 @@ function FAQ() {
   return (
     <section id="faq" className="py-24 px-6 border-t border-border">
       <div className="max-w-3xl mx-auto">
-        <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium text-center">Preguntas</p>
+        <div className="flex justify-center"><SectionLabel>Preguntas</SectionLabel></div>
         <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight text-center">
           Lo que más nos preguntan.
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {items.map((i) => (
             <details
               key={i.q}
-              className="group bg-card border border-border rounded-xl px-6 py-4 hover:border-primary/30 transition"
+              className="group bg-card border border-border rounded-xl px-6 py-4 hover:border-foreground/20 transition open:shadow-soft"
             >
-              <summary className="cursor-pointer list-none flex items-center justify-between font-medium text-foreground">
+              <summary className="cursor-pointer list-none flex items-center justify-between font-medium text-foreground gap-4">
                 {i.q}
-                <span className="size-6 rounded-full bg-primary/10 text-primary grid place-items-center text-sm group-open:rotate-45 transition-transform">
-                  +
+                <span className="size-7 rounded-full bg-foreground/5 text-foreground/70 grid place-items-center group-open:rotate-45 group-open:bg-primary group-open:text-primary-foreground transition-all shrink-0">
+                  <Plus className="size-3.5" strokeWidth={2.5} />
                 </span>
               </summary>
               <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{i.a}</p>
@@ -368,23 +425,22 @@ function CTA() {
     <section className="py-24 px-6 border-t border-border">
       <div className="max-w-4xl mx-auto">
         <div
-          className="relative overflow-hidden rounded-2xl p-12 md:p-16 text-center"
-          style={{
-            background:
-              "linear-gradient(135deg, color-mix(in oklab, var(--primary) 95%, white), color-mix(in oklab, var(--primary) 75%, black))",
-          }}
+          className="relative overflow-hidden rounded-3xl p-12 md:p-20 text-center bg-foreground"
         >
-          <h2 className="font-display text-4xl md:text-5xl text-primary-foreground font-semibold tracking-tight mb-4">
+          <div aria-hidden className="absolute inset-0 bg-dot opacity-30 pointer-events-none" />
+          <div aria-hidden className="absolute -top-20 -right-20 size-72 rounded-full bg-primary/30 blur-3xl" />
+          <h2 className="relative font-display text-4xl md:text-6xl text-background font-semibold tracking-[-0.03em] mb-5">
             Empieza hoy. Cobra mañana.
           </h2>
-          <p className="text-primary-foreground/90 mb-8 max-w-xl mx-auto">
+          <p className="relative text-background/70 mb-10 max-w-lg mx-auto">
             Configura tu agenda en 10 minutos y comparte tu link de reservas con tus clientes.
           </p>
           <Link
             to="/auth"
-            className="inline-block px-8 py-4 rounded-lg bg-background text-foreground font-semibold hover:-translate-y-0.5 transition shadow-lg"
+            className="relative group inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-background text-foreground font-medium hover:-translate-y-0.5 transition shadow-soft-lg"
           >
             Crear mi cuenta gratis
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>
@@ -394,15 +450,15 @@ function CTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border py-12 px-6">
+    <footer className="border-t border-border py-10 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <div className="size-6 rounded bg-primary grid place-items-center">
-            <span className="font-display font-bold text-primary-foreground text-xs">A</span>
+          <div className="size-6 rounded-md bg-foreground grid place-items-center">
+            <span className="font-display font-semibold text-background text-xs">A</span>
           </div>
-          <span className="font-display font-semibold">Agendy</span>
+          <span className="font-display font-semibold tracking-tight">Agendy</span>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 Agendy. Hecho en Perú.</p>
+        <p className="text-xs text-muted-foreground">© 2026 Agendy · Hecho en Perú.</p>
       </div>
     </footer>
   );
