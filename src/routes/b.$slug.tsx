@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableSlots } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
@@ -64,12 +64,29 @@ function BookingPage() {
       .order("created_at")).data ?? [],
   });
   const location = locations?.find((l) => l.id === locationId);
+  const hasLocations = (locations?.length ?? 0) > 0;
+
+  // Si el negocio no tiene sucursales, saltamos el paso de elegir sucursal.
+  useEffect(() => {
+    if (locations && !hasLocations && step === "location") setStep("mode");
+  }, [locations, hasLocations, step]);
 
   // Profesionales asignados a la sucursal
   const { data: locPros } = useQuery({
-    queryKey: ["public-loc-pros", locationId, business?.id],
-    enabled: !!locationId && !!business?.id,
+    queryKey: ["public-loc-pros", locationId, business?.id, hasLocations],
+    enabled: !!business?.id && (!!locationId || !hasLocations),
     queryFn: async () => {
+      // Sin sucursal seleccionada: lista todos los profesionales del negocio
+      if (!locationId) {
+        const { data } = await supabase
+          .from("professionals")
+          .select("id,name,avatar_url,is_active,deleted_at")
+          .eq("business_id", business!.id)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .order("name");
+        return data ?? [];
+      }
       const { data } = await supabase
         .from("location_professionals")
         .select("professional_id, professionals!inner(id,name,avatar_url,is_active,deleted_at)")
@@ -94,7 +111,7 @@ function BookingPage() {
   const proIdsInLoc = (locPros ?? []).map((p: any) => p.id);
   const { data: locServices } = useQuery({
     queryKey: ["public-loc-services", locationId, business?.id, proIdsInLoc.join(",")],
-    enabled: !!locationId && !!business?.id && proIdsInLoc.length > 0,
+    enabled: !!business?.id && proIdsInLoc.length > 0,
     queryFn: async () => {
       const { data } = await supabase
         .from("professional_services")
@@ -147,18 +164,19 @@ function BookingPage() {
   // Profesionales que ofrecen el servicio seleccionado dentro de la sucursal
   const { data: svcPros } = useQuery({
     queryKey: ["public-svc-pros", serviceId, locationId, proIdsInLoc.join(",")],
-    enabled: !!serviceId && !!locationId && proIdsInLoc.length > 0,
+    enabled: !!serviceId && proIdsInLoc.length > 0,
     queryFn: async () => {
-      const { data } = await supabase
+      const q = supabase
         .from("professional_services")
         .select("professional_id, professionals!inner(id,name,avatar_url,is_active,deleted_at)")
         .eq("service_id", serviceId)
         .in("professional_id", proIdsInLoc);
+      const { data } = await q;
       const list = (data ?? [])
         .map((r: any) => r.professionals)
         .filter((p: any) => p && p.is_active && !p.deleted_at);
       if (list.length > 0) return list;
-      // Fallback: todos los profesionales de la sucursal
+      // Fallback: todos los profesionales disponibles
       return locPros ?? [];
     },
   });
@@ -169,8 +187,8 @@ function BookingPage() {
 
   const { data: slots } = useQuery({
     queryKey: ["slots", business?.id, serviceId, professionalId, locationId, date.toDateString()],
-    enabled: !!business?.id && !!serviceId && !!professionalId && !!locationId,
-    queryFn: () => getAvailableSlots({ businessId: business!.id, serviceId, date, locationId, professionalId }),
+    enabled: !!business?.id && !!serviceId && !!professionalId,
+    queryFn: () => getAvailableSlots({ businessId: business!.id, serviceId, date, locationId: locationId || undefined, professionalId }),
   });
 
   const book = useMutation({
@@ -180,8 +198,8 @@ function BookingPage() {
         data: {
           businessId: business.id,
           serviceId: service.id,
-          locationId: locationId ?? null,
-          professionalId: professionalId ?? null,
+          locationId: locationId || null,
+          professionalId: professionalId || null,
           startsAt: slot.starts_at.toISOString(),
           endsAt: slot.ends_at.toISOString(),
           name,
@@ -201,16 +219,16 @@ function BookingPage() {
   const professional = (locPros ?? []).find((p: any) => p.id === professionalId);
 
   const goBack = () => {
-    if (step === "mode") setStep("location");
+    if (step === "mode") setStep(hasLocations ? "location" : "mode");
     else if (step === "pickPro" || step === "pickSvc") setStep("mode");
     else if (step === "datetime") setStep(mode === "pro" ? "pickSvc" : "pickPro");
     else if (step === "client") setStep("datetime");
   };
 
   const resetAll = () => {
-    setStep("location"); setLocationId(""); setMode(null);
+    setStep(hasLocations ? "location" : "mode"); setLocationId(""); setMode(null);
     setProfessionalId(""); setServiceId(""); setSlot(null);
-    setName(""); setPhone("");
+    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
   };
 
   const stepNum = step === "location" ? 1 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 2 : step === "datetime" || step === "client" ? 3 : 3;
@@ -352,7 +370,7 @@ function BookingPage() {
         {step === "datetime" && service && (
           <>
             <Card><CardContent className="pt-4 pb-4 text-sm space-y-0.5">
-              <p><strong>{location?.name}</strong></p>
+              {location?.name && <p><strong>{location.name}</strong></p>}
               <p>{service.name} · {service.duration_minutes} min · {formatPriceCents(service.price_cents)}</p>
               <p className="text-muted-foreground">con {professional?.name}</p>
             </CardContent></Card>
@@ -389,7 +407,7 @@ function BookingPage() {
             <h2 className="font-display text-2xl">Tus datos</h2>
             <Card><CardContent className="pt-4 pb-4 text-sm">
               <p><strong>{service.name}</strong></p>
-              <p className="text-muted-foreground">{location?.name} · con {professional?.name}</p>
+              <p className="text-muted-foreground">{location?.name ? `${location.name} · ` : ""}con {professional?.name}</p>
               <p className="text-muted-foreground">{slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })} · {formatTime(slot.starts_at)}</p>
             </CardContent></Card>
             <div className="space-y-3">
