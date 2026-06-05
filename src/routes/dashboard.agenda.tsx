@@ -218,39 +218,120 @@ function AgendaPage() {
       ) : view === "kanban" ? (
         <KanbanBoard appts={appts} onChangeStatus={(id, status) => updateStatus.mutate({ id, status })} />
       ) : (
-        <div className="space-y-2">
-          {appts.map((a: any) => (
-            <Card key={a.id} className={cn(a.status === "cancelled" && "opacity-50", a.status === "no_show" && "border-destructive/40")}>
-              <CardContent className="pt-4 pb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="font-display text-xl">{formatTime(a.starts_at)}</p>
-                    <p className="text-xs text-muted-foreground">{a.services?.duration_minutes}m</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">{a.clients?.name}</p>
-                    <p className="text-sm text-muted-foreground">{a.services?.name} · {a.clients?.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={a.status} />
-                  <Select value={a.status} onValueChange={(v) => updateStatus.mutate({ id: a.id, status: v })}>
-                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendiente</SelectItem>
-                      <SelectItem value="booked">Confirmada</SelectItem>
-                      <SelectItem value="completed">Completada</SelectItem>
-                      <SelectItem value="cancelled">Cancelada</SelectItem>
-                      <SelectItem value="no_show">No-show</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <DayCalendar
+          date={date}
+          appts={appts}
+          onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+        />
       )}
     </div>
+  );
+}
+
+function DayCalendar({
+  date,
+  appts,
+  onChangeStatus,
+}: {
+  date: Date;
+  appts: any[];
+  onChangeStatus: (id: string, status: ApptStatus) => void;
+}) {
+  const startHour = 7;
+  const endHour = 22;
+  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+  const pxPerMinute = 1.2; // 72px per hour
+  const isToday = date.toDateString() === new Date().toDateString();
+  const now = new Date();
+  const nowMinutes = (now.getHours() - startHour) * 60 + now.getMinutes();
+  const nowVisible = isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <div className="relative flex">
+          <div className="w-16 shrink-0 border-r border-border">
+            {hours.map((h) => (
+              <div key={h} style={{ height: 60 * pxPerMinute }} className="text-xs text-muted-foreground text-right pr-2 pt-1">
+                {String(h).padStart(2, "0")}:00
+              </div>
+            ))}
+          </div>
+          <div className="relative flex-1">
+            {hours.map((h) => (
+              <div
+                key={h}
+                style={{ height: 60 * pxPerMinute }}
+                className="border-b border-border/60"
+              />
+            ))}
+            {nowVisible && (
+              <div
+                className="absolute left-0 right-0 flex items-center pointer-events-none"
+                style={{ top: nowMinutes * pxPerMinute }}
+              >
+                <div className="size-2 rounded-full bg-destructive -ml-1" />
+                <div className="h-px flex-1 bg-destructive" />
+              </div>
+            )}
+            {appts.map((a: any) => {
+              const start = new Date(a.starts_at);
+              const startMin = (start.getHours() - startHour) * 60 + start.getMinutes();
+              const dur = a.services?.duration_minutes ?? 30;
+              if (startMin + dur < 0 || startMin > (endHour - startHour) * 60) return null;
+              const top = Math.max(0, startMin) * pxPerMinute;
+              const height = Math.max(28, dur * pxPerMinute - 2);
+              const colorMap: Record<string, string> = {
+                pending: "bg-yellow-100 border-yellow-300 text-yellow-900",
+                booked: "bg-primary/15 border-primary/40 text-foreground",
+                completed: "bg-green-100 border-green-300 text-green-900",
+                cancelled: "bg-muted border-border text-muted-foreground line-through",
+                no_show: "bg-destructive/15 border-destructive/40 text-destructive",
+              };
+              return (
+                <Popover key={a.id}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "absolute left-1 right-1 rounded-md border px-2 py-1 text-left text-xs overflow-hidden hover:shadow-md transition",
+                        colorMap[a.status] ?? colorMap.booked
+                      )}
+                      style={{ top, height }}
+                    >
+                      <div className="font-medium truncate">{formatTime(a.starts_at)} · {a.clients?.name}</div>
+                      <div className="truncate opacity-80">{a.services?.name}</div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64" align="start">
+                    <div className="space-y-2">
+                      <div>
+                        <p className="font-medium">{a.clients?.name}</p>
+                        <p className="text-xs text-muted-foreground">{a.clients?.phone}</p>
+                      </div>
+                      <div className="text-sm">
+                        <p>{a.services?.name} · {a.services?.duration_minutes}m</p>
+                        <p className="text-muted-foreground">{formatTime(a.starts_at)}</p>
+                      </div>
+                      <Select value={a.status} onValueChange={(v) => onChangeStatus(a.id, v as ApptStatus)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendiente</SelectItem>
+                          <SelectItem value="booked">Confirmada</SelectItem>
+                          <SelectItem value="completed">Completada</SelectItem>
+                          <SelectItem value="cancelled">Cancelada</SelectItem>
+                          <SelectItem value="no_show">No-show</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
