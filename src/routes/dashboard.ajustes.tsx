@@ -95,9 +95,20 @@ function AjustesPage() {
           <Label>Tu página pública</Label>
           <div className="flex gap-2">
             <Input readOnly value={url} />
-            <Button variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}>Copiar</Button>
+            <Button
+              variant="outline"
+              disabled={!hasLocations}
+              onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}
+              title={hasLocations ? undefined : "Crea al menos una sucursal para activar el link de reservas"}
+            >
+              Copiar
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Comparte este enlace con tus clientes para que reserven solos.</p>
+          <p className="text-xs text-muted-foreground">
+            {hasLocations
+              ? "Comparte este enlace con tus clientes para que reserven solos."
+              : "Crea al menos una sucursal para activar el link de reservas."}
+          </p>
         </CardContent>
       </Card>
     </div>
