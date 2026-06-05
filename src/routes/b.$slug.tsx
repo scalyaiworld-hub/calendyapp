@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, MapPin, User2, Scissors } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
+import { BrandTheme } from "@/lib/brand-theme";
 
 export const Route = createFileRoute("/b/$slug")({
   head: ({ params }) => ({ meta: [{ title: `Reservar — ${params.slug}` }] }),
@@ -40,7 +41,7 @@ function BookingPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("businesses")
-        .select("id,name,slug,timezone,logo_url,industry,created_at")
+        .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font")
         .eq("slug", slug)
         .is("deleted_at", null)
         .maybeSingle();
@@ -194,6 +195,7 @@ function BookingPage() {
   const stepNum = step === "location" ? 1 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 2 : step === "datetime" || step === "client" ? 3 : 3;
 
   return (
+    <BrandTheme brand={business as any}>
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-2xl mx-auto px-4 py-6 text-center">
@@ -401,5 +403,6 @@ function BookingPage() {
         )}
       </main>
     </div>
+    </BrandTheme>
   );
 }
