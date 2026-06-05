@@ -249,17 +249,17 @@ function AjustesPage() {
             <Input readOnly value={url} />
             <Button
               variant="outline"
-              disabled={!hasLocations}
+              disabled={!canShare}
               onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}
-              title={hasLocations ? undefined : "Crea al menos una sucursal para activar el link de reservas"}
+              title={canShare ? undefined : missingMsg}
             >
               Copiar
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {hasLocations
+            {canShare
               ? "Comparte este enlace con tus clientes para que reserven solos."
-              : "Crea al menos una sucursal para activar el link de reservas."}
+              : missingMsg}
           </p>
         </CardContent>
       </Card>
