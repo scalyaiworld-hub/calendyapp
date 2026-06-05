@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, MapPin, User2 } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { toast } from "sonner";
@@ -27,16 +26,9 @@ function SucursalesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl">Sucursales</h1>
-        <p className="text-muted-foreground">Gestiona tus locales, horarios y profesionales.</p>
+        <p className="text-muted-foreground">Gestiona tus locales y horarios de atención.</p>
       </div>
-      <Tabs defaultValue="locations">
-        <TabsList>
-          <TabsTrigger value="locations"><MapPin className="size-4 mr-1.5" /> Sucursales</TabsTrigger>
-          <TabsTrigger value="pros"><User2 className="size-4 mr-1.5" /> Profesionales</TabsTrigger>
-        </TabsList>
-        <TabsContent value="locations" className="mt-4"><LocationsTab /></TabsContent>
-        <TabsContent value="pros" className="mt-4"><ProsTab /></TabsContent>
-      </Tabs>
+      <LocationsTab />
     </div>
   );
 }
