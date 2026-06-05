@@ -227,22 +227,30 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
   ];
   const pro = [
     "Citas ilimitadas",
-    "Multi-sucursal y profesionales",
+    "Hasta 3 sucursales y profesionales ilimitados",
     "Marca y colores personalizados",
     "Chat con IA para tus clientes",
     "Métricas avanzadas",
     "Soporte prioritario en español",
   ];
+  const studio = [
+    "Todo lo del plan Pro",
+    "Sucursales y equipos ilimitados",
+    "Roles y permisos por staff",
+    "Integraciones (Google Calendar, Zapier, API)",
+    "Reportes y exportes avanzados",
+    "Onboarding 1:1 y soporte dedicado",
+  ];
   return (
     <section id="pricing" className="py-24 px-6 border-t border-border">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium">Precio</p>
         <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">Empieza gratis. Crece cuando quieras.</h2>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* Free plan */}
-          <div className="bg-card border border-border rounded-2xl p-10 flex flex-col">
+          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col">
             <div className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Gratis</div>
-            <div className="font-display text-6xl mb-2 font-semibold tracking-tight">
+            <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
               <span className="text-foreground">$0</span>
               <span className="text-lg text-muted-foreground font-normal"> / mes</span>
             </div>
@@ -261,16 +269,16 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
           </div>
 
           {/* Pro plan */}
-          <div className="bg-card border-2 border-primary rounded-2xl p-10 shadow-rose relative overflow-hidden flex flex-col">
+          <div className="bg-card border-2 border-primary rounded-2xl p-8 shadow-rose relative overflow-hidden flex flex-col">
             <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs uppercase tracking-widest font-medium">
               Recomendado
             </div>
             <div className="text-xs uppercase tracking-widest text-primary font-medium mb-3">Pro</div>
-            <div className="font-display text-6xl mb-2 font-semibold tracking-tight">
+            <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
               <span className="text-foreground">$29</span>
               <span className="text-lg text-muted-foreground font-normal"> USD / mes</span>
             </div>
-            <p className="text-muted-foreground mb-8 text-sm">Todo incluido. Cancela cuando quieras.</p>
+            <p className="text-muted-foreground mb-8 text-sm">Para salones que ya están creciendo.</p>
             <ul className="text-left space-y-3 mb-10 text-sm">
               {pro.map((f) => (
                 <li key={f} className="flex items-center gap-3">
@@ -285,6 +293,31 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
               className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition"
             >
               Preregistro
+            </button>
+          </div>
+
+          {/* Studio plan */}
+          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col relative overflow-hidden">
+            <div className="text-xs uppercase tracking-widest text-foreground font-medium mb-3">Studio</div>
+            <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
+              <span className="text-foreground">$79</span>
+              <span className="text-lg text-muted-foreground font-normal"> USD / mes</span>
+            </div>
+            <p className="text-muted-foreground mb-8 text-sm">Para cadenas y equipos grandes.</p>
+            <ul className="text-left space-y-3 mb-10 text-sm">
+              {studio.map((f) => (
+                <li key={f} className="flex items-center gap-3">
+                  <span className="size-5 rounded-full bg-foreground/10 text-foreground grid place-items-center text-xs">✓</span>
+                  <span className="text-foreground">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={onProClick}
+              className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-foreground bg-foreground text-background font-semibold hover:opacity-90 transition"
+            >
+              Hablar con ventas
             </button>
           </div>
         </div>
