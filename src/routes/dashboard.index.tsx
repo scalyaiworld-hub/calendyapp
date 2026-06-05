@@ -65,7 +65,7 @@ function Summary({ businessId, businessName, slug }: { businessId: string; busin
   const now = new Date();
   const upcoming = (today ?? []).find((a: any) => new Date(a.ends_at) >= now);
   const completedToday = (today ?? []).filter((a: any) => a.status === "completed").length;
-  const isReady = (counts?.locs ?? 0) > 0 && (counts?.pros ?? 0) > 0 && (counts?.services ?? 0) > 0;
+  const isReady = (counts?.pros ?? 0) > 0 && (counts?.services ?? 0) > 0;
   const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/b/${slug}` : `/b/${slug}`;
   const greeting = (() => {
     const h = new Date().getHours();
@@ -105,9 +105,8 @@ function Summary({ businessId, businessName, slug }: { businessId: string; busin
                 <AlertCircle className="size-5 text-primary mt-0.5 shrink-0" />
                 <div className="flex-1">
                   <p className="font-medium mb-1">Termina de configurar para activar tu link de reservas</p>
-                  <p className="text-sm text-muted-foreground mb-4">Necesitas al menos una sucursal, un profesional y un servicio.</p>
+                  <p className="text-sm text-muted-foreground mb-4">Necesitas al menos un profesional y un servicio.</p>
                   <div className="flex flex-wrap gap-2">
-                    <ChecklistItem done={(counts?.locs ?? 0) > 0} label="Sucursal" to="/dashboard/sucursales" />
                     <ChecklistItem done={(counts?.pros ?? 0) > 0} label="Profesional" to="/dashboard/profesionales" />
                     <ChecklistItem done={(counts?.services ?? 0) > 0} label="Servicio" to="/dashboard/servicios" />
                   </div>
