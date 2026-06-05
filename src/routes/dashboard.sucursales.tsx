@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
 import { Button } from "@/components/ui/button";
@@ -135,34 +135,32 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
     queryFn: async () => (await supabase.from("professionals").select("id,name").eq("business_id", businessId!).is("deleted_at", null)).data ?? [],
   });
 
-  // Hydrate when editing changes
-  useState(() => null);
-  // Use effect-like sync via key prop on Dialog? Simpler: re-init on open change
-  // (run only on open transition)
-  if (open && editing && name === "" && !address && !phone && editing.name) {
-    setName(editing.name);
+  useEffect(() => {
+    if (!open) {
+      setName(""); setAddress(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
+      setHours(Array.from({ length: 7 }, () => ({ open: true, start: "09:00", end: "18:00" })));
+      setSelectedPros(new Set());
+      return;
+    }
+    if (!editing) return;
+    setName(editing.name ?? "");
     setAddress(editing.address ?? "");
     setPhone(editing.phone ?? "");
     setCountryCode(editing.phone_country_code ?? DEFAULT_COUNTRY_CODE);
     (async () => {
       const { data: lh } = await supabase.from("location_hours").select("*").eq("location_id", editing.id);
-      if (lh?.length) {
+      if (lh) {
         setHours((prev) => {
           const next = prev.map((h) => ({ open: false, start: h.start, end: h.end }));
-          lh.forEach((row: any) => { next[row.day_of_week] = { open: true, start: row.start_time.slice(0,5), end: row.end_time.slice(0,5) }; });
+          lh.forEach((row: any) => { next[row.day_of_week] = { open: true, start: String(row.start_time).slice(0,5), end: String(row.end_time).slice(0,5) }; });
           return next;
         });
       }
       const { data: lp } = await supabase.from("location_professionals").select("professional_id").eq("location_id", editing.id);
       setSelectedPros(new Set((lp ?? []).map((x: any) => x.professional_id)));
     })();
-  }
-  if (!open && name !== "") {
-    // reset on close
-    setName(""); setAddress(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
-    setHours(Array.from({ length: 7 }, () => ({ open: true, start: "09:00", end: "18:00" })));
-    setSelectedPros(new Set());
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing?.id]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -322,18 +320,21 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
     queryFn: async () => (await supabase.from("services").select("id,name").eq("business_id", businessId!).is("deleted_at", null).eq("is_active", true).order("display_order")).data ?? [],
   });
 
-  if (open && editing && name === "" && editing.name) {
-    setName(editing.name);
+  useEffect(() => {
+    if (!open) {
+      setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setSelectedServices(new Set());
+      return;
+    }
+    if (!editing) return;
+    setName(editing.name ?? "");
     setPhone(editing.phone ?? "");
     setCountryCode(editing.phone_country_code ?? DEFAULT_COUNTRY_CODE);
     (async () => {
       const { data } = await supabase.from("professional_services").select("service_id").eq("professional_id", editing.id);
       setSelectedServices(new Set((data ?? []).map((x: any) => x.service_id)));
     })();
-  }
-  if (!open && name !== "") {
-    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setSelectedServices(new Set());
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing?.id]);
 
   const save = useMutation({
     mutationFn: async () => {
