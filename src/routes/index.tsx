@@ -254,13 +254,14 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
     "Citas ilimitadas",
     "Hasta 3 sucursales",
     "Profesionales ilimitados",
+    "Recordatorios automáticos por WhatsApp y email",
     "Marca y colores personalizados",
-    "Chat con IA para tus clientes",
     "Métricas avanzadas",
     "Soporte prioritario en español",
   ];
   const studio = [
     "Todo lo del plan Pro",
+    "Chat con IA para tus clientes",
     "Sucursales y equipos ilimitados",
     "Roles y permisos por staff",
     "Integraciones (Google Calendar, Zapier, API)",
