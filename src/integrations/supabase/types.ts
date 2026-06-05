@@ -397,6 +397,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pro_preregistrations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          negocio: string | null
+          nombre: string
+          telefono: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          negocio?: string | null
+          nombre: string
+          telefono?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          negocio?: string | null
+          nombre?: string
+          telefono?: string | null
+        }
+        Relationships: []
+      }
       professional_services: {
         Row: {
           created_at: string

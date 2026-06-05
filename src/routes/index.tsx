@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,6 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [proOpen, setProOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -22,10 +29,11 @@ function Index() {
       <Problem />
       <Features />
       <HowItWorks />
-      <Pricing />
+      <Pricing onProClick={() => setProOpen(true)} />
       <FAQ />
       <CTA />
       <Footer />
+      <ProPreregisterDialog open={proOpen} onOpenChange={setProOpen} />
     </div>
   );
 }
@@ -210,7 +218,7 @@ function HowItWorks() {
   );
 }
 
-function Pricing() {
+function Pricing({ onProClick }: { onProClick: () => void }) {
   const free = [
     "Hasta 50 citas/mes",
     "1 sucursal",
@@ -271,9 +279,13 @@ function Pricing() {
                 </li>
               ))}
             </ul>
-            <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition">
-              Empezar con Pro
-            </Link>
+            <button
+              type="button"
+              onClick={onProClick}
+              className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition"
+            >
+              Preregistro
+            </button>
           </div>
         </div>
         <p className="mt-6 text-xs text-muted-foreground text-center">Sin tarjeta para empezar · Cambia de plan cuando quieras</p>
@@ -359,5 +371,74 @@ function Footer() {
         <p className="text-xs text-muted-foreground">© 2026 Agendy. Hecho en Perú.</p>
       </div>
     </footer>
+  );
+}
+
+function ProPreregisterDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [negocio, setNegocio] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nombre.trim() || !email.trim()) {
+      toast.error("Nombre y email son obligatorios");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.from("pro_preregistrations").insert({
+      nombre: nombre.trim(),
+      email: email.trim(),
+      negocio: negocio.trim() || null,
+      telefono: telefono.trim() || null,
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("No pudimos registrarte. Intenta de nuevo.");
+      return;
+    }
+    toast.success("¡Listo! Te avisamos cuando abramos Pro.");
+    setNombre(""); setEmail(""); setNegocio(""); setTelefono("");
+    onOpenChange(false);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Preregistro Pro</DialogTitle>
+          <DialogDescription>
+            Déjanos tus datos y serás de los primeros en activar el plan Pro con un descuento de lanzamiento.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="pre-nombre">Nombre *</Label>
+            <Input id="pre-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="pre-email">Email *</Label>
+            <Input id="pre-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="pre-negocio">Negocio</Label>
+            <Input id="pre-negocio" value={negocio} onChange={(e) => setNegocio(e.target.value)} placeholder="Nombre de tu negocio" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="pre-telefono">Teléfono / WhatsApp</Label>
+            <Input id="pre-telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+51 999 999 999" />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg transition disabled:opacity-60"
+          >
+            {loading ? "Enviando..." : "Quiero el preregistro"}
+          </button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
