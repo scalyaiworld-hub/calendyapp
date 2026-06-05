@@ -91,9 +91,47 @@ function AjustesPage() {
     },
   });
 
+  const { data: prosCount } = useQuery({
+    queryKey: ["pros-count", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("professionals")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const { data: servicesCount } = useQuery({
+    queryKey: ["services-count", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const hasLocations = (locations?.count ?? 0) > 0;
+  const hasPros = (prosCount ?? 0) > 0;
+  const hasServices = (servicesCount ?? 0) > 0;
+  const canShare = hasLocations && hasPros && hasServices;
+  const missing: string[] = [];
+  if (!hasLocations) missing.push("una sucursal");
+  if (!hasPros) missing.push("un profesional");
+  if (!hasServices) missing.push("un servicio");
+  const missingMsg = `Agrega al menos ${missing.join(", ")} para activar el link de reservas.`;
   const url = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
 
   return (
@@ -211,17 +249,17 @@ function AjustesPage() {
             <Input readOnly value={url} />
             <Button
               variant="outline"
-              disabled={!hasLocations}
+              disabled={!canShare}
               onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}
-              title={hasLocations ? undefined : "Crea al menos una sucursal para activar el link de reservas"}
+              title={canShare ? undefined : missingMsg}
             >
               Copiar
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {hasLocations
+            {canShare
               ? "Comparte este enlace con tus clientes para que reserven solos."
-              : "Crea al menos una sucursal para activar el link de reservas."}
+              : missingMsg}
           </p>
         </CardContent>
       </Card>

@@ -70,7 +70,45 @@ function AgendaPage() {
     },
   });
 
+  const { data: prosCount } = useQuery({
+    queryKey: ["pros-count", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("professionals")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId!)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const { data: servicesCount } = useQuery({
+    queryKey: ["services-count", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("services")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId!)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   const hasLocations = (locations?.count ?? 0) > 0;
+  const hasPros = (prosCount ?? 0) > 0;
+  const hasServices = (servicesCount ?? 0) > 0;
+  const canShare = hasLocations && hasPros && hasServices;
+  const missing: string[] = [];
+  if (!hasLocations) missing.push("una sucursal");
+  if (!hasPros) missing.push("un profesional");
+  if (!hasServices) missing.push("un servicio");
+  const missingMsg = `Agrega ${missing.join(", ")} para activar el link de reservas.`;
 
   const { data: appts, error: apptsError } = useQuery({
     queryKey: ["appts", businessId, date.toDateString()],
@@ -129,8 +167,8 @@ function AgendaPage() {
               Kanban
             </button>
           </div>
-          {!hasLocations ? (
-            <Button variant="outline" disabled title="Crea al menos una sucursal para activar el link de reservas">
+          {!canShare ? (
+            <Button variant="outline" disabled title={missingMsg}>
               <Building2 className="size-4" /> Copiar link de reservas
             </Button>
           ) : (
