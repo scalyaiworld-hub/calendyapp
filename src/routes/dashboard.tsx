@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2 } from "lucide-react";
+import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
 
