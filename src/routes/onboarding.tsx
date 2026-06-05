@@ -115,6 +115,8 @@ function OnboardingPage() {
       if (!business) throw new Error("Falta el paso anterior");
       if (!name.trim()) throw new Error("Escribe el nombre del salón");
       if (!industry) throw new Error("Elige el rubro");
+      const industryValue = industry === "other" ? customIndustry.trim() : industry;
+      if (!industryValue) throw new Error("Escribe tu rubro");
       const baseSlug = slugify(name) || `salon-${Math.random().toString(36).slice(2, 7)}`;
       // Best-effort uniqueness: append short suffix if needed
       let slug = baseSlug;
@@ -128,7 +130,7 @@ function OnboardingPage() {
 
       const { error } = await supabase
         .from("businesses")
-        .update({ name: name.trim(), slug, industry, onboarding_step: 3 })
+        .update({ name: name.trim(), slug, industry: industryValue, onboarding_step: 3 })
         .eq("id", business.id);
       if (error) throw error;
 
