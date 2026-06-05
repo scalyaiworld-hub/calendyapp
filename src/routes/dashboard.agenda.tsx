@@ -100,15 +100,21 @@ function AgendaPage() {
           <p className="text-muted-foreground">Citas del día.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            onClick={() => {
-              navigator.clipboard.writeText(bookingUrl);
-              toast.success("Link copiado", { description: bookingUrl });
-            }}
-          >
-            <Link2 className="size-4" /> Copiar link de reservas
-          </Button>
+          {!hasLocations ? (
+            <Button variant="outline" disabled title="Crea al menos una sucursal para activar el link de reservas">
+              <Building2 className="size-4" /> Copiar link de reservas
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(bookingUrl);
+                toast.success("Link copiado", { description: bookingUrl });
+              }}
+            >
+              <Link2 className="size-4" /> Copiar link de reservas
+            </Button>
+          )}
           <NewApptDialog businessId={businessId!} initialDate={date} trigger={<Button><Plus className="size-4" /> Nueva cita</Button>} />
         </div>
       </div>
