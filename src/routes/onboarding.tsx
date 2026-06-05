@@ -42,7 +42,8 @@ function OnboardingPage() {
 
   // Step 2 — Salón
   const [name, setName] = useState("");
-  const [industry, setIndustry] = useState<Industry | "">("");
+  const [industry, setIndustry] = useState<string>("");
+  const [customIndustry, setCustomIndustry] = useState("");
 
   // Step 3 — Servicios
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -53,11 +54,23 @@ function OnboardingPage() {
     if (business.whatsapp_country_code) setCountryCode(business.whatsapp_country_code);
     if (business.whatsapp_number) setWaNumber(business.whatsapp_number);
     if (business.name) setName(business.name);
-    if (business.industry) setIndustry(business.industry as Industry);
+    if (business.industry) {
+      const known = INDUSTRIES.some((i) => i.id === business.industry);
+      if (known) {
+        setIndustry(business.industry);
+      } else {
+        setIndustry("other");
+        setCustomIndustry(business.industry);
+      }
+    }
     if (business.onboarding_step) setStep(Math.max(1, Math.min(3, business.onboarding_step)) as 1 | 2 | 3);
   }, [business]);
 
-  const templates = useMemo(() => (industry ? SERVICE_TEMPLATES[industry as Industry] : []), [industry]);
+  const isKnownIndustry = industry && industry !== "other" && industry in SERVICE_TEMPLATES;
+  const templates = useMemo(
+    () => (isKnownIndustry ? SERVICE_TEMPLATES[industry as Industry] : []),
+    [industry, isKnownIndustry]
+  );
 
   const saveStep1 = useMutation({
     mutationFn: async () => {
