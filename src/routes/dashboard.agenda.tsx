@@ -167,8 +167,8 @@ function AgendaPage() {
               Kanban
             </button>
           </div>
-          {!hasLocations ? (
-            <Button variant="outline" disabled title="Crea al menos una sucursal para activar el link de reservas">
+          {!canShare ? (
+            <Button variant="outline" disabled title={missingMsg}>
               <Building2 className="size-4" /> Copiar link de reservas
             </Button>
           ) : (
