@@ -78,7 +78,7 @@ function OnboardingPage() {
       if (!waNumber.trim()) throw new Error("Ingresa tu número de WhatsApp");
       // Create or update business
       if (business) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("businesses")
           .update({
             whatsapp_country_code: countryCode,
@@ -86,12 +86,15 @@ function OnboardingPage() {
             phone: `${countryCode} ${waNumber.trim()}`,
             onboarding_step: 2,
           })
-          .eq("id", business.id);
+          .eq("id", business.id)
+          .select("*")
+          .maybeSingle();
         if (error) throw error;
+        return data;
       } else {
         // Placeholder slug; final slug set on step 2 when we have a name.
         const placeholder = `salon-${Math.random().toString(36).slice(2, 8)}`;
-        const { error } = await supabase.from("businesses").insert({
+        const { data, error } = await supabase.from("businesses").insert({
           owner_id: user.id,
           name: placeholder,
           slug: placeholder,
@@ -99,11 +102,15 @@ function OnboardingPage() {
           whatsapp_number: waNumber.trim(),
           phone: `${countryCode} ${waNumber.trim()}`,
           onboarding_step: 2,
-        });
+        }).select("*").maybeSingle();
         if (error) throw error;
+        return data;
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (newBusiness) => {
+      if (newBusiness && user) {
+        qc.setQueryData(["my-business", user.id], newBusiness);
+      }
       await qc.invalidateQueries({ queryKey: ["my-business"] });
       setStep(2);
     },
