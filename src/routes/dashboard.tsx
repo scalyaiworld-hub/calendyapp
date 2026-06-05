@@ -81,8 +81,18 @@ function DashboardLayout() {
             </a>
           )}
         </nav>
-        <div className="p-4 border-t border-border">
-          <p className="text-xs text-muted-foreground truncate mb-2">{user.email}</p>
+        <div className="p-4 border-t border-border space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider",
+              (business as any)?.plan === "pro"
+                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {(business as any)?.plan === "pro" ? "Pro" : "Free"}
+            </span>
+          </div>
           <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">
             Cerrar sesión
           </button>
