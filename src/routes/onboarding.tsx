@@ -42,7 +42,8 @@ function OnboardingPage() {
 
   // Step 2 — Salón
   const [name, setName] = useState("");
-  const [industry, setIndustry] = useState<Industry | "">("");
+  const [industry, setIndustry] = useState<string>("");
+  const [customIndustry, setCustomIndustry] = useState("");
 
   // Step 3 — Servicios
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -53,11 +54,23 @@ function OnboardingPage() {
     if (business.whatsapp_country_code) setCountryCode(business.whatsapp_country_code);
     if (business.whatsapp_number) setWaNumber(business.whatsapp_number);
     if (business.name) setName(business.name);
-    if (business.industry) setIndustry(business.industry as Industry);
+    if (business.industry) {
+      const known = INDUSTRIES.some((i) => i.id === business.industry);
+      if (known) {
+        setIndustry(business.industry);
+      } else {
+        setIndustry("other");
+        setCustomIndustry(business.industry);
+      }
+    }
     if (business.onboarding_step) setStep(Math.max(1, Math.min(3, business.onboarding_step)) as 1 | 2 | 3);
   }, [business]);
 
-  const templates = useMemo(() => (industry ? SERVICE_TEMPLATES[industry as Industry] : []), [industry]);
+  const isKnownIndustry = industry && industry !== "other" && industry in SERVICE_TEMPLATES;
+  const templates = useMemo(
+    () => (isKnownIndustry ? SERVICE_TEMPLATES[industry as Industry] : []),
+    [industry, isKnownIndustry]
+  );
 
   const saveStep1 = useMutation({
     mutationFn: async () => {
@@ -102,6 +115,8 @@ function OnboardingPage() {
       if (!business) throw new Error("Falta el paso anterior");
       if (!name.trim()) throw new Error("Escribe el nombre del salón");
       if (!industry) throw new Error("Elige el rubro");
+      const industryValue = industry === "other" ? customIndustry.trim() : industry;
+      if (!industryValue) throw new Error("Escribe tu rubro");
       const baseSlug = slugify(name) || `salon-${Math.random().toString(36).slice(2, 7)}`;
       // Best-effort uniqueness: append short suffix if needed
       let slug = baseSlug;
@@ -115,7 +130,7 @@ function OnboardingPage() {
 
       const { error } = await supabase
         .from("businesses")
-        .update({ name: name.trim(), slug, industry, onboarding_step: 3 })
+        .update({ name: name.trim(), slug, industry: industryValue, onboarding_step: 3 })
         .eq("id", business.id);
       if (error) throw error;
 
@@ -244,9 +259,39 @@ function OnboardingPage() {
                       <p className="text-xs text-muted-foreground">{ind.description}</p>
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setIndustry("other")}
+                    className={cn(
+                      "p-3 rounded-md border text-left transition-colors",
+                      industry === "other" ? "border-primary bg-primary/10" : "border-border hover:bg-accent"
+                    )}
+                  >
+                    <div className="text-2xl">✨</div>
+                    <p className="font-medium text-sm mt-1">Otro</p>
+                    <p className="text-xs text-muted-foreground">Escribe tu rubro</p>
+                  </button>
                 </div>
+                {industry === "other" && (
+                  <Input
+                    value={customIndustry}
+                    onChange={(e) => setCustomIndustry(e.target.value)}
+                    placeholder="Ej. Tatuajes, masajes, podología…"
+                    className="mt-3 h-11"
+                    autoFocus
+                  />
+                )}
               </div>
-              <Button className="w-full h-11" onClick={() => saveStep2.mutate()} disabled={!name.trim() || !industry || saveStep2.isPending}>
+              <Button
+                className="w-full h-11"
+                onClick={() => saveStep2.mutate()}
+                disabled={
+                  !name.trim() ||
+                  !industry ||
+                  (industry === "other" && !customIndustry.trim()) ||
+                  saveStep2.isPending
+                }
+              >
                 {saveStep2.isPending ? "Guardando…" : "Continuar"}
                 <ChevronRight className="size-4" />
               </Button>
