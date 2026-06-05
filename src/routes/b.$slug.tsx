@@ -198,7 +198,6 @@ function BookingPage() {
       <header className="border-b border-border bg-card">
         <div className="max-w-2xl mx-auto px-4 py-6 text-center">
           <h1 className="font-display text-3xl gradient-rose-text">{business.name}</h1>
-          {business.phone && <p className="text-sm text-muted-foreground mt-1">{business.phone}</p>}
         </div>
       </header>
 
@@ -230,7 +229,6 @@ function BookingPage() {
                         <div className="min-w-0">
                           <p className="font-medium">{l.name}</p>
                           {l.address && <p className="text-sm text-muted-foreground">{l.address}</p>}
-                          {l.phone && <p className="text-xs text-muted-foreground">{l.phone_country_code} {l.phone}</p>}
                         </div>
                       </CardContent>
                     </Card>
