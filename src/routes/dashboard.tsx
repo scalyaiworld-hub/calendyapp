@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — AutoCitas" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Agendy" }] }),
   component: DashboardLayout,
 });
 
@@ -51,7 +51,7 @@ function DashboardLayout() {
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 w-60 border-r border-border bg-card hidden md:flex flex-col">
         <div className="px-6 py-6 border-b border-border">
-          <Link to="/" className="font-display text-2xl gradient-rose-text">AutoCitas</Link>
+          <Link to="/" className="font-display text-2xl gradient-rose-text">Agendy</Link>
           {business && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{business.name}</p>
           )}
@@ -90,7 +90,7 @@ function DashboardLayout() {
       </aside>
 
       <header className="md:hidden border-b border-border bg-card px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="font-display text-xl gradient-rose-text">AutoCitas</Link>
+        <Link to="/" className="font-display text-xl gradient-rose-text">Agendy</Link>
         <button onClick={signOut} className="text-xs text-muted-foreground">Salir</button>
       </header>
       <nav className={cn("md:hidden flex overflow-x-auto gap-1 px-2 py-2 border-b border-border bg-card")}>

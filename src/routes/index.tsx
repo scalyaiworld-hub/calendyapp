@@ -4,9 +4,9 @@ import { Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AutoCitas — Tu salón agenda sola" },
-      { name: "description", content: "Plataforma para salones, spas y estéticas que convierte mensajes y clicks en citas confirmadas automáticamente. Adiós cuaderno." },
-      { property: "og:title", content: "AutoCitas — Tu salón agenda sola" },
+      { title: "Agendy — Tu negocio agenda sola" },
+      { name: "description", content: "Plataforma para negocios que convierte mensajes y clicks en citas confirmadas automáticamente. Adiós cuaderno." },
+      { property: "og:title", content: "Agendy — Tu negocio agenda sola" },
       { property: "og:description", content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes." },
     ],
   }),
@@ -38,7 +38,7 @@ function Header() {
           <div className="size-8 rounded-md bg-primary grid place-items-center">
             <span className="font-display font-bold text-primary-foreground text-lg">A</span>
           </div>
-          <span className="font-display text-xl font-semibold tracking-tight">AutoCitas</span>
+          <span className="font-display text-xl font-semibold tracking-tight">Agendy</span>
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">Funciones</a>
@@ -354,9 +354,9 @@ function Footer() {
           <div className="size-6 rounded bg-primary grid place-items-center">
             <span className="font-display font-bold text-primary-foreground text-xs">A</span>
           </div>
-          <span className="font-display font-semibold">AutoCitas</span>
+          <span className="font-display font-semibold">Agendy</span>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 AutoCitas. Hecho en Perú.</p>
+        <p className="text-xs text-muted-foreground">© 2026 Agendy. Hecho en Perú.</p>
       </div>
     </footer>
   );

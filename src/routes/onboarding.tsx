@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Check, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
-  head: () => ({ meta: [{ title: "Configura tu salón — AutoCitas" }] }),
+  head: () => ({ meta: [{ title: "Configura tu negocio — Agendy" }] }),
   component: OnboardingPage,
 });
 
@@ -195,7 +195,7 @@ function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 px-4 py-8">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <span className="font-display text-xl gradient-rose-text">AutoCitas</span>
+          <span className="font-display text-xl gradient-rose-text">Agendy</span>
           <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">Cerrar sesión</button>
         </div>
 
