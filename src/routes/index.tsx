@@ -227,7 +227,8 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
   ];
   const pro = [
     "Citas ilimitadas",
-    "Hasta 3 sucursales y profesionales ilimitados",
+    "Hasta 3 sucursales",
+    "Profesionales ilimitados",
     "Marca y colores personalizados",
     "Chat con IA para tus clientes",
     "Métricas avanzadas",
