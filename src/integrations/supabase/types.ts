@@ -202,6 +202,7 @@ export type Database = {
           onboarding_step: number
           owner_id: string
           phone: string | null
+          plan: string
           slug: string
           timezone: string
           updated_at: string
@@ -222,6 +223,7 @@ export type Database = {
           onboarding_step?: number
           owner_id: string
           phone?: string | null
+          plan?: string
           slug: string
           timezone?: string
           updated_at?: string
@@ -242,6 +244,7 @@ export type Database = {
           onboarding_step?: number
           owner_id?: string
           phone?: string | null
+          plan?: string
           slug?: string
           timezone?: string
           updated_at?: string
