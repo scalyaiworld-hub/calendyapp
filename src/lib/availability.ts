@@ -13,8 +13,10 @@ export async function getAvailableSlots(opts: {
   businessId: string;
   serviceId: string;
   date: Date; // any time in the target date — we use local Y-M-D
+  locationId?: string;
+  professionalId?: string;
 }): Promise<Slot[]> {
-  const { businessId, serviceId, date } = opts;
+  const { businessId, serviceId, date, locationId, professionalId } = opts;
 
   const { data: svc, error: svcErr } = await supabase
     .from("services")
@@ -24,11 +26,23 @@ export async function getAvailableSlots(opts: {
   if (svcErr || !svc) return [];
 
   const dow = date.getDay();
-  const { data: rules } = await supabase
-    .from("availability_rules")
-    .select("start_time,end_time")
-    .eq("business_id", businessId)
-    .eq("day_of_week", dow);
+  let rules: { start_time: string; end_time: string }[] | null = null;
+  if (locationId) {
+    const { data } = await supabase
+      .from("location_hours")
+      .select("start_time,end_time")
+      .eq("location_id", locationId)
+      .eq("day_of_week", dow);
+    rules = data;
+  }
+  if (!rules || rules.length === 0) {
+    const { data } = await supabase
+      .from("availability_rules")
+      .select("start_time,end_time")
+      .eq("business_id", businessId)
+      .eq("day_of_week", dow);
+    rules = data;
+  }
   if (!rules || rules.length === 0) return [];
 
   const dayStart = new Date(date);
@@ -36,13 +50,15 @@ export async function getAvailableSlots(opts: {
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
 
-  const { data: appts } = await supabase
+  let apptQ = supabase
     .from("appointments")
-    .select("starts_at,ends_at,status")
+    .select("starts_at,ends_at,status,professional_id")
     .eq("business_id", businessId)
     .in("status", ["pending", "booked"])
     .gte("starts_at", dayStart.toISOString())
     .lt("starts_at", dayEnd.toISOString());
+  if (professionalId) apptQ = apptQ.eq("professional_id", professionalId);
+  const { data: appts } = await apptQ;
 
   const slots: Slot[] = [];
   const stepMin = svc.duration_minutes;
