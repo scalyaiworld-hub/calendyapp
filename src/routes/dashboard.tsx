@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut, Lock } from "lucide-react";
+import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut, Lock, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Cuenta",
     items: [
+      { to: "/dashboard/planes", label: "Planes", icon: Sparkles },
       { to: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
     ],
   },
