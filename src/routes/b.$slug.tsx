@@ -67,24 +67,34 @@ function BookingPage() {
 
   // Profesionales asignados a la sucursal
   const { data: locPros } = useQuery({
-    queryKey: ["public-loc-pros", locationId],
-    enabled: !!locationId,
+    queryKey: ["public-loc-pros", locationId, business?.id],
+    enabled: !!locationId && !!business?.id,
     queryFn: async () => {
       const { data } = await supabase
         .from("location_professionals")
         .select("professional_id, professionals!inner(id,name,avatar_url,is_active,deleted_at)")
         .eq("location_id", locationId);
-      return (data ?? [])
+      const assigned = (data ?? [])
         .map((r: any) => r.professionals)
         .filter((p: any) => p && p.is_active && !p.deleted_at);
+      if (assigned.length > 0) return assigned;
+      // Fallback: si no hay asignaciones, muestra todos los profesionales activos del negocio
+      const { data: all } = await supabase
+        .from("professionals")
+        .select("id,name,avatar_url,is_active,deleted_at")
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name");
+      return all ?? [];
     },
   });
 
   // Servicios ofrecidos en la sucursal (por al menos un profesional asignado)
   const proIdsInLoc = (locPros ?? []).map((p: any) => p.id);
   const { data: locServices } = useQuery({
-    queryKey: ["public-loc-services", locationId, proIdsInLoc.join(",")],
-    enabled: !!locationId && proIdsInLoc.length > 0,
+    queryKey: ["public-loc-services", locationId, business?.id, proIdsInLoc.join(",")],
+    enabled: !!locationId && !!business?.id && proIdsInLoc.length > 0,
     queryFn: async () => {
       const { data } = await supabase
         .from("professional_services")
@@ -94,29 +104,49 @@ function BookingPage() {
       (data ?? []).forEach((r: any) => {
         if (r.services && r.services.is_active && !r.services.deleted_at) map.set(r.services.id, r.services);
       });
-      return Array.from(map.values()).sort((a, b) => a.display_order - b.display_order);
+      const list = Array.from(map.values());
+      if (list.length > 0) return list.sort((a, b) => a.display_order - b.display_order);
+      // Fallback: muestra todos los servicios activos del negocio
+      const { data: all } = await supabase
+        .from("services")
+        .select("id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at")
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("display_order");
+      return all ?? [];
     },
   });
 
   // Servicios del profesional seleccionado
   const { data: proServices } = useQuery({
-    queryKey: ["public-pro-services", professionalId],
-    enabled: !!professionalId,
+    queryKey: ["public-pro-services", professionalId, business?.id],
+    enabled: !!professionalId && !!business?.id,
     queryFn: async () => {
       const { data } = await supabase
         .from("professional_services")
         .select("service_id, services!inner(id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at)")
         .eq("professional_id", professionalId);
-      return (data ?? [])
+      const list = (data ?? [])
         .map((r: any) => r.services)
         .filter((s: any) => s && s.is_active && !s.deleted_at)
         .sort((a: any, b: any) => a.display_order - b.display_order);
+      if (list.length > 0) return list;
+      // Fallback: todos los servicios activos del negocio
+      const { data: all } = await supabase
+        .from("services")
+        .select("id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at")
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("display_order");
+      return all ?? [];
     },
   });
 
   // Profesionales que ofrecen el servicio seleccionado dentro de la sucursal
   const { data: svcPros } = useQuery({
-    queryKey: ["public-svc-pros", serviceId, locationId],
+    queryKey: ["public-svc-pros", serviceId, locationId, proIdsInLoc.join(",")],
     enabled: !!serviceId && !!locationId && proIdsInLoc.length > 0,
     queryFn: async () => {
       const { data } = await supabase
@@ -124,9 +154,12 @@ function BookingPage() {
         .select("professional_id, professionals!inner(id,name,avatar_url,is_active,deleted_at)")
         .eq("service_id", serviceId)
         .in("professional_id", proIdsInLoc);
-      return (data ?? [])
+      const list = (data ?? [])
         .map((r: any) => r.professionals)
         .filter((p: any) => p && p.is_active && !p.deleted_at);
+      if (list.length > 0) return list;
+      // Fallback: todos los profesionales de la sucursal
+      return locPros ?? [];
     },
   });
 
