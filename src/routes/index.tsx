@@ -211,40 +211,72 @@ function HowItWorks() {
 }
 
 function Pricing() {
+  const free = [
+    "Hasta 50 citas/mes",
+    "1 sucursal",
+    "Link de reservas público",
+    "Clientes y agenda básica",
+  ];
+  const pro = [
+    "Citas ilimitadas",
+    "Multi-sucursal y profesionales",
+    "Marca y colores personalizados",
+    "Chat con IA para tus clientes",
+    "Métricas avanzadas",
+    "Soporte prioritario en español",
+  ];
   return (
     <section id="pricing" className="py-24 px-6 border-t border-border">
-      <div className="max-w-3xl mx-auto text-center">
+      <div className="max-w-5xl mx-auto">
         <p className="text-xs uppercase tracking-widest text-primary mb-4 font-medium">Precio</p>
-        <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">Un precio. Sin sorpresas.</h2>
-        <div className="bg-card border border-border rounded-2xl p-10 md:p-12 shadow-rose relative overflow-hidden">
-          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs uppercase tracking-widest text-primary font-medium">
-            Plan único
+        <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">Empieza gratis. Crece cuando quieras.</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Free plan */}
+          <div className="bg-card border border-border rounded-2xl p-10 flex flex-col">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Gratis</div>
+            <div className="font-display text-6xl mb-2 font-semibold tracking-tight">
+              <span className="text-foreground">$0</span>
+              <span className="text-lg text-muted-foreground font-normal"> / mes</span>
+            </div>
+            <p className="text-muted-foreground mb-8 text-sm">Para empezar y probar sin compromiso.</p>
+            <ul className="text-left space-y-3 mb-10 text-sm">
+              {free.map((f) => (
+                <li key={f} className="flex items-center gap-3">
+                  <span className="size-5 rounded-full bg-muted text-foreground grid place-items-center text-xs">✓</span>
+                  <span className="text-foreground">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-semibold transition">
+              Crear cuenta gratis
+            </Link>
           </div>
-          <div className="font-display text-7xl md:text-8xl mb-2 font-semibold tracking-tight">
-            <span className="text-foreground">$29</span>
-            <span className="text-2xl text-muted-foreground font-normal"> USD / mes</span>
+
+          {/* Pro plan */}
+          <div className="bg-card border-2 border-primary rounded-2xl p-10 shadow-rose relative overflow-hidden flex flex-col">
+            <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs uppercase tracking-widest font-medium">
+              Recomendado
+            </div>
+            <div className="text-xs uppercase tracking-widest text-primary font-medium mb-3">Pro</div>
+            <div className="font-display text-6xl mb-2 font-semibold tracking-tight">
+              <span className="text-foreground">$29</span>
+              <span className="text-lg text-muted-foreground font-normal"> USD / mes</span>
+            </div>
+            <p className="text-muted-foreground mb-8 text-sm">Todo incluido. Cancela cuando quieras.</p>
+            <ul className="text-left space-y-3 mb-10 text-sm">
+              {pro.map((f) => (
+                <li key={f} className="flex items-center gap-3">
+                  <span className="size-5 rounded-full bg-primary/10 text-primary grid place-items-center text-xs">✓</span>
+                  <span className="text-foreground">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition">
+              Empezar con Pro
+            </Link>
           </div>
-          <p className="text-muted-foreground mb-8">Todo incluido. Cancela cuando quieras.</p>
-          <ul className="text-left max-w-sm mx-auto space-y-3 mb-10 text-sm">
-            {[
-              "Citas ilimitadas",
-              "Link de reservas público",
-              "Multi-sucursal y profesionales",
-              "Marca y colores personalizados",
-              "Clientes y métricas",
-              "Soporte en español",
-            ].map((f) => (
-              <li key={f} className="flex items-center gap-3">
-                <span className="size-5 rounded-full bg-primary/10 text-primary grid place-items-center text-xs">✓</span>
-                <span className="text-foreground">{f}</span>
-              </li>
-            ))}
-          </ul>
-          <Link to="/auth" className="inline-block px-8 py-4 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition">
-            Empezar ahora
-          </Link>
-          <p className="mt-4 text-xs text-muted-foreground">Sin tarjeta para probar · Setup en minutos</p>
         </div>
+        <p className="mt-6 text-xs text-muted-foreground text-center">Sin tarjeta para empezar · Cambia de plan cuando quieras</p>
       </div>
     </section>
   );
