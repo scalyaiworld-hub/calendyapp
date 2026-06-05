@@ -49,6 +49,22 @@ function AjustesPage() {
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
+  const { data: locations } = useQuery({
+    queryKey: ["locations-count", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return { count: data?.length ?? 0 };
+    },
+  });
+
+  const hasLocations = (locations?.count ?? 0) > 0;
   const url = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
 
   return (
