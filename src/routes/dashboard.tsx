@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { to: "/dashboard", label: "Resumen", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/dashboard/sucursales", label: "Sucursales", icon: Building2 },
+  { to: "/dashboard/profesionales", label: "Profesionales", icon: User2 },
   { to: "/dashboard/servicios", label: "Servicios", icon: Scissors },
   { to: "/dashboard/clientes", label: "Clientes", icon: Users },
   { to: "/dashboard/horarios", label: "Horarios", icon: Clock },
