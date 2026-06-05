@@ -259,9 +259,39 @@ function OnboardingPage() {
                       <p className="text-xs text-muted-foreground">{ind.description}</p>
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setIndustry("other")}
+                    className={cn(
+                      "p-3 rounded-md border text-left transition-colors",
+                      industry === "other" ? "border-primary bg-primary/10" : "border-border hover:bg-accent"
+                    )}
+                  >
+                    <div className="text-2xl">✨</div>
+                    <p className="font-medium text-sm mt-1">Otro</p>
+                    <p className="text-xs text-muted-foreground">Escribe tu rubro</p>
+                  </button>
                 </div>
+                {industry === "other" && (
+                  <Input
+                    value={customIndustry}
+                    onChange={(e) => setCustomIndustry(e.target.value)}
+                    placeholder="Ej. Tatuajes, masajes, podología…"
+                    className="mt-3 h-11"
+                    autoFocus
+                  />
+                )}
               </div>
-              <Button className="w-full h-11" onClick={() => saveStep2.mutate()} disabled={!name.trim() || !industry || saveStep2.isPending}>
+              <Button
+                className="w-full h-11"
+                onClick={() => saveStep2.mutate()}
+                disabled={
+                  !name.trim() ||
+                  !industry ||
+                  (industry === "other" && !customIndustry.trim()) ||
+                  saveStep2.isPending
+                }
+              >
                 {saveStep2.isPending ? "Guardando…" : "Continuar"}
                 <ChevronRight className="size-4" />
               </Button>
