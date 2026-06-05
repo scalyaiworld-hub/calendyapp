@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, MapPin, User2, Scissors } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
+import { createPublicBooking } from "@/lib/api/public-booking.functions";
 import { BrandTheme } from "@/lib/brand-theme";
 
 export const Route = createFileRoute("/b/$slug")({
