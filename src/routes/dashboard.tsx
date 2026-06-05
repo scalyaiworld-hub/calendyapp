@@ -2,7 +2,10 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut } from "lucide-react";
+import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut, Lock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
 
@@ -45,6 +48,19 @@ function DashboardLayout() {
   const { data: business, isLoading: bizLoading } = useMyBusiness();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { data: readyCounts } = useQuery({
+    queryKey: ["dashboard-ready-counts", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const [pros, services] = await Promise.all([
+        supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
+        supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
+      ]);
+      return { pros: pros.count ?? 0, services: services.count ?? 0 };
+    },
+  });
+  const canShareLink = (readyCounts?.pros ?? 0) > 0 && (readyCounts?.services ?? 0) > 0;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
@@ -116,16 +132,28 @@ function DashboardLayout() {
         {business && (
           <div>
             <div className="h-px bg-border my-2 mx-2" />
-            <a
-              href={`/b/${business.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={onNavigate}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="size-4" strokeWidth={1.75} />
-              Página pública
-            </a>
+            {canShareLink ? (
+              <a
+                href={`/b/${business.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={onNavigate}
+                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <ExternalLink className="size-4" strokeWidth={1.75} />
+                Página pública
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.info("Agrega al menos un profesional y un servicio para activar tu página pública.")}
+                className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground/60 cursor-not-allowed text-left"
+                title="Agrega al menos un profesional y un servicio"
+              >
+                <Lock className="size-4" strokeWidth={1.75} />
+                Página pública
+              </button>
+            )}
           </div>
         )}
       </nav>
