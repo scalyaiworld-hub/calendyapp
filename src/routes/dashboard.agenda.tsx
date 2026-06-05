@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2 } from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,23 @@ function AgendaPage() {
   const qc = useQueryClient();
   const [date, setDate] = useState(startOfDay(new Date()));
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const { data: locations } = useQuery({
+    queryKey: ["locations-count", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId!)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return { count: data?.length ?? 0 };
+    },
+  });
+
+  const hasLocations = (locations?.count ?? 0) > 0;
 
   const { data: appts, error: apptsError } = useQuery({
     queryKey: ["appts", businessId, date.toDateString()],
@@ -83,15 +100,21 @@ function AgendaPage() {
           <p className="text-muted-foreground">Citas del día.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            onClick={() => {
-              navigator.clipboard.writeText(bookingUrl);
-              toast.success("Link copiado", { description: bookingUrl });
-            }}
-          >
-            <Link2 className="size-4" /> Copiar link de reservas
-          </Button>
+          {!hasLocations ? (
+            <Button variant="outline" disabled title="Crea al menos una sucursal para activar el link de reservas">
+              <Building2 className="size-4" /> Copiar link de reservas
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(bookingUrl);
+                toast.success("Link copiado", { description: bookingUrl });
+              }}
+            >
+              <Link2 className="size-4" /> Copiar link de reservas
+            </Button>
+          )}
           <NewApptDialog businessId={businessId!} initialDate={date} trigger={<Button><Plus className="size-4" /> Nueva cita</Button>} />
         </div>
       </div>

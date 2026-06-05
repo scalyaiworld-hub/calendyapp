@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
@@ -49,6 +49,22 @@ function AjustesPage() {
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
+  const { data: locations } = useQuery({
+    queryKey: ["locations-count", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return { count: data?.length ?? 0 };
+    },
+  });
+
+  const hasLocations = (locations?.count ?? 0) > 0;
   const url = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
 
   return (
@@ -79,9 +95,20 @@ function AjustesPage() {
           <Label>Tu página pública</Label>
           <div className="flex gap-2">
             <Input readOnly value={url} />
-            <Button variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}>Copiar</Button>
+            <Button
+              variant="outline"
+              disabled={!hasLocations}
+              onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}
+              title={hasLocations ? undefined : "Crea al menos una sucursal para activar el link de reservas"}
+            >
+              Copiar
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Comparte este enlace con tus clientes para que reserven solos.</p>
+          <p className="text-xs text-muted-foreground">
+            {hasLocations
+              ? "Comparte este enlace con tus clientes para que reserven solos."
+              : "Crea al menos una sucursal para activar el link de reservas."}
+          </p>
         </CardContent>
       </Card>
     </div>
