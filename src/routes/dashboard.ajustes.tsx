@@ -123,12 +123,10 @@ function AjustesPage() {
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
-  const hasLocations = (locations?.count ?? 0) > 0;
   const hasPros = (prosCount ?? 0) > 0;
   const hasServices = (servicesCount ?? 0) > 0;
-  const canShare = hasLocations && hasPros && hasServices;
+  const canShare = hasPros && hasServices;
   const missing: string[] = [];
-  if (!hasLocations) missing.push("una sucursal");
   if (!hasPros) missing.push("un profesional");
   if (!hasServices) missing.push("un servicio");
   const missingMsg = `Agrega al menos ${missing.join(", ")} para activar el link de reservas.`;
