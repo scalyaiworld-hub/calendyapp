@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { CalendarDays, Scissors, Users, Plus, Link2, ArrowRight, Clock3, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getPlan, MODULE_LABELS } from "@/lib/plans";
+import { Sparkles, Lock, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
@@ -18,10 +20,11 @@ function DashboardHome() {
   const { data: business, isLoading } = useMyBusiness();
   if (isLoading) return <p className="text-muted-foreground">Cargando…</p>;
   if (!business) return null;
-  return <Summary businessId={business.id} businessName={business.name} slug={business.slug} />;
+  return <Summary businessId={business.id} businessName={business.name} slug={business.slug} plan={(business as any).plan ?? "free"} />;
 }
 
-function Summary({ businessId, businessName, slug }: { businessId: string; businessName: string; slug: string }) {
+function Summary({ businessId, businessName, slug, plan: planId }: { businessId: string; businessName: string; slug: string; plan: string }) {
+  const plan = getPlan(planId);
   const { data: today } = useQuery({
     queryKey: ["today-appts", businessId],
     queryFn: async () => {
@@ -59,6 +62,23 @@ function Summary({ businessId, businessName, slug }: { businessId: string; busin
         locs: locs.count ?? 0,
         pending: pending.count ?? 0,
       };
+    },
+  });
+
+  const { data: monthApptsCount } = useQuery({
+    queryKey: ["month-appts-count", businessId],
+    queryFn: async () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const { count } = await supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId)
+        .gte("starts_at", start.toISOString())
+        .lt("starts_at", end.toISOString())
+        .in("status", ["pending", "booked", "completed"]);
+      return count ?? 0;
     },
   });
 
@@ -123,6 +143,16 @@ function Summary({ businessId, businessName, slug }: { businessId: string; busin
           <Stat icon={Scissors} label="Servicios" value={counts?.services ?? 0} />
           <Stat icon={Users} label="Clientes" value={counts?.clients ?? 0} />
         </div>
+
+        {/* Plan card */}
+        <PlanCard
+          plan={plan}
+          usage={{
+            appointmentsMonth: monthApptsCount ?? 0,
+            locations: counts?.locs ?? 0,
+            professionals: counts?.pros ?? 0,
+          }}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Next up */}
