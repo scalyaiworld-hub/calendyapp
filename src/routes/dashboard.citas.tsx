@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { formatTime, formatCurrency, DAY_NAMES_SHORT } from "@/lib/format";
+import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
 
 export const Route = createFileRoute("/dashboard/citas")({
   component: CitasPage,
