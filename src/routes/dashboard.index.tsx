@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
+import { PageHeader } from "@/components/PageHeader";
+import { CalendarDays, Scissors, Users, Plus, Link2, ArrowRight, Clock3, CheckCircle2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
@@ -12,11 +17,11 @@ export const Route = createFileRoute("/dashboard/")({
 function DashboardHome() {
   const { data: business, isLoading } = useMyBusiness();
   if (isLoading) return <p className="text-muted-foreground">Cargando…</p>;
-  if (!business) return null; // layout already redirects to /onboarding
-  return <Summary businessId={business.id} />;
+  if (!business) return null;
+  return <Summary businessId={business.id} businessName={business.name} slug={business.slug} />;
 }
 
-function Summary({ businessId }: { businessId: string }) {
+function Summary({ businessId, businessName, slug }: { businessId: string; businessName: string; slug: string }) {
   const { data: today } = useQuery({
     queryKey: ["today-appts", businessId],
     queryFn: async () => {
@@ -40,61 +45,203 @@ function Summary({ businessId }: { businessId: string }) {
   const { data: counts } = useQuery({
     queryKey: ["counts", businessId],
     queryFn: async () => {
-      const [services, clients] = await Promise.all([
+      const [services, clients, pros, locs, pending] = await Promise.all([
         supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null),
         supabase.from("clients").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null),
+        supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null).eq("is_active", true),
+        supabase.from("locations").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null).eq("is_active", true),
+        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", businessId).eq("status", "pending"),
       ]);
-      return { services: services.count ?? 0, clients: clients.count ?? 0 };
+      return {
+        services: services.count ?? 0,
+        clients: clients.count ?? 0,
+        pros: pros.count ?? 0,
+        locs: locs.count ?? 0,
+        pending: pending.count ?? 0,
+      };
     },
   });
 
+  const now = new Date();
+  const upcoming = (today ?? []).find((a: any) => new Date(a.ends_at) >= now);
+  const completedToday = (today ?? []).filter((a: any) => a.status === "completed").length;
+  const isReady = (counts?.locs ?? 0) > 0 && (counts?.pros ?? 0) > 0 && (counts?.services ?? 0) > 0;
+  const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/b/${slug}` : `/b/${slug}`;
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Buenos días";
+    if (h < 19) return "Buenas tardes";
+    return "Buenas noches";
+  })();
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl mb-1">Resumen</h1>
-        <p className="text-muted-foreground">Tu salón de hoy en un vistazo.</p>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow={greeting}
+        title={businessName}
+        description={new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link to="/dashboard/agenda"><Plus className="size-4" /> Nueva cita</Link>
+            </Button>
+            <Button
+              disabled={!isReady}
+              onClick={() => { navigator.clipboard.writeText(bookingUrl); toast.success("Link copiado"); }}
+              title={isReady ? undefined : "Completa sucursal, profesional y servicio"}
+            >
+              <Link2 className="size-4" /> Copiar link de reservas
+            </Button>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Stat label="Citas hoy" value={today?.length ?? 0} />
-        <Stat label="Servicios" value={counts?.services ?? 0} />
-        <Stat label="Clientes" value={counts?.clients ?? 0} />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-display text-xl">Citas de hoy</CardTitle>
-          <CardDescription>{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!today?.length ? (
-            <p className="text-sm text-muted-foreground">No hay citas hoy. <Link to="/dashboard/agenda" className="text-primary underline">Crear una</Link></p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {today.map((a: any) => (
-                <li key={a.id} className="py-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{formatTime(a.starts_at)} · {a.clients?.name}</p>
-                    <p className="text-sm text-muted-foreground">{a.services?.name}</p>
+      <div className="space-y-8">
+        {/* Setup checklist when not ready */}
+        {!isReady && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="size-5 text-primary mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium mb-1">Termina de configurar para activar tu link de reservas</p>
+                  <p className="text-sm text-muted-foreground mb-4">Necesitas al menos una sucursal, un profesional y un servicio.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <ChecklistItem done={(counts?.locs ?? 0) > 0} label="Sucursal" to="/dashboard/sucursales" />
+                    <ChecklistItem done={(counts?.pros ?? 0) > 0} label="Profesional" to="/dashboard/profesionales" />
+                    <ChecklistItem done={(counts?.services ?? 0) > 0} label="Servicio" to="/dashboard/servicios" />
                   </div>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">{a.status}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Stat icon={CalendarDays} label="Citas hoy" value={today?.length ?? 0} hint={completedToday > 0 ? `${completedToday} completadas` : undefined} />
+          <Stat icon={Clock3} label="Pendientes" value={counts?.pending ?? 0} accent={(counts?.pending ?? 0) > 0} />
+          <Stat icon={Scissors} label="Servicios" value={counts?.services ?? 0} />
+          <Stat icon={Users} label="Clientes" value={counts?.clients ?? 0} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Next up */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="font-display text-base text-muted-foreground font-medium">Próxima cita</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {upcoming ? (
+                <div className="space-y-3">
+                  <p className="font-display text-3xl tracking-tight">{formatTime(upcoming.starts_at)}</p>
+                  <div>
+                    <p className="font-medium">{upcoming.clients?.name}</p>
+                    <p className="text-sm text-muted-foreground">{upcoming.services?.name} · {upcoming.services?.duration_minutes} min</p>
+                  </div>
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <Link to="/dashboard/agenda">Ver agenda <ArrowRight className="size-3.5" /></Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Clock3 className="size-8 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-3">Sin citas próximas hoy</p>
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/dashboard/agenda"><Plus className="size-3.5" /> Crear cita</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Today list */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="font-display text-xl">Citas de hoy</CardTitle>
+                <CardDescription>{today?.length ?? 0} {today?.length === 1 ? "cita programada" : "citas programadas"}</CardDescription>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/dashboard/agenda">Abrir agenda <ArrowRight className="size-3.5" /></Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {!today?.length ? (
+                <div className="text-center py-10 border border-dashed border-border rounded-lg">
+                  <CalendarDays className="size-10 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="font-medium mb-1">No hay citas hoy</p>
+                  <p className="text-sm text-muted-foreground mb-4">Crea una desde la agenda o comparte tu link público.</p>
+                  <Button asChild size="sm">
+                    <Link to="/dashboard/agenda"><Plus className="size-3.5" /> Crear cita</Link>
+                  </Button>
+                </div>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {today.map((a: any) => (
+                    <li key={a.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="size-10 rounded-md bg-muted grid place-items-center shrink-0">
+                          <span className="font-display text-xs text-muted-foreground">{formatTime(a.starts_at)}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{a.clients?.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{a.services?.name}</p>
+                        </div>
+                      </div>
+                      <StatusPill status={a.status} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ icon: Icon, label, value, hint, accent }: { icon: any; label: string; value: number; hint?: string; accent?: boolean }) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="font-display text-3xl mt-1">{value}</p>
+    <Card className={cn(accent && "border-primary/40")}>
+      <CardContent className="pt-5 pb-5">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
+          <Icon className={cn("size-4", accent ? "text-primary" : "text-muted-foreground/60")} strokeWidth={1.75} />
+        </div>
+        <p className="font-display text-3xl tracking-tight leading-none">{value}</p>
+        {hint && <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>}
       </CardContent>
     </Card>
   );
+}
+
+function ChecklistItem({ done, label, to }: { done: boolean; label: string; to: string }) {
+  return (
+    <Link
+      to={to as any}
+      className={cn(
+        "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-colors",
+        done
+          ? "border-primary/30 bg-primary/10 text-foreground"
+          : "border-border bg-background hover:bg-accent"
+      )}
+    >
+      {done ? <CheckCircle2 className="size-3.5 text-primary" /> : <span className="size-3.5 rounded-full border border-muted-foreground/40" />}
+      {label}
+    </Link>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    pending: { label: "Pendiente", cls: "bg-amber-100 text-amber-800 border-amber-200" },
+    booked: { label: "Confirmada", cls: "bg-primary/10 text-primary border-primary/20" },
+    completed: { label: "Completada", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+    cancelled: { label: "Cancelada", cls: "bg-rose-100 text-rose-800 border-rose-200" },
+    no_show: { label: "No-show", cls: "bg-muted text-muted-foreground border-border" },
+  };
+  const s = map[status] ?? map.pending;
+  return <span className={cn("text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>;
 }
