@@ -177,7 +177,7 @@ function CitasPage() {
                     <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", STATUS_STYLES[a.status as ApptStatus])}>
                       {STATUS_LABEL[a.status as ApptStatus]}
                     </span>
-                    <p className="text-sm font-medium text-right hidden sm:block">{formatCurrency((a.services?.price_cents ?? 0) / 100)}</p>
+                    <p className="text-sm font-medium text-right hidden sm:block">{formatPriceCents(a.services?.price_cents ?? 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -230,7 +230,7 @@ function CitasPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Scissors className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.services?.name} · {formatCurrency((selectedAppt.services?.price_cents ?? 0) / 100)}</span>
+                  <span>{selectedAppt.services?.name} · {formatPriceCents(selectedAppt.services?.price_cents ?? 0)}</span>
                 </div>
                 {selectedAppt.locations?.name && (
                   <p className="text-muted-foreground">{selectedAppt.locations?.name}</p>
