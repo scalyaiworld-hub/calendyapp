@@ -83,8 +83,21 @@ function OnboardingPage() {
     mutationFn: async () => {
       if (!user) throw new Error("Sin sesión");
       if (!waNumber.trim()) throw new Error("Ingresa tu número de WhatsApp");
-      // Create or update business
-      if (business) {
+      // Re-check on the server in case the cached value is stale (e.g. previous
+      // duplicate-creation attempts left more than one row for this owner).
+      let existing = business;
+      if (!existing) {
+        const { data: found } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        existing = found ?? null;
+      }
+      if (existing) {
         const { data, error } = await supabase
           .from("businesses")
           .update({
@@ -93,7 +106,7 @@ function OnboardingPage() {
             phone: `${countryCode} ${waNumber.trim()}`,
             onboarding_step: 2,
           })
-          .eq("id", business.id)
+          .eq("id", existing.id)
           .select("*")
           .maybeSingle();
         if (error) throw error;
