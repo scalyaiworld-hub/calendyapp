@@ -1,79 +1,101 @@
-# Plan de mejoras
 
-Te propongo cinco bloques de cambios. Te explico cada uno simple y luego los detalles técnicos.
+## Resumen
 
-## 1. Login con Google + rediseño
+Agregar un módulo de **Sucursales** con sus propios profesionales y servicios, y rediseñar el link público de reservas en 3 pasos: Sucursal → (Profesional o Servicio) → Fecha/Hora.
 
-**Qué cambia para el usuario:**
-- Pantalla de ingreso más limpia: botón grande de Google arriba, separador "o continúa con email", y debajo el formulario de email + contraseña.
-- Quien quiera puede entrar con su cuenta de Google en un clic.
+---
 
-**Detalles técnicos:**
-- Habilitar el proveedor Google en el backend (`configure_social_auth providers: ["google"]`).
-- Usar el broker de Lovable: `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/dashboard" })`.
-- Rediseño de `src/routes/auth.tsx` con mejor jerarquía (logo, título grande, botón Google con ícono, divisor, formulario).
+## 1. Cambios en la base de datos (nuevas tablas)
 
-## 2. Onboarding obligatorio en 3 pasos
+**`locations` (sucursales)**
+- `business_id`, `name`, `address`, `phone`, `phone_country_code`, `is_active`
 
-**Qué cambia para el usuario:**
-- En el primer ingreso aparece un asistente que no se puede saltar.
-- Paso 1: WhatsApp (selector de país con bandera + código, y campo aparte para el número).
-- Paso 2: Nombre del salón.
-- Paso 3: Servicios (con botón "Omitir por ahora").
-- Mientras no termine, cualquier ruta del dashboard lo devuelve al paso pendiente.
+**`location_hours` (horario de atención por sucursal)**
+- `location_id`, `day_of_week` (0–6), `start_time`, `end_time`
 
-**Detalles técnicos:**
-- Migración: agregar a `businesses` las columnas `whatsapp_country_code` (text, default '+51'), `whatsapp_number` (text), `onboarding_completed` (boolean, default false), `onboarding_step` (smallint, default 1).
-- Nueva ruta `src/routes/_authenticated/onboarding.tsx` (o `src/routes/dashboard.onboarding.tsx`) con un stepper de 3 pasos.
-- En `dashboard.tsx`, si `!business` o `!business.onboarding_completed`, redirigir a `/dashboard/onboarding`.
-- Componente `PhoneInput` reutilizable: dropdown con países comunes de LatAm + España + EEUU (bandera emoji + código), input numérico aparte. Guarda `country_code` y `number` separados.
-- El paso 3 reutiliza el `CatalogDialog` por rubro (ver bloque 5) y permite "Omitir por ahora" (marca `onboarding_completed = true` sin servicios).
+**`professionals` (profesionales)**
+- `business_id`, `name`, `phone`, `phone_country_code`, `avatar_url`, `is_active`
 
-## 3. Link público de reservas
+**`location_professionals`** (qué profesionales trabajan en cada sucursal)
+- `location_id`, `professional_id`, `UNIQUE(location_id, professional_id)`
 
-**Qué cambia para el usuario:**
-- En Agenda hay un botón "Copiar link de reservas". Al hacer clic, copia al portapapeles la URL pública del salón.
-- Cualquier cliente final que abra ese link ve los servicios activos, elige uno, ve solo los huecos libres según horarios y citas existentes, y reserva.
+**`professional_services`** (qué servicios ofrece cada profesional)
+- `professional_id`, `service_id`, `UNIQUE(professional_id, service_id)`
 
-**Detalles técnicos:**
-- Botón en `src/routes/dashboard.agenda.tsx` que copia `${window.location.origin}/b/${business.slug}` con `navigator.clipboard.writeText` y `toast.success`.
-- Mejorar `src/routes/b.$slug.tsx` para que tenga el flujo completo: selección de servicio → selección de fecha → mostrar slots disponibles calculados con `src/lib/availability.ts` (cruzando `availability_rules` con `appointments` no canceladas y duración del servicio) → formulario simple (nombre + WhatsApp con prefijo separado) → crear `client` (o reusar por teléfono) y `appointment` con status `pending`.
-- Requiere policy pública (anon) de **INSERT** en `appointments` y `clients` solo cuando `business_id` corresponde a un negocio activo, y **SELECT** público sobre `businesses`, `services` activos y `availability_rules` por slug. Migración con grants + policies acotadas.
+**Modificar `appointments`**: agregar `location_id` y `professional_id` (nullables al inicio para no romper datos existentes).
 
-## 4. WhatsApp con prefijo separado en todos lados
+**RLS**:
+- `authenticated`: dueño del negocio (vía `is_business_owner`) gestiona todo.
+- `anon`: SELECT público sobre `locations`, `professionals`, `location_professionals`, `professional_services`, `location_hours` para que el link público pueda leer.
+- INSERT público en `appointments` ya existe; se valida que `location_id`/`professional_id` pertenezcan al `business_id`.
 
-**Qué cambia para el usuario:**
-- Onboarding, ajustes del salón, alta de clientes y formulario público de reservas: siempre dos campos (prefijo país + número local). Nunca uno solo.
+---
 
-**Detalles técnicos:**
-- Componente `src/components/PhoneInput.tsx` reutilizable (controlado, recibe `countryCode`, `number` y `onChange`).
-- Lista de países en `src/lib/countries.ts` (~15 países LatAm + ES + US con bandera emoji + código).
-- Migración: agregar a `clients` `phone_country_code` (text) y mantener `phone` como el número local. Conservar `phone` existente como número (sin migración destructiva).
-- Actualizar `dashboard.ajustes.tsx`, `dashboard.clientes.tsx`, `dashboard.agenda.tsx` (NewApptDialog), `b.$slug.tsx` para usar `PhoneInput`.
+## 2. Nueva sección en el dashboard: Sucursales
 
-## 5. Plantillas de servicios por rubro
+Ruta nueva: `src/routes/dashboard.sucursales.tsx`
 
-**Qué cambia para el usuario:**
-- Al crear el salón ya **no** se precargan servicios automáticamente.
-- En Servicios aparece una galería con plantillas agrupadas por rubro: Peluquería, Barbería, Spa, Uñas, Estética.
-- El usuario elige las que quiere, las importa con un clic, y puede editar nombre / duración / precio. También puede crear servicios desde cero (ya existe).
+- Lista de sucursales en cards (nombre, dirección, teléfono, # de profesionales).
+- Botón "Nueva sucursal" → diálogo con:
+  - Datos básicos (nombre, dirección, teléfono con `PhoneInput`).
+  - Horario semanal (7 días, hora inicio/fin, toggle "cerrado").
+  - Selector múltiple de profesionales asignados.
+- Editar / eliminar (soft delete con `is_active=false`).
 
-**Detalles técnicos:**
-- Reemplazar `src/lib/spa-catalog.ts` por `src/lib/service-templates.ts` con cinco rubros y ~10–15 servicios cada uno.
-- Quitar la pre-carga automática en `dashboard.index.tsx` (`Onboarding`) y del paso 3 del nuevo onboarding (cargar solo lo que el usuario seleccione).
-- Rediseñar `CatalogDialog` en `dashboard.servicios.tsx`: tabs por rubro, tarjetas seleccionables, contador de seleccionados, botón "Importar N servicios".
+Subsección o tab "Profesionales" dentro de Sucursales:
+- CRUD de profesionales del negocio.
+- Por cada profesional, seleccionar los servicios que ofrece (multi-select desde la lista existente de servicios).
+
+Agregar el item "Sucursales" al menú lateral del dashboard.
+
+---
+
+## 3. Rediseño del link público `b/$slug`
+
+Reescribir `src/routes/b.$slug.tsx` como wizard de 3 pasos con estado local:
+
+**Paso 1 — Sucursal**
+- Lista visual de sucursales activas del negocio (nombre, dirección, horario resumido).
+- Al hacer clic se avanza al paso 2.
+
+**Paso 2 — Cómo reservar**
+- Dos tarjetas grandes equivalentes: "Por Profesional" / "Por Servicio".
+- **Rama Profesional**: lista profesionales de la sucursal → al elegir uno, muestra solo los servicios que ese profesional ofrece.
+- **Rama Servicio**: lista servicios disponibles en la sucursal (servicios ofrecidos por al menos un profesional asignado a esa sucursal) → al elegir uno, muestra los profesionales que lo realizan en esa sucursal.
+- Ambas ramas terminan con `{ location, professional, service }` definidos.
+
+**Paso 3 — Fecha, hora y confirmación**
+- Calendario para elegir día.
+- Slots calculados a partir de:
+  - Horario de la sucursal (`location_hours`) ∩ Reglas de disponibilidad del negocio (`availability_rules`) — usaremos el horario de la sucursal como fuente principal.
+  - Citas existentes del **profesional** en esa sucursal (para no chocar).
+  - Duración del servicio.
+- Formulario final: nombre + WhatsApp (con `PhoneInput` de prefijo separado).
+- Crea `client` + `appointment` (status `pending`, source `booking_page`) con `location_id` y `professional_id`.
+
+UX móvil: 1 columna, pasos grandes, botón "Atrás" en cada paso, indicador de progreso (1/3, 2/3, 3/3).
+
+---
+
+## 4. Agenda
+
+En `dashboard.agenda.tsx`, mostrar etiqueta de sucursal y profesional en cada cita. Filtro opcional por sucursal/profesional (nice-to-have, puedo dejarlo para después si quieres).
+
+---
 
 ## Orden de implementación
 
-1. Migración: columnas de onboarding, columnas de WhatsApp en clients, policies públicas para reservas anon.
-2. Habilitar Google OAuth + rediseño de `/auth`.
-3. `PhoneInput` + `countries.ts`.
-4. Service templates (5 rubros) + rediseño de `CatalogDialog`.
-5. Onboarding stepper obligatorio + gate en `dashboard.tsx`.
-6. Botón "Copiar link" en Agenda + flujo público completo en `/b/$slug`.
-7. Reemplazar todos los inputs de teléfono por `PhoneInput`.
+1. Migración SQL (tablas + RLS + grants + columnas en `appointments`).
+2. Página `dashboard.sucursales.tsx` con CRUD de sucursales y profesionales.
+3. Rediseño completo de `b.$slug.tsx` (wizard 3 pasos).
+4. Mostrar sucursal/profesional en agenda.
 
-## Preguntas antes de implementar
+---
 
-- ¿El link público de reservas debe crear la cita como **pendiente** (tú la confirmas desde Agenda) o **confirmada** automáticamente?
-- Para el selector de país, ¿con LatAm + España + EEUU es suficiente o quieres lista mundial completa?
+## Preguntas antes de empezar
+
+1. **Profesionales con cuenta propia**: ¿los profesionales solo son "recursos" que el dueño gestiona, o más adelante cada uno tendrá su propio login? (Por ahora asumo lo primero — solo recursos. Si después quieres logins, se agrega `user_id` opcional.)
+2. **Horario**: ¿cada sucursal tiene su propio horario independiente, o también heredan del horario general del negocio? (Asumo independiente — la sucursal manda.)
+3. **Servicios**: ¿el precio/duración de un servicio es igual en todas las sucursales, o puede variar por sucursal/profesional? (Asumo igual — un servicio = un precio.)
+
+Si las 3 asunciones te calzan, dime "dale" y arranco. Si quieres cambiar alguna, avísame.

@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink } from "lucide-react";
+import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard")({
@@ -14,6 +14,7 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Resumen", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
+  { to: "/dashboard/sucursales", label: "Sucursales", icon: Building2 },
   { to: "/dashboard/servicios", label: "Servicios", icon: Scissors },
   { to: "/dashboard/clientes", label: "Clientes", icon: Users },
   { to: "/dashboard/horarios", label: "Horarios", icon: Clock },

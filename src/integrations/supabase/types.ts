@@ -23,7 +23,9 @@ export type Database = {
           created_at: string
           ends_at: string
           id: string
+          location_id: string | null
           notes: string | null
+          professional_id: string | null
           service_id: string
           source: Database["public"]["Enums"]["appointment_source"]
           starts_at: string
@@ -38,7 +40,9 @@ export type Database = {
           created_at?: string
           ends_at: string
           id?: string
+          location_id?: string | null
           notes?: string | null
+          professional_id?: string | null
           service_id: string
           source?: Database["public"]["Enums"]["appointment_source"]
           starts_at: string
@@ -53,7 +57,9 @@ export type Database = {
           created_at?: string
           ends_at?: string
           id?: string
+          location_id?: string | null
           notes?: string | null
+          professional_id?: string | null
           service_id?: string
           source?: Database["public"]["Enums"]["appointment_source"]
           starts_at?: string
@@ -269,6 +275,147 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      location_hours: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          location_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          location_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          location_id?: string
+          start_time?: string
+        }
+        Relationships: []
+      }
+      location_professionals: {
+        Row: {
+          created_at: string
+          location_id: string
+          professional_id: string
+        }
+        Insert: {
+          created_at?: string
+          location_id: string
+          professional_id: string
+        }
+        Update: {
+          created_at?: string
+          location_id?: string
+          professional_id?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          address: string | null
+          business_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          phone_country_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          phone_country_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          phone_country_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      professional_services: {
+        Row: {
+          created_at: string
+          professional_id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          professional_id: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          professional_id?: string
+          service_id?: string
+        }
+        Relationships: []
+      }
+      professionals: {
+        Row: {
+          avatar_url: string | null
+          business_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          phone_country_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          business_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          phone_country_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          business_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          phone_country_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       services: {
         Row: {
