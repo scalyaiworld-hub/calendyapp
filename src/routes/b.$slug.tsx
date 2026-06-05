@@ -142,32 +142,19 @@ function BookingPage() {
   const book = useMutation({
     mutationFn: async () => {
       if (!business || !service || !slot) throw new Error("Faltan datos");
-      // Upsert client by phone
-      const { data: existing } = await supabase
-        .from("clients")
-        .select("id")
-        .eq("business_id", business.id)
-        .eq("phone", phone)
-        .eq("phone_country_code", countryCode)
-        .is("deleted_at", null)
-        .maybeSingle();
-      let clientId = existing?.id;
-      if (!clientId) {
-        const { data, error } = await supabase
-          .from("clients")
-          .insert({ business_id: business.id, name, phone, phone_country_code: countryCode })
-          .select()
-          .single();
-        if (error) throw error;
-        clientId = data.id;
-      }
-      const { error } = await supabase.from("appointments").insert({
-        business_id: business.id, client_id: clientId, service_id: service.id,
-        location_id: locationId, professional_id: professionalId,
-        starts_at: slot.starts_at.toISOString(), ends_at: slot.ends_at.toISOString(),
-        source: "booking_page", status: "pending",
+      await createPublicBooking({
+        data: {
+          businessId: business.id,
+          serviceId: service.id,
+          locationId: locationId ?? null,
+          professionalId: professionalId ?? null,
+          startsAt: slot.starts_at.toISOString(),
+          endsAt: slot.ends_at.toISOString(),
+          name,
+          phone,
+          countryCode,
+        },
       });
-      if (error) throw error;
     },
     onSuccess: () => setStep("done"),
     onError: (e: Error) => toast.error("No se pudo reservar: " + e.message),
