@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardSucursalesRouteImport } from './routes/dashboard.sucursales'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
+import { Route as DashboardProfesionalesRouteImport } from './routes/dashboard.profesionales'
 import { Route as DashboardHorariosRouteImport } from './routes/dashboard.horarios'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
 import { Route as DashboardAjustesRouteImport } from './routes/dashboard.ajustes'
@@ -57,6 +58,11 @@ const DashboardServiciosRoute = DashboardServiciosRouteImport.update({
   path: '/servicios',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardProfesionalesRoute = DashboardProfesionalesRouteImport.update({
+  id: '/profesionales',
+  path: '/profesionales',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardHorariosRoute = DashboardHorariosRouteImport.update({
   id: '/horarios',
   path: '/horarios',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/profesionales': typeof DashboardProfesionalesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/profesionales': typeof DashboardProfesionalesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/profesionales': typeof DashboardProfesionalesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/dashboard/ajustes'
     | '/dashboard/clientes'
     | '/dashboard/horarios'
+    | '/dashboard/profesionales'
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard/'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/dashboard/ajustes'
     | '/dashboard/clientes'
     | '/dashboard/horarios'
+    | '/dashboard/profesionales'
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/dashboard/ajustes'
     | '/dashboard/clientes'
     | '/dashboard/horarios'
+    | '/dashboard/profesionales'
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard/'
@@ -228,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardServiciosRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/profesionales': {
+      id: '/dashboard/profesionales'
+      path: '/profesionales'
+      fullPath: '/dashboard/profesionales'
+      preLoaderRoute: typeof DashboardProfesionalesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/horarios': {
       id: '/dashboard/horarios'
       path: '/horarios'
@@ -271,6 +290,7 @@ interface DashboardRouteChildren {
   DashboardAjustesRoute: typeof DashboardAjustesRoute
   DashboardClientesRoute: typeof DashboardClientesRoute
   DashboardHorariosRoute: typeof DashboardHorariosRoute
+  DashboardProfesionalesRoute: typeof DashboardProfesionalesRoute
   DashboardServiciosRoute: typeof DashboardServiciosRoute
   DashboardSucursalesRoute: typeof DashboardSucursalesRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -281,6 +301,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAjustesRoute: DashboardAjustesRoute,
   DashboardClientesRoute: DashboardClientesRoute,
   DashboardHorariosRoute: DashboardHorariosRoute,
+  DashboardProfesionalesRoute: DashboardProfesionalesRoute,
   DashboardServiciosRoute: DashboardServiciosRoute,
   DashboardSucursalesRoute: DashboardSucursalesRoute,
   DashboardIndexRoute: DashboardIndexRoute,
@@ -300,3 +321,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
