@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,6 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [proOpen, setProOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -22,10 +29,11 @@ function Index() {
       <Problem />
       <Features />
       <HowItWorks />
-      <Pricing />
+      <Pricing onProClick={() => setProOpen(true)} />
       <FAQ />
       <CTA />
       <Footer />
+      <ProPreregisterDialog open={proOpen} onOpenChange={setProOpen} />
     </div>
   );
 }
@@ -210,7 +218,7 @@ function HowItWorks() {
   );
 }
 
-function Pricing() {
+function Pricing({ onProClick }: { onProClick: () => void }) {
   const free = [
     "Hasta 50 citas/mes",
     "1 sucursal",
@@ -271,9 +279,13 @@ function Pricing() {
                 </li>
               ))}
             </ul>
-            <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition">
-              Empezar con Pro
-            </Link>
+            <button
+              type="button"
+              onClick={onProClick}
+              className="mt-auto inline-block text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:shadow-lg hover:-translate-y-0.5 transition"
+            >
+              Preregistro
+            </button>
           </div>
         </div>
         <p className="mt-6 text-xs text-muted-foreground text-center">Sin tarjeta para empezar · Cambia de plan cuando quieras</p>
