@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -48,12 +48,19 @@ function OnboardingPage() {
   // Step 3 — Servicios
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  // Prefill from existing partial business
+  // Prefill from existing partial business — only once, so we don't overwrite
+  // the user's in-progress edits when the query refetches.
+  const prefilledRef = useRef(false);
   useEffect(() => {
-    if (!business) return;
+    if (!business || prefilledRef.current) return;
+    prefilledRef.current = true;
     if (business.whatsapp_country_code) setCountryCode(business.whatsapp_country_code);
     if (business.whatsapp_number) setWaNumber(business.whatsapp_number);
-    if (business.name) setName(business.name);
+    // Ignore the temporary placeholder name we save in step 1 (e.g. "salon-ab12cd"
+    // before the user has typed a real name in step 2).
+    const isPlaceholderName =
+      business.name && business.slug && business.name === business.slug && /^salon-[a-z0-9]{4,8}$/.test(business.name);
+    if (business.name && !isPlaceholderName) setName(business.name);
     if (business.industry) {
       const known = INDUSTRIES.some((i) => i.id === business.industry);
       if (known) {
