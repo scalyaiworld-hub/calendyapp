@@ -300,7 +300,7 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
           <div className="bg-card border border-border rounded-2xl p-8 flex flex-col relative overflow-hidden">
             <div className="text-xs uppercase tracking-widest text-foreground font-medium mb-3">Studio</div>
             <div className="font-display text-5xl mb-2 font-semibold tracking-tight">
-              <span className="text-foreground">$79</span>
+              <span className="text-foreground">$99</span>
               <span className="text-lg text-muted-foreground font-normal"> USD / mes</span>
             </div>
             <p className="text-muted-foreground mb-8 text-sm">Para cadenas y equipos grandes.</p>
