@@ -274,3 +274,92 @@ function StatusPill({ status }: { status: string }) {
   const s = map[status] ?? map.pending;
   return <span className={cn("text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>;
 }
+
+function PlanCard({
+  plan,
+  usage,
+}: {
+  plan: ReturnType<typeof getPlan>;
+  usage: { appointmentsMonth: number; locations: number; professionals: number };
+}) {
+  const items: { label: string; used: number; limit: number | null }[] = [
+    { label: "Citas este mes", used: usage.appointmentsMonth, limit: plan.limits.appointmentsPerMonth },
+    { label: "Sucursales activas", used: usage.locations, limit: plan.limits.locations },
+    { label: "Profesionales activos", used: usage.professionals, limit: plan.limits.professionals },
+  ];
+  const moduleKeys = Object.keys(plan.modules) as (keyof typeof plan.modules)[];
+  const Icon = plan.id === "studio" ? Crown : plan.id === "pro" ? Sparkles : Lock;
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between space-y-0 gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className={cn(
+            "size-10 rounded-lg grid place-items-center shrink-0",
+            plan.id === "studio" ? "bg-foreground text-background" : plan.id === "pro" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+          )}>
+            <Icon className="size-5" strokeWidth={1.75} />
+          </div>
+          <div className="min-w-0">
+            <CardTitle className="font-display text-xl">Plan {plan.label}</CardTitle>
+            <CardDescription>{plan.tagline}</CardDescription>
+          </div>
+        </div>
+        {plan.id !== "studio" && (
+          <Button asChild variant="outline" size="sm">
+            <Link to="/#pricing">Mejorar plan <ArrowRight className="size-3.5" /></Link>
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        <div className="grid sm:grid-cols-3 gap-3 mb-6">
+          {items.map((it) => {
+            const isUnlimited = it.limit === null;
+            const pct = isUnlimited ? 0 : Math.min(100, Math.round((it.used / Math.max(1, it.limit!)) * 100));
+            const reached = !isUnlimited && it.used >= (it.limit ?? 0);
+            const warn = !isUnlimited && pct >= 80 && !reached;
+            return (
+              <div key={it.label} className="rounded-lg border border-border p-3 bg-background/40">
+                <div className="flex items-baseline justify-between mb-2">
+                  <p className="text-xs text-muted-foreground font-medium">{it.label}</p>
+                  <p className="font-display text-sm tabular-nums">
+                    {it.used}
+                    <span className="text-muted-foreground">/{isUnlimited ? "∞" : it.limit}</span>
+                  </p>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full transition-all",
+                      isUnlimited ? "bg-primary/40 w-full" : reached ? "bg-rose-500" : warn ? "bg-amber-500" : "bg-primary"
+                    )}
+                    style={isUnlimited ? undefined : { width: `${pct}%` }}
+                  />
+                </div>
+                {reached && <p className="text-[11px] text-rose-600 mt-1.5">Límite alcanzado</p>}
+                {warn && <p className="text-[11px] text-amber-600 mt-1.5">Cerca del límite</p>}
+              </div>
+            );
+          })}
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Módulos incluidos</p>
+          <ul className="grid sm:grid-cols-2 gap-y-1.5 gap-x-4">
+            {moduleKeys.map((k) => {
+              const on = plan.modules[k];
+              return (
+                <li key={k} className={cn("flex items-center gap-2 text-sm", !on && "text-muted-foreground/70")}>
+                  {on ? (
+                    <CheckCircle2 className="size-4 text-primary shrink-0" strokeWidth={2} />
+                  ) : (
+                    <Lock className="size-3.5 text-muted-foreground/50 shrink-0" strokeWidth={1.75} />
+                  )}
+                  <span className={cn(!on && "line-through decoration-muted-foreground/30")}>{MODULE_LABELS[k]}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
