@@ -48,7 +48,13 @@ function ProsTab() {
       const { error } = await supabase.from("professionals").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-full"] }); qc.invalidateQueries({ queryKey: ["pros"] }); toast.success("Eliminado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pros-full"] });
+      qc.invalidateQueries({ queryKey: ["pros"] });
+      qc.invalidateQueries({ queryKey: ["pros-count"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+      toast.success("Eliminado");
+    },
   });
 
   return (
@@ -137,7 +143,14 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pros-full"] }); qc.invalidateQueries({ queryKey: ["pros"] }); toast.success("Guardado"); onOpenChange(false); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pros-full"] });
+      qc.invalidateQueries({ queryKey: ["pros"] });
+      qc.invalidateQueries({ queryKey: ["pros-count"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+      toast.success("Guardado");
+      onOpenChange(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

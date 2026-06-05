@@ -211,14 +211,16 @@ function AgendaPage() {
 
       {apptsError ? (
         <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
-      ) : !appts?.length ? (
-        <Card><CardContent className="pt-6 text-center text-muted-foreground">No hay citas este día.</CardContent></Card>
       ) : view === "kanban" ? (
-        <KanbanBoard appts={appts} onChangeStatus={(id, status) => updateStatus.mutate({ id, status })} />
+        !appts?.length ? (
+          <Card><CardContent className="pt-6 text-center text-muted-foreground">No hay citas este día.</CardContent></Card>
+        ) : (
+          <KanbanBoard appts={appts} onChangeStatus={(id, status) => updateStatus.mutate({ id, status })} />
+        )
       ) : (
         <DayCalendar
           date={date}
-          appts={appts}
+          appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
         />
       )}

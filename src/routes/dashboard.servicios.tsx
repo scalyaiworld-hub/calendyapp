@@ -54,7 +54,14 @@ function ServicesPage() {
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["services"] }); toast.success("Guardado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services"] });
+      qc.invalidateQueries({ queryKey: ["services-count"] });
+      qc.invalidateQueries({ queryKey: ["services-active"] });
+      qc.invalidateQueries({ queryKey: ["services-for-pro"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+      toast.success("Guardado");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -63,7 +70,14 @@ function ServicesPage() {
       const { error } = await supabase.from("services").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["services"] }); toast.success("Eliminado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services"] });
+      qc.invalidateQueries({ queryKey: ["services-count"] });
+      qc.invalidateQueries({ queryKey: ["services-active"] });
+      qc.invalidateQueries({ queryKey: ["services-for-pro"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+      toast.success("Eliminado");
+    },
   });
 
   const toggleActive = useMutation({
@@ -71,7 +85,11 @@ function ServicesPage() {
       const { error } = await supabase.from("services").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["services"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services"] });
+      qc.invalidateQueries({ queryKey: ["services-count"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+    },
   });
 
   const addCatalog = useMutation({
@@ -91,7 +109,14 @@ function ServicesPage() {
       const { error } = await supabase.from("services").insert(rows);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["services"] }); toast.success("Servicios agregados"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["services"] });
+      qc.invalidateQueries({ queryKey: ["services-count"] });
+      qc.invalidateQueries({ queryKey: ["services-active"] });
+      qc.invalidateQueries({ queryKey: ["services-for-pro"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+      toast.success("Servicios agregados");
+    },
   });
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;

@@ -22,7 +22,7 @@ export async function getAvailableSlots(opts: {
     .from("services")
     .select("duration_minutes")
     .eq("id", serviceId)
-    .single();
+    .maybeSingle();
   if (svcErr || !svc) return [];
 
   const dow = date.getDay();

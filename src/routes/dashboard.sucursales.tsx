@@ -71,7 +71,12 @@ function LocationsTab() {
       const { error } = await supabase.from("locations").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["locations"] }); toast.success("Sucursal eliminada"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["locations"] });
+      qc.invalidateQueries({ queryKey: ["locations-count"] });
+      qc.invalidateQueries({ queryKey: ["public-locations"] });
+      toast.success("Sucursal eliminada");
+    },
   });
 
   return (
@@ -187,7 +192,14 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["locations"] }); qc.invalidateQueries({ queryKey: ["loc-pro-counts"] }); toast.success("Guardado"); onOpenChange(false); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["locations"] });
+      qc.invalidateQueries({ queryKey: ["locations-count"] });
+      qc.invalidateQueries({ queryKey: ["loc-pro-counts"] });
+      qc.invalidateQueries({ queryKey: ["public-locations"] });
+      toast.success("Guardado");
+      onOpenChange(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
