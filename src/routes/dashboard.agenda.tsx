@@ -42,6 +42,23 @@ function AgendaPage() {
   const [date, setDate] = useState(startOfDay(new Date()));
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  const { data: locations } = useQuery({
+    queryKey: ["locations-count", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId!)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return { count: data?.length ?? 0 };
+    },
+  });
+
+  const hasLocations = (locations?.count ?? 0) > 0;
+
   const { data: appts, error: apptsError } = useQuery({
     queryKey: ["appts", businessId, date.toDateString()],
     enabled: !!businessId,
