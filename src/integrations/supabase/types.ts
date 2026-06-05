@@ -189,6 +189,9 @@ export type Database = {
       }
       businesses: {
         Row: {
+          brand_background: string | null
+          brand_font: string | null
+          brand_primary: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -206,6 +209,9 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          brand_background?: string | null
+          brand_font?: string | null
+          brand_primary?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -223,6 +229,9 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          brand_background?: string | null
+          brand_font?: string | null
+          brand_primary?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string

@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
 import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandTheme } from "@/lib/brand-theme";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — AutoCitas" }] }),
@@ -46,6 +47,7 @@ function DashboardLayout() {
   }
 
   return (
+    <BrandTheme brand={business as any}>
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 w-60 border-r border-border bg-card hidden md:flex flex-col">
         <div className="px-6 py-6 border-b border-border">
@@ -110,5 +112,6 @@ function DashboardLayout() {
         <Outlet />
       </main>
     </div>
+    </BrandTheme>
   );
 }
