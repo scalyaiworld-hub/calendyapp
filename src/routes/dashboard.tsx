@@ -15,6 +15,7 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Resumen", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
+  { to: "/dashboard/citas", label: "Citas", icon: ClipboardList },
   { to: "/dashboard/sucursales", label: "Sucursales", icon: Building2 },
   { to: "/dashboard/profesionales", label: "Profesionales", icon: User2 },
   { to: "/dashboard/servicios", label: "Servicios", icon: Scissors },
