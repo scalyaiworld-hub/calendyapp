@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,11 @@ function AjustesPage() {
   const [brandBackground, setBrandBackground] = useState<string>("#fafbfc");
   const [brandFont, setBrandFont] = useState<string>("Inter");
 
+  // Only prefill once so background refetches don't overwrite the user's edits.
+  const prefilledRef = useRef(false);
   useEffect(() => {
-    if (business) {
+    if (business && !prefilledRef.current) {
+      prefilledRef.current = true;
       setName(business.name);
       setWaCountry((business as any).whatsapp_country_code ?? DEFAULT_COUNTRY_CODE);
       setWaNumber((business as any).whatsapp_number ?? business.phone ?? "");
