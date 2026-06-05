@@ -75,6 +75,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -129,6 +136,13 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "audit_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       availability_rules: {
@@ -162,6 +176,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "availability_rules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -272,6 +293,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -465,11 +493,146 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_appointment_slots: {
+        Row: {
+          business_id: string | null
+          ends_at: string | null
+          id: string | null
+          location_id: string | null
+          professional_id: string | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["appointment_status"] | null
+        }
+        Insert: {
+          business_id?: string | null
+          ends_at?: string | null
+          id?: string | null
+          location_id?: string | null
+          professional_id?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+        }
+        Update: {
+          business_id?: string | null
+          ends_at?: string | null
+          id?: string | null
+          location_id?: string | null
+          professional_id?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_businesses: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          industry: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          timezone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          industry?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          timezone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          industry?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          timezone?: string | null
+        }
+        Relationships: []
+      }
+      public_locations: {
+        Row: {
+          address: string | null
+          business_id: string | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+        }
+        Relationships: []
+      }
+      public_professionals: {
+        Row: {
+          avatar_url: string | null
+          business_id: string | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }

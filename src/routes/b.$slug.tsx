@@ -38,7 +38,12 @@ function BookingPage() {
   const { data: business, isLoading } = useQuery({
     queryKey: ["public-biz", slug],
     queryFn: async () => {
-      const { data, error } = await supabase.from("businesses").select("*").eq("slug", slug).is("deleted_at", null).maybeSingle();
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("id,name,slug,timezone,logo_url,industry,created_at")
+        .eq("slug", slug)
+        .is("deleted_at", null)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -48,7 +53,13 @@ function BookingPage() {
   const { data: locations } = useQuery({
     queryKey: ["public-locations", business?.id],
     enabled: !!business?.id,
-    queryFn: async () => (await supabase.from("locations").select("*").eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true).order("created_at")).data ?? [],
+    queryFn: async () => (await supabase
+      .from("locations")
+      .select("id,business_id,name,address,is_active,created_at")
+      .eq("business_id", business!.id)
+      .is("deleted_at", null)
+      .eq("is_active", true)
+      .order("created_at")).data ?? [],
   });
   const location = locations?.find((l) => l.id === locationId);
 
@@ -187,7 +198,6 @@ function BookingPage() {
       <header className="border-b border-border bg-card">
         <div className="max-w-2xl mx-auto px-4 py-6 text-center">
           <h1 className="font-display text-3xl gradient-rose-text">{business.name}</h1>
-          {business.phone && <p className="text-sm text-muted-foreground mt-1">{business.phone}</p>}
         </div>
       </header>
 
@@ -219,7 +229,6 @@ function BookingPage() {
                         <div className="min-w-0">
                           <p className="font-medium">{l.name}</p>
                           {l.address && <p className="text-sm text-muted-foreground">{l.address}</p>}
-                          {l.phone && <p className="text-xs text-muted-foreground">{l.phone_country_code} {l.phone}</p>}
                         </div>
                       </CardContent>
                     </Card>
