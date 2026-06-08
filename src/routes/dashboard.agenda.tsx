@@ -700,7 +700,6 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={cn("text-xs px-2 py-0.5 rounded-full hidden sm:inline-block", map[status])}>{status}</span>;
 }
 
-function KanbanBoard({ appts, onChangeStatus }: { appts: any[]; onChangeStatus: (id: string, status: ApptStatus) => void }) {
 function KanbanBoard(_: { appts: any[]; onChangeStatus: (id: string, status: ApptStatus) => void }) {
   return null;
 }
