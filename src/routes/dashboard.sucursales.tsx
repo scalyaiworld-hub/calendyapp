@@ -80,6 +80,19 @@ function LocationsTab() {
     },
   });
 
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("locations").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["locations"] });
+      qc.invalidateQueries({ queryKey: ["locations-count"] });
+      qc.invalidateQueries({ queryKey: ["public-locations"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -93,7 +106,7 @@ function LocationsTab() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {locations.map((l) => (
-            <Card key={l.id}>
+            <Card key={l.id} className={l.is_active === false ? "opacity-60" : ""}>
               <CardContent className="pt-4 pb-4 flex gap-3">
                 <div className="size-16 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
                   {l.image_url ? (
@@ -103,12 +116,22 @@ function LocationsTab() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{l.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium truncate">{l.name}</p>
+                    {l.is_active === false && (
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactiva</span>
+                    )}
+                  </div>
                   {l.address && <p className="text-sm text-muted-foreground truncate">{l.address}</p>}
                   {l.phone && <p className="text-xs text-muted-foreground">{l.phone_country_code} {l.phone}</p>}
                   <p className="text-xs text-muted-foreground mt-1">{assignCounts?.[l.id] ?? 0} profesional(es)</p>
                 </div>
-                <div className="flex gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  <Switch
+                    checked={l.is_active !== false}
+                    onCheckedChange={(v) => toggleActive.mutate({ id: l.id, is_active: v })}
+                    aria-label="Activa"
+                  />
                   <Button size="icon" variant="ghost" onClick={() => { setEditing(l); setOpen(true); }}><Pencil className="size-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar sucursal?")) del.mutate(l.id); }}><Trash2 className="size-4" /></Button>
                 </div>

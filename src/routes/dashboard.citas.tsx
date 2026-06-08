@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -58,6 +60,18 @@ function CitasPage() {
     queryFn: async () => (await supabase.from("locations").select("id,name").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
   });
 
+  const { data: clientsList } = useQuery({
+    queryKey: ["citas-clients", businessId],
+    enabled: !!businessId && !!selectedAppt,
+    queryFn: async () => (await supabase.from("clients").select("id,name,phone").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
+  });
+
+  const { data: servicesList } = useQuery({
+    queryKey: ["citas-services", businessId],
+    enabled: !!businessId && !!selectedAppt,
+    queryFn: async () => (await supabase.from("services").select("id,name,duration_minutes,price_cents").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
+  });
+
   const { data: appointments, isLoading } = useQuery({
     queryKey: ["citas", businessId, statusFilter, locationFilter, dateFrom, dateTo, search.trim(), page],
     enabled: !!businessId,
@@ -99,6 +113,59 @@ function CitasPage() {
       qc.invalidateQueries({ queryKey: ["citas"] });
       qc.invalidateQueries({ queryKey: ["appts"] });
       toast.success("Estado actualizado");
+      setSelectedAppt(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [editClientId, setEditClientId] = useState("");
+  const [editServiceId, setEditServiceId] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editStatus, setEditStatus] = useState<ApptStatus>("booked");
+  const [editNotes, setEditNotes] = useState("");
+
+  useEffect(() => {
+    if (!selectedAppt) return;
+    const d = new Date(selectedAppt.starts_at);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    setEditClientId(selectedAppt.client_id ?? "");
+    setEditServiceId(selectedAppt.service_id ?? "");
+    setEditDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    setEditTime(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    setEditStatus((selectedAppt.status as ApptStatus) ?? "booked");
+    setEditNotes(selectedAppt.notes ?? "");
+  }, [selectedAppt?.id]);
+
+  const saveAppt = useMutation({
+    mutationFn: async () => {
+      if (!selectedAppt) throw new Error("Sin cita");
+      if (!editClientId || !editServiceId) throw new Error("Cliente y servicio son requeridos");
+      const svc = servicesList?.find((s) => s.id === editServiceId);
+      if (!svc) throw new Error("Servicio no encontrado");
+      const [y, m, d] = editDate.split("-").map(Number);
+      const [hh, mm] = editTime.split(":").map(Number);
+      const starts = new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0, 0, 0);
+      const ends = new Date(starts.getTime() + svc.duration_minutes * 60000);
+      const patch: any = {
+        client_id: editClientId,
+        service_id: editServiceId,
+        starts_at: starts.toISOString(),
+        ends_at: ends.toISOString(),
+        status: editStatus,
+        notes: editNotes.trim() || null,
+      };
+      if (editStatus === "cancelled" && !selectedAppt.cancelled_at) {
+        patch.cancelled_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("appointments").update(patch).eq("id", selectedAppt.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["citas"] });
+      qc.invalidateQueries({ queryKey: ["appts"] });
+      qc.invalidateQueries({ queryKey: ["today-appts"] });
+      toast.success("Cita actualizada");
       setSelectedAppt(null);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -288,52 +355,51 @@ function CitasPage() {
       )}
 
       <Dialog open={!!selectedAppt} onOpenChange={(v) => !v && setSelectedAppt(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalle de cita</DialogTitle>
+            <DialogTitle>Editar cita</DialogTitle>
           </DialogHeader>
           {selectedAppt && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", STATUS_STYLES[selectedAppt.status as ApptStatus])}>
-                  {STATUS_LABEL[selectedAppt.status as ApptStatus]}
-                </span>
+              {selectedAppt.locations?.name && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {selectedAppt.locations.name}</p>
+              )}
+              <div>
+                <Label>Cliente</Label>
+                <Select value={editClientId} onValueChange={setEditClientId}>
+                  <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
+                  <SelectContent>
+                    {clientsList?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="size-4 text-muted-foreground" />
-                  <span>{formatDateLabel(selectedAppt.starts_at)} · {formatTime(selectedAppt.starts_at)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.services?.duration_minutes} minutos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.clients?.name} · {selectedAppt.clients?.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Scissors className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.services?.name} · {formatPriceCents(selectedAppt.services?.price_cents ?? 0)}</span>
-                </div>
-                {selectedAppt.locations?.name && (
-                  <p className="text-muted-foreground">{selectedAppt.locations?.name}</p>
-                )}
-                {selectedAppt.notes && (
-                  <div className="bg-muted/40 rounded-md p-3 text-sm">
-                    <p className="text-muted-foreground text-xs mb-1">Notas</p>
-                    <p>{selectedAppt.notes}</p>
-                  </div>
-                )}
+              <div>
+                <Label>Servicio</Label>
+                <Select value={editServiceId} onValueChange={setEditServiceId}>
+                  <SelectTrigger><SelectValue placeholder="Elegir servicio" /></SelectTrigger>
+                  <SelectContent>
+                    {servicesList?.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} · {s.duration_minutes}m · {formatPriceCents(s.price_cents)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <DialogFooter className="flex-col sm:flex-row gap-2">
-                <Select
-                  value={selectedAppt.status}
-                  onValueChange={(v) => updateStatus.mutate({ id: selectedAppt.id, status: v as ApptStatus })}
-                >
-                  <SelectTrigger className="w-full sm:w-44">
-                    <SelectValue placeholder="Cambiar estado" />
-                  </SelectTrigger>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fecha</Label>
+                  <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Hora</Label>
+                  <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>Estado</Label>
+                <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ApptStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="booked">Confirmada</SelectItem>
@@ -342,6 +408,16 @@ function CitasPage() {
                     <SelectItem value="no_show">No-show</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Notas</Label>
+                <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} maxLength={1000} placeholder="Notas internas (opcional)" />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedAppt(null)}>Cancelar</Button>
+                <Button onClick={() => saveAppt.mutate()} disabled={saveAppt.isPending}>
+                  {saveAppt.isPending ? "Guardando…" : "Guardar cambios"}
+                </Button>
               </DialogFooter>
             </div>
           )}

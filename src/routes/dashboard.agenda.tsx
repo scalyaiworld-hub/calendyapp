@@ -35,6 +35,15 @@ export const Route = createFileRoute("/dashboard/agenda")({
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function timeFromOffset(offsetY: number, startHour: number, pxPerMinute: number, endHour: number) {
+  const rawMin = Math.max(0, offsetY / pxPerMinute);
+  const snapped = Math.round(rawMin / 15) * 15;
+  const minute = Math.min((endHour - startHour) * 60 - 15, snapped);
+  const total = startHour * 60 + minute;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 function startOfWeek(d: Date) {
   const x = startOfDay(d);
   const day = x.getDay(); // 0 = domingo
@@ -70,6 +79,13 @@ function AgendaPage() {
   const [date, setDate] = useState(startOfWeek(startOfDay(new Date())));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("week");
+  const [newApptOpen, setNewApptOpen] = useState(false);
+  const [newApptSlot, setNewApptSlot] = useState<{ date: Date; time: string }>({ date: new Date(), time: "10:00" });
+
+  function openNewAppt(slotDate: Date, time = "10:00") {
+    setNewApptSlot({ date: slotDate, time });
+    setNewApptOpen(true);
+  }
 
   const { data: locations } = useQuery({
     queryKey: ["locations-count", businessId],
@@ -220,7 +236,9 @@ function AgendaPage() {
               <Link2 className="size-4" /> Copiar link de reservas
             </Button>
           )}
-          <NewApptDialog businessId={businessId!} initialDate={date} trigger={<Button><Plus className="size-4" /> Nueva cita</Button>} />
+          <Button onClick={() => openNewAppt(view === "week" ? new Date() : date)}>
+            <Plus className="size-4" /> Nueva cita
+          </Button>
         </div>
       </div>
 
@@ -258,12 +276,23 @@ function AgendaPage() {
           weekStart={weekStart}
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
         />
       ) : (
         <DayCalendar
           date={date}
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onSlotClick={(time) => openNewAppt(date, time)}
+        />
+      )}
+      {businessId && (
+        <NewApptDialog
+          businessId={businessId}
+          open={newApptOpen}
+          onOpenChange={setNewApptOpen}
+          initialDate={newApptSlot.date}
+          initialTime={newApptSlot.time}
         />
       )}
     </div>
@@ -275,10 +304,12 @@ function WeekCalendar({
   weekStart,
   appts,
   onChangeStatus,
+  onSlotClick,
 }: {
   weekStart: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
+  onSlotClick?: (date: Date, time: string) => void;
 }) {
   const startHour = 7;
   const endHour = 22;
@@ -380,7 +411,16 @@ function WeekCalendar({
                 </div>
 
                 {/* Grid */}
-                <div className="relative">
+                <div
+                  className={cn("relative", onSlotClick && "cursor-cell")}
+                  onClick={(e) => {
+                    if (!onSlotClick) return;
+                    if ((e.target as HTMLElement).closest("[data-appt]")) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+                    onSlotClick(day, time);
+                  }}
+                >
                   {hours.map((h) => (
                     <div
                       key={h}
@@ -422,6 +462,7 @@ function WeekCalendar({
                         <PopoverTrigger asChild>
                           <button
                             type="button"
+                            data-appt="1"
                             className={cn(
                               "group absolute left-1 right-1 rounded-md border pl-2 pr-1.5 py-0.5 text-left overflow-hidden",
                               "hover:shadow-md hover:-translate-y-px transition-all duration-150",
@@ -487,10 +528,12 @@ function DayCalendar({
   date,
   appts,
   onChangeStatus,
+  onSlotClick,
 }: {
   date: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
+  onSlotClick?: (time: string) => void;
 }) {
   const startHour = 7;
   const endHour = 22;
@@ -578,7 +621,16 @@ function DayCalendar({
           </div>
 
           {/* Day grid */}
-          <div className="relative flex-1 min-w-0">
+          <div
+            className={cn("relative flex-1 min-w-0", onSlotClick && "cursor-cell")}
+            onClick={(e) => {
+              if (!onSlotClick) return;
+              if ((e.target as HTMLElement).closest("[data-appt]")) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+              onSlotClick(time);
+            }}
+          >
             {hours.map((h) => (
               <div
                 key={h}
@@ -623,6 +675,7 @@ function DayCalendar({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
+                      data-appt="1"
                       className={cn(
                         "group absolute left-1.5 right-1.5 rounded-lg border pl-2.5 pr-2 py-1 text-left overflow-hidden",
                         "hover:shadow-md hover:-translate-y-px transition-all duration-150",
@@ -700,9 +753,29 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={cn("text-xs px-2 py-0.5 rounded-full hidden sm:inline-block", map[status])}>{status}</span>;
 }
 
-function NewApptDialog({ businessId, initialDate, trigger }: { businessId: string; initialDate: Date; trigger: React.ReactNode }) {
+function NewApptDialog({
+  businessId,
+  initialDate,
+  initialTime = "10:00",
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  businessId: string;
+  initialDate: Date;
+  initialTime?: string;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+}) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? !!openProp : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
   const [serviceId, setServiceId] = useState("");
   const [clientId, setClientId] = useState("");
   const [newClientName, setNewClientName] = useState("");
@@ -710,9 +783,14 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
   const [newClientPhone, setNewClientPhone] = useState("");
   const [creatingClient, setCreatingClient] = useState(false);
   const [dateStr, setDateStr] = useState(toLocalDateInput(initialDate));
-  const [time, setTime] = useState("10:00");
+  const [time, setTime] = useState(initialTime);
 
-  useEffect(() => { if (open) setDateStr(toLocalDateInput(initialDate)); }, [open, initialDate]);
+  useEffect(() => {
+    if (open) {
+      setDateStr(toLocalDateInput(initialDate));
+      setTime(initialTime);
+    }
+  }, [open, initialDate, initialTime]);
 
   const { data: services } = useQuery({
     queryKey: ["services-active", businessId],
@@ -768,7 +846,7 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader><DialogTitle>Nueva cita</DialogTitle></DialogHeader>
         <div className="space-y-3">
