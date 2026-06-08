@@ -61,6 +61,18 @@ function CitasPage() {
     queryFn: async () => (await supabase.from("locations").select("id,name").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
   });
 
+  const { data: clientsList } = useQuery({
+    queryKey: ["citas-clients", businessId],
+    enabled: !!businessId && !!selectedAppt,
+    queryFn: async () => (await supabase.from("clients").select("id,name,phone").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
+  });
+
+  const { data: servicesList } = useQuery({
+    queryKey: ["citas-services", businessId],
+    enabled: !!businessId && !!selectedAppt,
+    queryFn: async () => (await supabase.from("services").select("id,name,duration_minutes,price_cents").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
+  });
+
   const { data: appointments, isLoading } = useQuery({
     queryKey: ["citas", businessId, statusFilter, locationFilter, dateFrom, dateTo, search.trim(), page],
     enabled: !!businessId,
