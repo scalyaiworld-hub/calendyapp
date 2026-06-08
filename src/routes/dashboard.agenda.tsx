@@ -21,6 +21,8 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
 type ViewMode = "day" | "week";
 
+type RescheduleInput = { id: string; newDate: Date; newTime: string; durationMin: number };
+
 const STATUS_LABEL: Record<ApptStatus, string> = {
   pending: "Pendiente",
   booked: "Confirmada",
@@ -199,6 +201,51 @@ function AgendaPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const reschedule = useMutation({
+    mutationFn: async ({ id, newDate, newTime, durationMin }: RescheduleInput) => {
+      const [h, m] = newTime.split(":").map(Number);
+      const start = new Date(newDate);
+      start.setHours(h, m, 0, 0);
+      const end = new Date(start.getTime() + durationMin * 60_000);
+      const { error } = await supabase
+        .from("appointments")
+        .update({ starts_at: start.toISOString(), ends_at: end.toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (vars) => {
+      const keys = qc.getQueryCache().findAll({ queryKey: ["appts"] });
+      const snapshots = keys.map((k) => ({ key: k.queryKey, data: qc.getQueryData(k.queryKey) }));
+      for (const s of snapshots) {
+        const prev = s.data as any[] | undefined;
+        if (!Array.isArray(prev)) continue;
+        const [h, m] = vars.newTime.split(":").map(Number);
+        const start = new Date(vars.newDate);
+        start.setHours(h, m, 0, 0);
+        const end = new Date(start.getTime() + vars.durationMin * 60_000);
+        qc.setQueryData(
+          s.key,
+          prev.map((a) =>
+            a.id === vars.id ? { ...a, starts_at: start.toISOString(), ends_at: end.toISOString() } : a,
+          ),
+        );
+      }
+      return { snapshots };
+    },
+    onError: (e: Error, _vars, ctx) => {
+      ctx?.snapshots.forEach((s: any) => qc.setQueryData(s.key, s.data));
+      toast.error(e.message || "No se pudo mover la cita");
+    },
+    onSuccess: () => {
+      toast.success("Cita reprogramada");
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["appts"] });
+      qc.invalidateQueries({ queryKey: ["today-appts"] });
+      qc.invalidateQueries({ queryKey: ["citas"] });
+    },
+  });
+
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -298,6 +345,7 @@ function AgendaPage() {
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
+          onReschedule={(v) => reschedule.mutate(v)}
         />
       ) : (
         <DayCalendar
@@ -305,6 +353,7 @@ function AgendaPage() {
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(time) => openNewAppt(date, time)}
+          onReschedule={(v) => reschedule.mutate(v)}
         />
       )}
       {businessId && (
