@@ -70,6 +70,13 @@ function AgendaPage() {
   const [date, setDate] = useState(startOfWeek(startOfDay(new Date())));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("week");
+  const [newApptOpen, setNewApptOpen] = useState(false);
+  const [newApptSlot, setNewApptSlot] = useState<{ date: Date; time: string }>({ date: new Date(), time: "10:00" });
+
+  function openNewAppt(slotDate: Date, time = "10:00") {
+    setNewApptSlot({ date: slotDate, time });
+    setNewApptOpen(true);
+  }
 
   const { data: locations } = useQuery({
     queryKey: ["locations-count", businessId],
@@ -220,7 +227,9 @@ function AgendaPage() {
               <Link2 className="size-4" /> Copiar link de reservas
             </Button>
           )}
-          <NewApptDialog businessId={businessId!} initialDate={date} trigger={<Button><Plus className="size-4" /> Nueva cita</Button>} />
+          <Button onClick={() => openNewAppt(view === "week" ? new Date() : date)}>
+            <Plus className="size-4" /> Nueva cita
+          </Button>
         </div>
       </div>
 
@@ -258,12 +267,23 @@ function AgendaPage() {
           weekStart={weekStart}
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
         />
       ) : (
         <DayCalendar
           date={date}
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onSlotClick={(time) => openNewAppt(date, time)}
+        />
+      )}
+      {businessId && (
+        <NewApptDialog
+          businessId={businessId}
+          open={newApptOpen}
+          onOpenChange={setNewApptOpen}
+          initialDate={newApptSlot.date}
+          initialTime={newApptSlot.time}
         />
       )}
     </div>
