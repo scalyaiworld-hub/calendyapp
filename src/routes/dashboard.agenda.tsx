@@ -375,11 +375,13 @@ function WeekCalendar({
   appts,
   onChangeStatus,
   onSlotClick,
+  onReschedule,
 }: {
   weekStart: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
   onSlotClick?: (date: Date, time: string) => void;
+  onReschedule?: (v: RescheduleInput) => void;
 }) {
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
@@ -489,6 +491,21 @@ function WeekCalendar({
                     const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
                     onSlotClick(day, time);
                   }}
+                  onDragOver={(e) => {
+                    if (!onReschedule) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    if (!onReschedule) return;
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData("text/appt-id");
+                    const durationMin = Number(e.dataTransfer.getData("text/appt-duration")) || 30;
+                    if (!id) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+                    onReschedule({ id, newDate: day, newTime: time, durationMin });
+                  }}
                 >
                   {hours.map((h) => (
                     <div
@@ -532,10 +549,17 @@ function WeekCalendar({
                           <button
                             type="button"
                             data-appt="1"
+                            draggable={!!onReschedule && a.status !== "cancelled"}
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/appt-id", a.id);
+                              e.dataTransfer.setData("text/appt-duration", String(dur));
+                            }}
                             className={cn(
                               "group absolute left-1 right-1 rounded-md border pl-2 pr-1.5 py-0.5 text-left overflow-hidden",
                               "hover:shadow-md hover:-translate-y-px transition-all duration-150",
                               "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                              onReschedule && "cursor-grab active:cursor-grabbing",
                               c.bg, c.border, c.text
                             )}
                             style={{ top, height }}
