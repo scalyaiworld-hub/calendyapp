@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
