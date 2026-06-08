@@ -222,6 +222,12 @@ function CitasPage() {
             <p>No se encontraron citas.</p>
           </CardContent>
         </Card>
+      ) : view === "kanban" ? (
+        <KanbanBoard
+          appts={filteredItems}
+          onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onSelect={(a) => setSelectedAppt(a)}
+        />
       ) : (
         <div className="space-y-2">
           {filteredItems.map((a: any) => (
@@ -264,7 +270,7 @@ function CitasPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
+      {view === "list" && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
             Mostrando {page * pageSize + 1}-{Math.min((page + 1) * pageSize, appointments?.count ?? 0)} de {appointments?.count}
