@@ -701,69 +701,8 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function KanbanBoard({ appts, onChangeStatus }: { appts: any[]; onChangeStatus: (id: string, status: ApptStatus) => void }) {
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const grouped: Record<ApptStatus, any[]> = {
-    pending: [], booked: [], completed: [], cancelled: [], no_show: [],
-  };
-  for (const a of appts) {
-    const s = (a.status as ApptStatus) ?? "pending";
-    if (grouped[s]) grouped[s].push(a);
-  }
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-      {KANBAN_COLS.map((col) => (
-        <div
-          key={col}
-          onDragOver={(e) => { e.preventDefault(); }}
-          onDrop={(e) => {
-            e.preventDefault();
-            const id = e.dataTransfer.getData("text/plain") || draggingId;
-            setDraggingId(null);
-            if (id) {
-              const current = appts.find((a) => a.id === id);
-              if (current && current.status !== col) onChangeStatus(id, col);
-            }
-          }}
-          className="bg-muted/30 border border-border rounded-lg p-3 min-h-[200px]"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
-            <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
-              {grouped[col].length}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {grouped[col].map((a: any) => (
-              <div
-                key={a.id}
-                draggable
-                onDragStart={(e) => {
-                  setDraggingId(a.id);
-                  e.dataTransfer.setData("text/plain", a.id);
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onDragEnd={() => setDraggingId(null)}
-                className={cn(
-                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition",
-                  draggingId === a.id && "opacity-50"
-                )}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-display text-base">{formatTime(a.starts_at)}</span>
-                  <span className="text-xs text-muted-foreground">{a.services?.duration_minutes}m</span>
-                </div>
-                <p className="text-sm font-medium truncate">{a.clients?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
-              </div>
-            ))}
-            {grouped[col].length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Sin citas</p>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+function KanbanBoard(_: { appts: any[]; onChangeStatus: (id: string, status: ApptStatus) => void }) {
+  return null;
 }
 
 function NewApptDialog({ businessId, initialDate, trigger }: { businessId: string; initialDate: Date; trigger: React.ReactNode }) {
