@@ -724,9 +724,29 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={cn("text-xs px-2 py-0.5 rounded-full hidden sm:inline-block", map[status])}>{status}</span>;
 }
 
-function NewApptDialog({ businessId, initialDate, trigger }: { businessId: string; initialDate: Date; trigger: React.ReactNode }) {
+function NewApptDialog({
+  businessId,
+  initialDate,
+  initialTime = "10:00",
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  businessId: string;
+  initialDate: Date;
+  initialTime?: string;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+}) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? !!openProp : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
   const [serviceId, setServiceId] = useState("");
   const [clientId, setClientId] = useState("");
   const [newClientName, setNewClientName] = useState("");
@@ -734,9 +754,14 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
   const [newClientPhone, setNewClientPhone] = useState("");
   const [creatingClient, setCreatingClient] = useState(false);
   const [dateStr, setDateStr] = useState(toLocalDateInput(initialDate));
-  const [time, setTime] = useState("10:00");
+  const [time, setTime] = useState(initialTime);
 
-  useEffect(() => { if (open) setDateStr(toLocalDateInput(initialDate)); }, [open, initialDate]);
+  useEffect(() => {
+    if (open) {
+      setDateStr(toLocalDateInput(initialDate));
+      setTime(initialTime);
+    }
+  }, [open, initialDate, initialTime]);
 
   const { data: services } = useQuery({
     queryKey: ["services-active", businessId],
@@ -792,7 +817,7 @@ function NewApptDialog({ businessId, initialDate, trigger }: { businessId: strin
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader><DialogTitle>Nueva cita</DialogTitle></DialogHeader>
         <div className="space-y-3">
