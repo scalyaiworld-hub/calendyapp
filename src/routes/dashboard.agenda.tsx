@@ -675,6 +675,7 @@ function DayCalendar({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
+                      data-appt="1"
                       className={cn(
                         "group absolute left-1.5 right-1.5 rounded-lg border pl-2.5 pr-2 py-1 text-left overflow-hidden",
                         "hover:shadow-md hover:-translate-y-px transition-all duration-150",
