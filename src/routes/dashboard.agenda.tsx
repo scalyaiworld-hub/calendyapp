@@ -246,10 +246,18 @@ function DayCalendar({
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   const nowMinutes = (now.getHours() - startHour) * 60 + now.getMinutes();
   const nowVisible = isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
+
+  useEffect(() => {
+    if (isToday && scrollRef.current) {
+      const target = Math.max(0, nowMinutes * pxPerMinute - scrollRef.current.clientHeight / 3);
+      scrollRef.current.scrollTo({ top: target, behavior: "smooth" });
+    }
+  }, [isToday]);
 
   const active = appts.filter((a) => a.status !== "cancelled" && a.status !== "no_show");
   const totalRevenueCents = active
