@@ -35,6 +35,15 @@ export const Route = createFileRoute("/dashboard/agenda")({
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function timeFromOffset(offsetY: number, startHour: number, pxPerMinute: number, endHour: number) {
+  const rawMin = Math.max(0, offsetY / pxPerMinute);
+  const snapped = Math.round(rawMin / 15) * 15;
+  const minute = Math.min((endHour - startHour) * 60 - 15, snapped);
+  const total = startHour * 60 + minute;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 function startOfWeek(d: Date) {
   const x = startOfDay(d);
   const day = x.getDay(); // 0 = domingo
