@@ -621,7 +621,16 @@ function DayCalendar({
           </div>
 
           {/* Day grid */}
-          <div className="relative flex-1 min-w-0">
+          <div
+            className={cn("relative flex-1 min-w-0", onSlotClick && "cursor-cell")}
+            onClick={(e) => {
+              if (!onSlotClick) return;
+              if ((e.target as HTMLElement).closest("[data-appt]")) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+              onSlotClick(time);
+            }}
+          >
             {hours.map((h) => (
               <div
                 key={h}
