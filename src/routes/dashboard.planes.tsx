@@ -5,10 +5,15 @@ import { useMyBusiness } from "@/lib/business";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PLANS, MODULE_LABELS, getPlan, type PlanId } from "@/lib/plans";
 import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/planes")({
   head: () => ({ meta: [{ title: "Planes — Calendia" }] }),
@@ -24,6 +29,7 @@ function PlanesPage() {
   const qc = useQueryClient();
   const currentId = ((business as any)?.plan ?? "free") as PlanId;
   const current = getPlan(currentId);
+  const [requestPlan, setRequestPlan] = useState<PlanId | null>(null);
 
   const { data: usage } = useQuery({
     queryKey: ["plan-usage", business?.id],
@@ -166,8 +172,7 @@ function PlanesPage() {
                   ) : (
                     <Button
                       className={cn("w-full", id === "studio" ? "bg-background text-foreground hover:bg-background/90" : "")}
-                      disabled={changePlan.isPending}
-                      onClick={() => changePlan.mutate(id)}
+                      onClick={() => setRequestPlan(id)}
                     >
                       {id === "studio" ? "Hablar con ventas" : "Mejorar a " + p.label} <ArrowRight className="size-4" />
                     </Button>
@@ -182,7 +187,80 @@ function PlanesPage() {
       <p className="text-xs text-muted-foreground text-center mt-6">
         ¿Dudas sobre qué plan elegir? <Link to="/" hash="pricing" className="underline hover:text-foreground">Compara todos los planes</Link>.
       </p>
+
+      <UpgradeRequestDialog
+        planId={requestPlan}
+        onClose={() => setRequestPlan(null)}
+        businessName={(business as any)?.name ?? ""}
+      />
     </div>
+  );
+}
+
+function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanId | null; onClose: () => void; businessName: string }) {
+  const open = planId !== null;
+  const plan = planId ? getPlan(planId) : null;
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const reset = () => {
+    setName(""); setEmail(""); setPhone(""); setMessage(""); setSubmitting(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    if (trimmedName.length < 2) return toast.error("Ingresa tu nombre");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return toast.error("Ingresa un email válido");
+    setSubmitting(true);
+    // Simulación de envío — el equipo comercial se pondrá en contacto.
+    await new Promise((r) => setTimeout(r, 600));
+    toast.success("¡Solicitud recibida! Te contactaremos en menos de 24 horas.");
+    reset();
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Solicitar plan {plan?.label ?? ""}</DialogTitle>
+          <DialogDescription>
+            Déjanos tus datos y un asesor te contactará para activar tu plan y resolver cualquier duda.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="up-name">Nombre completo</Label>
+            <Input id="up-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="up-email">Email</Label>
+            <Input id="up-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="up-phone">Teléfono (opcional)</Label>
+            <Input id="up-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="up-msg">¿Algo que debamos saber? (opcional)</Label>
+            <Textarea id="up-msg" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={500} rows={3} placeholder={`Negocio: ${businessName}`} />
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Enviando..." : "Enviar solicitud"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
