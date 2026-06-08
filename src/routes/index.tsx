@@ -22,9 +22,9 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Agendy — Tu negocio agenda sola" },
+      { title: "Calendia — Tu negocio agenda sola" },
       { name: "description", content: "Plataforma para negocios que convierte mensajes y clicks en citas confirmadas automáticamente. Adiós cuaderno." },
-      { property: "og:title", content: "Agendy — Tu negocio agenda sola" },
+      { property: "og:title", content: "Calendia — Tu negocio agenda sola" },
       { property: "og:description", content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes." },
     ],
   }),
@@ -58,7 +58,7 @@ function Header() {
           <div className="size-8 rounded-lg bg-foreground grid place-items-center shadow-soft">
             <span className="font-display font-semibold text-background text-base">A</span>
           </div>
-          <span className="font-display text-lg font-semibold tracking-tight">Agendy</span>
+          <span className="font-display text-lg font-semibold tracking-tight">Calendia</span>
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">Funciones</a>
@@ -457,9 +457,9 @@ function Footer() {
           <div className="size-6 rounded-md bg-foreground grid place-items-center">
             <span className="font-display font-semibold text-background text-xs">A</span>
           </div>
-          <span className="font-display font-semibold tracking-tight">Agendy</span>
+          <span className="font-display font-semibold tracking-tight">Calendia</span>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 Agendy · Hecho en Perú.</p>
+        <p className="text-xs text-muted-foreground">© 2026 Calendia · Hecho en Perú.</p>
       </div>
     </footer>
   );
