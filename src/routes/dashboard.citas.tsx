@@ -119,6 +119,59 @@ function CitasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [editClientId, setEditClientId] = useState("");
+  const [editServiceId, setEditServiceId] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editStatus, setEditStatus] = useState<ApptStatus>("booked");
+  const [editNotes, setEditNotes] = useState("");
+
+  useEffect(() => {
+    if (!selectedAppt) return;
+    const d = new Date(selectedAppt.starts_at);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    setEditClientId(selectedAppt.client_id ?? "");
+    setEditServiceId(selectedAppt.service_id ?? "");
+    setEditDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    setEditTime(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    setEditStatus((selectedAppt.status as ApptStatus) ?? "booked");
+    setEditNotes(selectedAppt.notes ?? "");
+  }, [selectedAppt?.id]);
+
+  const saveAppt = useMutation({
+    mutationFn: async () => {
+      if (!selectedAppt) throw new Error("Sin cita");
+      if (!editClientId || !editServiceId) throw new Error("Cliente y servicio son requeridos");
+      const svc = servicesList?.find((s) => s.id === editServiceId);
+      if (!svc) throw new Error("Servicio no encontrado");
+      const [y, m, d] = editDate.split("-").map(Number);
+      const [hh, mm] = editTime.split(":").map(Number);
+      const starts = new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0, 0, 0);
+      const ends = new Date(starts.getTime() + svc.duration_minutes * 60000);
+      const patch: any = {
+        client_id: editClientId,
+        service_id: editServiceId,
+        starts_at: starts.toISOString(),
+        ends_at: ends.toISOString(),
+        status: editStatus,
+        notes: editNotes.trim() || null,
+      };
+      if (editStatus === "cancelled" && !selectedAppt.cancelled_at) {
+        patch.cancelled_at = new Date().toISOString();
+      }
+      const { error } = await supabase.from("appointments").update(patch).eq("id", selectedAppt.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["citas"] });
+      qc.invalidateQueries({ queryKey: ["appts"] });
+      qc.invalidateQueries({ queryKey: ["today-appts"] });
+      toast.success("Cita actualizada");
+      setSelectedAppt(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const filteredItems = search.trim()
     ? (appointments?.items ?? []).filter((a: any) =>
         a.clients?.name?.toLowerCase().includes(search.toLowerCase()) ||
