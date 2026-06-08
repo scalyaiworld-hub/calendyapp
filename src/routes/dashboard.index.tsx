@@ -306,7 +306,7 @@ function PlanCard({
         </div>
         {plan.id !== "studio" && (
           <Button asChild variant="outline" size="sm">
-            <Link to="/" hash="pricing">Mejorar plan <ArrowRight className="size-3.5" /></Link>
+            <Link to="/dashboard/planes">Mejorar plan <ArrowRight className="size-3.5" /></Link>
           </Button>
         )}
       </CardHeader>
