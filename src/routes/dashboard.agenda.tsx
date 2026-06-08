@@ -19,7 +19,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
-type ViewMode = "day" | "week" | "kanban";
+type ViewMode = "day" | "week";
 
 const STATUS_LABEL: Record<ApptStatus, string> = {
   pending: "Pendiente",
@@ -28,7 +28,6 @@ const STATUS_LABEL: Record<ApptStatus, string> = {
   cancelled: "Cancelada",
   no_show: "No-show",
 };
-const KANBAN_COLS: ApptStatus[] = ["pending", "booked", "completed", "cancelled", "no_show"];
 
 export const Route = createFileRoute("/dashboard/agenda")({
   component: AgendaPage,
@@ -205,13 +204,6 @@ function AgendaPage() {
             >
               Semana
             </button>
-            <button
-              type="button"
-              onClick={() => setView("kanban")}
-              className={cn("px-3 py-1.5 text-sm rounded-sm transition", view === "kanban" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
-            >
-              Kanban
-            </button>
           </div>
           {!canShare ? (
             <Button variant="outline" disabled title={missingMsg}>
@@ -261,12 +253,6 @@ function AgendaPage() {
 
       {apptsError ? (
         <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
-      ) : view === "kanban" ? (
-        !appts?.length ? (
-          <Card><CardContent className="pt-6 text-center text-muted-foreground">No hay citas esta semana.</CardContent></Card>
-        ) : (
-          <KanbanBoard appts={appts} onChangeStatus={(id, status) => updateStatus.mutate({ id, status })} />
-        )
       ) : view === "week" ? (
         <WeekCalendar
           weekStart={weekStart}
