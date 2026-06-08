@@ -61,7 +61,21 @@ function DashboardLayout() {
       return { pros: pros.count ?? 0, services: services.count ?? 0 };
     },
   });
-  const canShareLink = (readyCounts?.pros ?? 0) > 0 && (readyCounts?.services ?? 0) > 0;
+  const { data: locsCount } = useQuery({
+    queryKey: ["dashboard-locations-count", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("locations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      return count ?? 0;
+    },
+  });
+  const canShareLink =
+    (readyCounts?.pros ?? 0) > 0 && (readyCounts?.services ?? 0) > 0 && (locsCount ?? 0) > 0;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
