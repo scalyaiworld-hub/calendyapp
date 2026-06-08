@@ -307,7 +307,7 @@ function DayCalendar({
             </div>
           </div>
         )}
-        <div className="relative flex max-h-[70vh] overflow-y-auto">
+        <div ref={scrollRef} className="relative flex max-h-[70vh] overflow-y-auto">
           {/* Time gutter */}
           <div className="w-14 sm:w-16 shrink-0 sticky left-0 bg-card z-10 border-r border-border">
             {hours.map((h) => (
