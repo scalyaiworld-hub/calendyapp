@@ -622,11 +622,13 @@ function DayCalendar({
   appts,
   onChangeStatus,
   onSlotClick,
+  onReschedule,
 }: {
   date: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
   onSlotClick?: (time: string) => void;
+  onReschedule?: (v: RescheduleInput) => void;
 }) {
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
@@ -722,6 +724,21 @@ function DayCalendar({
               const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
               onSlotClick(time);
             }}
+            onDragOver={(e) => {
+              if (!onReschedule) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(e) => {
+              if (!onReschedule) return;
+              e.preventDefault();
+              const id = e.dataTransfer.getData("text/appt-id");
+              const durationMin = Number(e.dataTransfer.getData("text/appt-duration")) || 30;
+              if (!id) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+              onReschedule({ id, newDate: date, newTime: time, durationMin });
+            }}
           >
             {hours.map((h) => (
               <div
@@ -768,10 +785,17 @@ function DayCalendar({
                     <button
                       type="button"
                       data-appt="1"
+                      draggable={!!onReschedule && a.status !== "cancelled"}
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/appt-id", a.id);
+                        e.dataTransfer.setData("text/appt-duration", String(dur));
+                      }}
                       className={cn(
                         "group absolute left-1.5 right-1.5 rounded-lg border pl-2.5 pr-2 py-1 text-left overflow-hidden",
                         "hover:shadow-md hover:-translate-y-px transition-all duration-150",
                         "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                        onReschedule && "cursor-grab active:cursor-grabbing",
                         c.bg, c.border, c.text
                       )}
                       style={{ top, height }}
