@@ -144,7 +144,7 @@ function AgendaPage() {
   const weekEnd = endOfWeek(date);
 
   const { data: appts, error: apptsError } = useQuery({
-    queryKey: ["appts", businessId, view, weekStart.toDateString()],
+    queryKey: ["appts", businessId, view, view === "day" ? date.toDateString() : weekStart.toDateString()],
     enabled: !!businessId,
     queryFn: async () => {
       let query = supabase

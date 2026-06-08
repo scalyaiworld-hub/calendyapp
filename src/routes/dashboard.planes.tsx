@@ -174,7 +174,11 @@ function PlanesPage() {
                       className={cn("w-full", id === "studio" ? "bg-background text-foreground hover:bg-background/90" : "")}
                       onClick={() => setRequestPlan(id)}
                     >
-                      {id === "studio" ? "Hablar con ventas" : "Mejorar a " + p.label} <ArrowRight className="size-4" />
+                      {id === "studio"
+                        ? "Hablar con ventas"
+                        : isDowngrade
+                          ? "Cambiar a " + p.label
+                          : "Mejorar a " + p.label} <ArrowRight className="size-4" />
                     </Button>
                   )}
                 </div>

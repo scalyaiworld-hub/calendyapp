@@ -53,6 +53,11 @@ function CitasPage() {
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
   const [view, setView] = useState<"list" | "kanban">("list");
   const pageSize = 20;
+  const trimmedSearch = search.trim();
+  // En Kanban y al buscar, traemos un lote grande sin paginar para que la
+  // búsqueda y el tablero abarquen todos los registros, no solo la página actual.
+  const usePagination = view === "list" && !trimmedSearch;
+  const wideLimit = 500;
 
   const { data: locationsList } = useQuery({
     queryKey: ["citas-locations", businessId],
@@ -73,15 +78,30 @@ function CitasPage() {
   });
 
   const { data: appointments, isLoading } = useQuery({
-    queryKey: ["citas", businessId, statusFilter, locationFilter, dateFrom, dateTo, search.trim(), page],
+    queryKey: ["citas", businessId, statusFilter, locationFilter, dateFrom, dateTo, trimmedSearch, view, page],
     enabled: !!businessId,
     queryFn: async () => {
+      let clientIdsForSearch: string[] | null = null;
+      if (trimmedSearch) {
+        const { data: matched } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("business_id", businessId!)
+          .is("deleted_at", null)
+          .or(`name.ilike.%${trimmedSearch}%,phone.ilike.%${trimmedSearch}%`)
+          .limit(1000);
+        clientIdsForSearch = (matched ?? []).map((c) => c.id);
+      }
       let q = supabase
         .from("appointments")
         .select("*, clients(name, phone), services(name, duration_minutes, price_cents), locations(name)", { count: "exact" })
         .eq("business_id", businessId!)
-        .order("starts_at", { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
+        .order("starts_at", { ascending: false });
+      if (usePagination) {
+        q = q.range(page * pageSize, (page + 1) * pageSize - 1);
+      } else {
+        q = q.range(0, wideLimit - 1);
+      }
 
       if (statusFilter !== "all") {
         q = q.eq("status", statusFilter);
@@ -94,6 +114,12 @@ function CitasPage() {
       }
       if (dateTo) {
         q = q.lte("starts_at", new Date(dateTo + "T23:59:59").toISOString());
+      }
+      if (clientIdsForSearch !== null) {
+        if (clientIdsForSearch.length === 0) {
+          return { items: [], count: 0 };
+        }
+        q = q.in("client_id", clientIdsForSearch);
       }
 
       const { data, error, count } = await q;
@@ -171,15 +197,8 @@ function CitasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const filteredItems = search.trim()
-    ? (appointments?.items ?? []).filter((a: any) =>
-        a.clients?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        a.services?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        a.clients?.phone?.includes(search)
-      )
-    : (appointments?.items ?? []);
-
-  const totalPages = Math.ceil((appointments?.count ?? 0) / pageSize);
+  const filteredItems = appointments?.items ?? [];
+  const totalPages = usePagination ? Math.ceil((appointments?.count ?? 0) / pageSize) : 1;
 
   const hasFilters = statusFilter !== "all" || locationFilter !== "all" || !!dateFrom || !!dateTo || !!search.trim();
   function clearFilters() {
@@ -337,7 +356,7 @@ function CitasPage() {
         </div>
       )}
 
-      {view === "list" && totalPages > 1 && (
+      {usePagination && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
             Mostrando {page * pageSize + 1}-{Math.min((page + 1) * pageSize, appointments?.count ?? 0)} de {appointments?.count}
