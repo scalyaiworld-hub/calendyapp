@@ -509,10 +509,12 @@ function DayCalendar({
   date,
   appts,
   onChangeStatus,
+  onSlotClick,
 }: {
   date: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
+  onSlotClick?: (time: string) => void;
 }) {
   const startHour = 7;
   const endHour = 22;
