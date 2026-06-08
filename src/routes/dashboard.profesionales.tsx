@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, User } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
+import { ImagePicker, PRO_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/profesionales")({
@@ -70,8 +71,15 @@ function ProsTab() {
         <div className="grid gap-3 md:grid-cols-2">
           {pros.map((p) => (
             <Card key={p.id}>
-              <CardContent className="pt-4 pb-4 flex justify-between gap-3">
-                <div className="min-w-0">
+              <CardContent className="pt-4 pb-4 flex gap-3">
+                <div className="size-12 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="size-5 text-muted-foreground/50" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
                   <p className="font-medium truncate">{p.name}</p>
                   {p.phone && <p className="text-xs text-muted-foreground">{p.phone_country_code} {p.phone}</p>}
                 </div>
@@ -94,6 +102,7 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
 
   const { data: services } = useQuery({
@@ -104,13 +113,14 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
 
   useEffect(() => {
     if (!open) {
-      setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setSelectedServices(new Set());
+      setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setAvatarUrl(null); setSelectedServices(new Set());
       return;
     }
     if (!editing) return;
     setName(editing.name ?? "");
     setPhone(editing.phone ?? "");
     setCountryCode(editing.phone_country_code ?? DEFAULT_COUNTRY_CODE);
+    setAvatarUrl(editing.avatar_url ?? null);
     (async () => {
       const { data } = await supabase.from("professional_services").select("service_id").eq("professional_id", editing.id);
       setSelectedServices(new Set((data ?? []).map((x: any) => x.service_id)));
@@ -125,12 +135,12 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
       let id = editing?.id as string | undefined;
       if (id) {
         const { error } = await supabase.from("professionals").update({
-          name, phone: phone || null, phone_country_code: phone ? countryCode : null,
+          name, phone: phone || null, phone_country_code: phone ? countryCode : null, avatar_url: avatarUrl,
         }).eq("id", id);
         if (error) throw error;
       } else {
         const { data, error } = await supabase.from("professionals").insert({
-          business_id: businessId, name, phone: phone || null, phone_country_code: phone ? countryCode : null,
+          business_id: businessId, name, phone: phone || null, phone_country_code: phone ? countryCode : null, avatar_url: avatarUrl,
         }).select().single();
         if (error) throw error;
         id = data.id;
@@ -164,6 +174,14 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
             <Label>Teléfono (opcional)</Label>
             <div className="mt-1.5"><PhoneInput countryCode={countryCode} number={phone} onCountryCodeChange={setCountryCode} onNumberChange={setPhone} /></div>
           </div>
+          <ImagePicker
+            value={avatarUrl}
+            onChange={setAvatarUrl}
+            templates={PRO_TEMPLATES}
+            label="Foto del profesional"
+            shape="circle"
+            previewClassName="max-w-[140px]"
+          />
           <div>
             <Label className="mb-2 block">Servicios que ofrece</Label>
             {!services?.length ? (
