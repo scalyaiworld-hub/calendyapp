@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
+import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
@@ -35,6 +35,8 @@ const STATUS_STYLES: Record<ApptStatus, string> = {
   no_show: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+const KANBAN_COLS: ApptStatus[] = ["pending", "booked", "completed", "cancelled", "no_show"];
+
 function CitasPage() {
   const { data: business } = useMyBusiness();
   const businessId = business?.id;
@@ -47,6 +49,7 @@ function CitasPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [page, setPage] = useState(0);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
+  const [view, setView] = useState<"list" | "kanban">("list");
   const pageSize = 20;
 
   const { data: locationsList } = useQuery({
@@ -133,6 +136,23 @@ function CitasPage() {
         <p className="text-muted-foreground">Historial y gestión de todas las citas.</p>
       </div>
 
+      <div className="inline-flex rounded-md border border-border bg-background p-0.5 w-fit">
+        <button
+          type="button"
+          onClick={() => setView("list")}
+          className={cn("px-3 py-1.5 text-sm rounded-sm transition inline-flex items-center gap-1.5", view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+        >
+          <List className="size-3.5" /> Lista
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("kanban")}
+          className={cn("px-3 py-1.5 text-sm rounded-sm transition inline-flex items-center gap-1.5", view === "kanban" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+        >
+          <LayoutGrid className="size-3.5" /> Kanban
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -202,6 +222,12 @@ function CitasPage() {
             <p>No se encontraron citas.</p>
           </CardContent>
         </Card>
+      ) : view === "kanban" ? (
+        <KanbanBoard
+          appts={filteredItems}
+          onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onSelect={(a) => setSelectedAppt(a)}
+        />
       ) : (
         <div className="space-y-2">
           {filteredItems.map((a: any) => (
@@ -244,7 +270,7 @@ function CitasPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
+      {view === "list" && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-sm text-muted-foreground">
             Mostrando {page * pageSize + 1}-{Math.min((page + 1) * pageSize, appointments?.count ?? 0)} de {appointments?.count}
@@ -321,6 +347,81 @@ function CitasPage() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function KanbanBoard({
+  appts,
+  onChangeStatus,
+  onSelect,
+}: {
+  appts: any[];
+  onChangeStatus: (id: string, status: ApptStatus) => void;
+  onSelect: (a: any) => void;
+}) {
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const grouped: Record<ApptStatus, any[]> = {
+    pending: [], booked: [], completed: [], cancelled: [], no_show: [],
+  };
+  for (const a of appts) {
+    const s = (a.status as ApptStatus) ?? "pending";
+    if (grouped[s]) grouped[s].push(a);
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      {KANBAN_COLS.map((col) => (
+        <div
+          key={col}
+          onDragOver={(e) => { e.preventDefault(); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData("text/plain") || draggingId;
+            setDraggingId(null);
+            if (id) {
+              const current = appts.find((a) => a.id === id);
+              if (current && current.status !== col) onChangeStatus(id, col);
+            }
+          }}
+          className="bg-muted/30 border border-border rounded-lg p-3 min-h-[200px]"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
+            <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
+              {grouped[col].length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {grouped[col].map((a: any) => (
+              <div
+                key={a.id}
+                draggable
+                onDragStart={(e) => {
+                  setDraggingId(a.id);
+                  e.dataTransfer.setData("text/plain", a.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={() => setDraggingId(null)}
+                onClick={() => onSelect(a)}
+                className={cn(
+                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition",
+                  draggingId === a.id && "opacity-50"
+                )}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-display text-base">{formatTime(a.starts_at)}</span>
+                  <span className="text-xs text-muted-foreground">{a.services?.duration_minutes}m</span>
+                </div>
+                <p className="text-sm font-medium truncate">{a.clients?.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
+              </div>
+            ))}
+            {grouped[col].length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">Sin citas</p>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

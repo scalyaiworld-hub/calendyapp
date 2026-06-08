@@ -19,7 +19,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
-type ViewMode = "day" | "week" | "kanban";
+type ViewMode = "day" | "week";
 
 const STATUS_LABEL: Record<ApptStatus, string> = {
   pending: "Pendiente",
@@ -28,7 +28,6 @@ const STATUS_LABEL: Record<ApptStatus, string> = {
   cancelled: "Cancelada",
   no_show: "No-show",
 };
-const KANBAN_COLS: ApptStatus[] = ["pending", "booked", "completed", "cancelled", "no_show"];
 
 export const Route = createFileRoute("/dashboard/agenda")({
   component: AgendaPage,
@@ -205,13 +204,6 @@ function AgendaPage() {
             >
               Semana
             </button>
-            <button
-              type="button"
-              onClick={() => setView("kanban")}
-              className={cn("px-3 py-1.5 text-sm rounded-sm transition", view === "kanban" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
-            >
-              Kanban
-            </button>
           </div>
           {!canShare ? (
             <Button variant="outline" disabled title={missingMsg}>
@@ -261,12 +253,6 @@ function AgendaPage() {
 
       {apptsError ? (
         <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
-      ) : view === "kanban" ? (
-        !appts?.length ? (
-          <Card><CardContent className="pt-6 text-center text-muted-foreground">No hay citas esta semana.</CardContent></Card>
-        ) : (
-          <KanbanBoard appts={appts} onChangeStatus={(id, status) => updateStatus.mutate({ id, status })} />
-        )
       ) : view === "week" ? (
         <WeekCalendar
           weekStart={weekStart}
@@ -712,72 +698,6 @@ function StatusBadge({ status }: { status: string }) {
     no_show: "bg-destructive/15 text-destructive",
   };
   return <span className={cn("text-xs px-2 py-0.5 rounded-full hidden sm:inline-block", map[status])}>{status}</span>;
-}
-
-function KanbanBoard({ appts, onChangeStatus }: { appts: any[]; onChangeStatus: (id: string, status: ApptStatus) => void }) {
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const grouped: Record<ApptStatus, any[]> = {
-    pending: [], booked: [], completed: [], cancelled: [], no_show: [],
-  };
-  for (const a of appts) {
-    const s = (a.status as ApptStatus) ?? "pending";
-    if (grouped[s]) grouped[s].push(a);
-  }
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-      {KANBAN_COLS.map((col) => (
-        <div
-          key={col}
-          onDragOver={(e) => { e.preventDefault(); }}
-          onDrop={(e) => {
-            e.preventDefault();
-            const id = e.dataTransfer.getData("text/plain") || draggingId;
-            setDraggingId(null);
-            if (id) {
-              const current = appts.find((a) => a.id === id);
-              if (current && current.status !== col) onChangeStatus(id, col);
-            }
-          }}
-          className="bg-muted/30 border border-border rounded-lg p-3 min-h-[200px]"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
-            <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
-              {grouped[col].length}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {grouped[col].map((a: any) => (
-              <div
-                key={a.id}
-                draggable
-                onDragStart={(e) => {
-                  setDraggingId(a.id);
-                  e.dataTransfer.setData("text/plain", a.id);
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onDragEnd={() => setDraggingId(null)}
-                className={cn(
-                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition",
-                  draggingId === a.id && "opacity-50"
-                )}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-display text-base">{formatTime(a.starts_at)}</span>
-                  <span className="text-xs text-muted-foreground">{a.services?.duration_minutes}m</span>
-                </div>
-                <p className="text-sm font-medium truncate">{a.clients?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
-              </div>
-            ))}
-            {grouped[col].length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Sin citas</p>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function NewApptDialog({ businessId, initialDate, trigger }: { businessId: string; initialDate: Date; trigger: React.ReactNode }) {
