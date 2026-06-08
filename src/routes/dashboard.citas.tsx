@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
@@ -42,12 +42,21 @@ function CitasPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ApptStatus | "all">("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [page, setPage] = useState(0);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
   const pageSize = 20;
 
+  const { data: locationsList } = useQuery({
+    queryKey: ["citas-locations", businessId],
+    enabled: !!businessId,
+    queryFn: async () => (await supabase.from("locations").select("id,name").eq("business_id", businessId!).is("deleted_at", null).order("name")).data ?? [],
+  });
+
   const { data: appointments, isLoading } = useQuery({
-    queryKey: ["citas", businessId, statusFilter, search.trim(), page],
+    queryKey: ["citas", businessId, statusFilter, locationFilter, dateFrom, dateTo, search.trim(), page],
     enabled: !!businessId,
     queryFn: async () => {
       let q = supabase
@@ -59,6 +68,15 @@ function CitasPage() {
 
       if (statusFilter !== "all") {
         q = q.eq("status", statusFilter);
+      }
+      if (locationFilter !== "all") {
+        q = q.eq("location_id", locationFilter);
+      }
+      if (dateFrom) {
+        q = q.gte("starts_at", new Date(dateFrom + "T00:00:00").toISOString());
+      }
+      if (dateTo) {
+        q = q.lte("starts_at", new Date(dateTo + "T23:59:59").toISOString());
       }
 
       const { data, error, count } = await q;
@@ -93,6 +111,16 @@ function CitasPage() {
 
   const totalPages = Math.ceil((appointments?.count ?? 0) / pageSize);
 
+  const hasFilters = statusFilter !== "all" || locationFilter !== "all" || !!dateFrom || !!dateTo || !!search.trim();
+  function clearFilters() {
+    setStatusFilter("all"); setLocationFilter("all"); setDateFrom(""); setDateTo(""); setSearch(""); setPage(0);
+  }
+
+  function initials(name?: string | null) {
+    if (!name) return "?";
+    return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("");
+  }
+
   function formatDateLabel(iso: string) {
     const d = new Date(iso);
     return `${DAY_NAMES_SHORT[d.getDay()]} ${d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}`;
@@ -105,8 +133,9 @@ function CitasPage() {
         <p className="text-muted-foreground">Historial y gestión de todas las citas.</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por cliente, servicio o teléfono..."
@@ -114,22 +143,49 @@ function CitasPage() {
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             className="pl-9"
           />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="size-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as ApptStatus | "all"); setPage(0); }}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Estado" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="booked">Confirmada</SelectItem>
+                <SelectItem value="completed">Completada</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+                <SelectItem value="no_show">No-show</SelectItem>
+              </SelectContent>
+            </Select>
+            {(locationsList?.length ?? 0) > 0 && (
+              <Select value={locationFilter} onValueChange={(v) => { setLocationFilter(v); setPage(0); }}>
+                <SelectTrigger className="w-44"><SelectValue placeholder="Sucursal" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las sucursales</SelectItem>
+                  {locationsList!.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="size-4 text-muted-foreground" />
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as ApptStatus | "all"); setPage(0); }}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Filtrar estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="pending">Pendiente</SelectItem>
-              <SelectItem value="booked">Confirmada</SelectItem>
-              <SelectItem value="completed">Completada</SelectItem>
-              <SelectItem value="cancelled">Cancelada</SelectItem>
-              <SelectItem value="no_show">No-show</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="size-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Desde</span>
+            <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="w-40 h-9" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Hasta</span>
+            <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="w-40 h-9" />
+          </div>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+              <X className="size-3.5 mr-1" /> Limpiar
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground ml-auto">{appointments?.count ?? 0} resultados</span>
         </div>
       </div>
 
@@ -157,9 +213,11 @@ function CitasPage() {
                       <p className="font-display text-xl leading-none">{formatTime(a.starts_at)}</p>
                       <p className="text-xs text-muted-foreground mt-1">{formatDateLabel(a.starts_at)}</p>
                     </div>
+                    <div className="size-10 rounded-full bg-primary/10 text-primary font-medium flex items-center justify-center text-sm shrink-0">
+                      {initials(a.clients?.name)}
+                    </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <User className="size-3.5 text-muted-foreground" />
                         <p className="font-medium">{a.clients?.name}</p>
                         <span className="text-xs text-muted-foreground">{a.clients?.phone}</span>
                       </div>
@@ -169,7 +227,7 @@ function CitasPage() {
                         <span className="text-xs text-muted-foreground">· {a.services?.duration_minutes}m</span>
                       </div>
                       {a.locations?.name && (
-                        <p className="text-xs text-muted-foreground">{a.locations?.name}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {a.locations?.name}</p>
                       )}
                     </div>
                   </div>
