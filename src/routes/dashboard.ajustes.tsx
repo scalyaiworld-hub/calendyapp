@@ -124,12 +124,29 @@ function AjustesPage() {
     },
   });
 
+  const { data: locationsCount } = useQuery({
+    queryKey: ["locations-count", business?.id],
+    enabled: !!business?.id,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("locations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", business!.id)
+        .is("deleted_at", null)
+        .eq("is_active", true);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const hasPros = (prosCount ?? 0) > 0;
   const hasServices = (servicesCount ?? 0) > 0;
-  const canShare = hasPros && hasServices;
+  const hasLocations = (locationsCount ?? 0) > 0;
+  const canShare = hasPros && hasServices && hasLocations;
   const missing: string[] = [];
+  if (!hasLocations) missing.push("una sucursal");
   if (!hasPros) missing.push("un profesional");
   if (!hasServices) missing.push("un servicio");
   const missingMsg = `Agrega al menos ${missing.join(", ")} para activar el link de reservas.`;

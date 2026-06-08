@@ -134,8 +134,10 @@ function AgendaPage() {
 
   const hasPros = (prosCount ?? 0) > 0;
   const hasServices = (servicesCount ?? 0) > 0;
-  const canShare = hasPros && hasServices;
+  const hasLocations = (locations?.count ?? 0) > 0;
+  const canShare = hasPros && hasServices && hasLocations;
   const missing: string[] = [];
+  if (!hasLocations) missing.push("una sucursal");
   if (!hasPros) missing.push("un profesional");
   if (!hasServices) missing.push("un servicio");
   const missingMsg = `Agrega ${missing.join(", ")} para activar el link de reservas.`;
