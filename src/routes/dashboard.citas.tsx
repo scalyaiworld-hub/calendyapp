@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X } from "lucide-react";
+import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
@@ -35,6 +35,8 @@ const STATUS_STYLES: Record<ApptStatus, string> = {
   no_show: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+const KANBAN_COLS: ApptStatus[] = ["pending", "booked", "completed", "cancelled", "no_show"];
+
 function CitasPage() {
   const { data: business } = useMyBusiness();
   const businessId = business?.id;
@@ -47,6 +49,7 @@ function CitasPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [page, setPage] = useState(0);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
+  const [view, setView] = useState<"list" | "kanban">("list");
   const pageSize = 20;
 
   const { data: locationsList } = useQuery({
@@ -131,6 +134,23 @@ function CitasPage() {
       <div>
         <h1 className="font-display text-3xl mb-1">Citas</h1>
         <p className="text-muted-foreground">Historial y gestión de todas las citas.</p>
+      </div>
+
+      <div className="inline-flex rounded-md border border-border bg-background p-0.5 w-fit">
+        <button
+          type="button"
+          onClick={() => setView("list")}
+          className={cn("px-3 py-1.5 text-sm rounded-sm transition inline-flex items-center gap-1.5", view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+        >
+          <List className="size-3.5" /> Lista
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("kanban")}
+          className={cn("px-3 py-1.5 text-sm rounded-sm transition inline-flex items-center gap-1.5", view === "kanban" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+        >
+          <LayoutGrid className="size-3.5" /> Kanban
+        </button>
       </div>
 
       <div className="flex flex-col gap-3">
