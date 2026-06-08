@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, Plus, Sparkles } from "lucide-react";
 import { INDUSTRIES, SERVICE_TEMPLATES, type Industry } from "@/lib/service-templates";
 import { formatPriceCents } from "@/lib/format";
@@ -43,13 +44,13 @@ function ServicesPage() {
     mutationFn: async (s: any) => {
       if (s.id) {
         const { error } = await supabase.from("services").update({
-          name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents, is_active: s.is_active,
+          name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents, is_active: s.is_active, description: s.description ?? null,
         }).eq("id", s.id);
         if (error) throw error;
       } else {
         if (!businessId) throw new Error("Sin negocio");
         const { error } = await supabase.from("services").insert({
-          business_id: businessId, name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents,
+          business_id: businessId, name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents, description: s.description ?? null,
         });
         if (error) throw error;
       }
@@ -177,25 +178,36 @@ function ServiceDialog({ initial, onSave, trigger }: { initial?: any; onSave: (s
   const [duration, setDuration] = useState(initial?.duration_minutes ?? 30);
   const [price, setPrice] = useState((initial?.price_cents ?? 0) / 100);
   const [active, setActive] = useState(initial?.is_active ?? true);
+  const [description, setDescription] = useState<string>(initial?.description ?? "");
 
   return (
     <Dialog open={open} onOpenChange={(v) => {
       setOpen(v);
-      if (v && initial) { setName(initial.name); setDuration(initial.duration_minutes); setPrice(initial.price_cents/100); setActive(initial.is_active); }
-      if (v && !initial) { setName(""); setDuration(30); setPrice(0); setActive(true); }
+      if (v && initial) { setName(initial.name); setDuration(initial.duration_minutes); setPrice(initial.price_cents/100); setActive(initial.is_active); setDescription(initial.description ?? ""); }
+      if (v && !initial) { setName(""); setDuration(30); setPrice(0); setActive(true); setDescription(""); }
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>{initial ? "Editar servicio" : "Nuevo servicio"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div>
+            <Label>Descripción (opcional)</Label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Detalles que verán tus clientes al reservar"
+              rows={2}
+              maxLength={500}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Duración (min)</Label><Input type="number" min={5} step={5} value={duration} onChange={(e) => setDuration(Number(e.target.value))} /></div>
             <div><Label>Precio (S/.)</Label><Input type="number" min={0} step={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} /></div>
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={() => { onSave({ name, duration_minutes: duration, price_cents: Math.round(price * 100), is_active: active }); setOpen(false); }} disabled={!name || duration < 1}>
+          <Button onClick={() => { onSave({ name, duration_minutes: duration, price_cents: Math.round(price * 100), is_active: active, description: description.trim() || null }); setOpen(false); }} disabled={!name || duration < 1}>
             Guardar
           </Button>
         </DialogFooter>
