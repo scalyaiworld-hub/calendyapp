@@ -21,6 +21,8 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
 type ViewMode = "day" | "week";
 
+type RescheduleInput = { id: string; newDate: Date; newTime: string; durationMin: number };
+
 const STATUS_LABEL: Record<ApptStatus, string> = {
   pending: "Pendiente",
   booked: "Confirmada",
@@ -199,6 +201,51 @@ function AgendaPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const reschedule = useMutation({
+    mutationFn: async ({ id, newDate, newTime, durationMin }: RescheduleInput) => {
+      const [h, m] = newTime.split(":").map(Number);
+      const start = new Date(newDate);
+      start.setHours(h, m, 0, 0);
+      const end = new Date(start.getTime() + durationMin * 60_000);
+      const { error } = await supabase
+        .from("appointments")
+        .update({ starts_at: start.toISOString(), ends_at: end.toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (vars) => {
+      const keys = qc.getQueryCache().findAll({ queryKey: ["appts"] });
+      const snapshots = keys.map((k) => ({ key: k.queryKey, data: qc.getQueryData(k.queryKey) }));
+      for (const s of snapshots) {
+        const prev = s.data as any[] | undefined;
+        if (!Array.isArray(prev)) continue;
+        const [h, m] = vars.newTime.split(":").map(Number);
+        const start = new Date(vars.newDate);
+        start.setHours(h, m, 0, 0);
+        const end = new Date(start.getTime() + vars.durationMin * 60_000);
+        qc.setQueryData(
+          s.key,
+          prev.map((a) =>
+            a.id === vars.id ? { ...a, starts_at: start.toISOString(), ends_at: end.toISOString() } : a,
+          ),
+        );
+      }
+      return { snapshots };
+    },
+    onError: (e: Error, _vars, ctx) => {
+      ctx?.snapshots.forEach((s: any) => qc.setQueryData(s.key, s.data));
+      toast.error(e.message || "No se pudo mover la cita");
+    },
+    onSuccess: () => {
+      toast.success("Cita reprogramada");
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["appts"] });
+      qc.invalidateQueries({ queryKey: ["today-appts"] });
+      qc.invalidateQueries({ queryKey: ["citas"] });
+    },
+  });
+
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -298,6 +345,7 @@ function AgendaPage() {
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
+          onReschedule={(v) => reschedule.mutate(v)}
         />
       ) : (
         <DayCalendar
@@ -305,6 +353,7 @@ function AgendaPage() {
           appts={appts ?? []}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(time) => openNewAppt(date, time)}
+          onReschedule={(v) => reschedule.mutate(v)}
         />
       )}
       {businessId && (
@@ -326,11 +375,13 @@ function WeekCalendar({
   appts,
   onChangeStatus,
   onSlotClick,
+  onReschedule,
 }: {
   weekStart: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
   onSlotClick?: (date: Date, time: string) => void;
+  onReschedule?: (v: RescheduleInput) => void;
 }) {
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
@@ -440,6 +491,21 @@ function WeekCalendar({
                     const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
                     onSlotClick(day, time);
                   }}
+                  onDragOver={(e) => {
+                    if (!onReschedule) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    if (!onReschedule) return;
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData("text/appt-id");
+                    const durationMin = Number(e.dataTransfer.getData("text/appt-duration")) || 30;
+                    if (!id) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+                    onReschedule({ id, newDate: day, newTime: time, durationMin });
+                  }}
                 >
                   {hours.map((h) => (
                     <div
@@ -483,10 +549,17 @@ function WeekCalendar({
                           <button
                             type="button"
                             data-appt="1"
+                            draggable={!!onReschedule && a.status !== "cancelled"}
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/appt-id", a.id);
+                              e.dataTransfer.setData("text/appt-duration", String(dur));
+                            }}
                             className={cn(
                               "group absolute left-1 right-1 rounded-md border pl-2 pr-1.5 py-0.5 text-left overflow-hidden",
                               "hover:shadow-md hover:-translate-y-px transition-all duration-150",
                               "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                              onReschedule && "cursor-grab active:cursor-grabbing",
                               c.bg, c.border, c.text
                             )}
                             style={{ top, height }}
@@ -549,11 +622,13 @@ function DayCalendar({
   appts,
   onChangeStatus,
   onSlotClick,
+  onReschedule,
 }: {
   date: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
   onSlotClick?: (time: string) => void;
+  onReschedule?: (v: RescheduleInput) => void;
 }) {
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
@@ -649,6 +724,21 @@ function DayCalendar({
               const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
               onSlotClick(time);
             }}
+            onDragOver={(e) => {
+              if (!onReschedule) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(e) => {
+              if (!onReschedule) return;
+              e.preventDefault();
+              const id = e.dataTransfer.getData("text/appt-id");
+              const durationMin = Number(e.dataTransfer.getData("text/appt-duration")) || 30;
+              if (!id) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+              onReschedule({ id, newDate: date, newTime: time, durationMin });
+            }}
           >
             {hours.map((h) => (
               <div
@@ -695,10 +785,17 @@ function DayCalendar({
                     <button
                       type="button"
                       data-appt="1"
+                      draggable={!!onReschedule && a.status !== "cancelled"}
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/appt-id", a.id);
+                        e.dataTransfer.setData("text/appt-duration", String(dur));
+                      }}
                       className={cn(
                         "group absolute left-1.5 right-1.5 rounded-lg border pl-2.5 pr-2 py-1 text-left overflow-hidden",
                         "hover:shadow-md hover:-translate-y-px transition-all duration-150",
                         "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                        onReschedule && "cursor-grab active:cursor-grabbing",
                         c.bg, c.border, c.text
                       )}
                       style={{ top, height }}
