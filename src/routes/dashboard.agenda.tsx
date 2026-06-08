@@ -190,7 +190,12 @@ function AgendaPage() {
       const { error } = await supabase.from("appointments").update(patch).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appts"] }); toast.success("Actualizado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["appts"] });
+      qc.invalidateQueries({ queryKey: ["today-appts"] });
+      qc.invalidateQueries({ queryKey: ["citas"] });
+      toast.success("Actualizado");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -852,6 +857,7 @@ function NewApptDialog({
       toast.success("Cita creada");
       qc.invalidateQueries({ queryKey: ["appts"] });
       qc.invalidateQueries({ queryKey: ["today-appts"] });
+      qc.invalidateQueries({ queryKey: ["citas"] });
       setOpen(false);
       setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false);
     },
