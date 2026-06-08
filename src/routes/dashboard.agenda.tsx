@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
 import { Button } from "@/components/ui/button";
@@ -241,10 +241,23 @@ function DayCalendar({
   const endHour = 22;
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2; // 72px per hour
-  const isToday = date.toDateString() === new Date().toDateString();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
   const nowMinutes = (now.getHours() - startHour) * 60 + now.getMinutes();
   const nowVisible = isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
+
+  useEffect(() => {
+    if (isToday && scrollRef.current) {
+      const target = Math.max(0, nowMinutes * pxPerMinute - scrollRef.current.clientHeight / 3);
+      scrollRef.current.scrollTo({ top: target, behavior: "smooth" });
+    }
+  }, [isToday]);
 
   const active = appts.filter((a) => a.status !== "cancelled" && a.status !== "no_show");
   const totalRevenueCents = active
@@ -294,7 +307,7 @@ function DayCalendar({
             </div>
           </div>
         )}
-        <div className="relative flex max-h-[70vh] overflow-y-auto">
+        <div ref={scrollRef} className="relative flex max-h-[70vh] overflow-y-auto">
           {/* Time gutter */}
           <div className="w-14 sm:w-16 shrink-0 sticky left-0 bg-card z-10 border-r border-border">
             {hours.map((h) => (
