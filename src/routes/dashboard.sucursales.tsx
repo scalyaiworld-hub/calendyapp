@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
+import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/sucursales")({
@@ -93,8 +94,15 @@ function LocationsTab() {
         <div className="grid gap-3 md:grid-cols-2">
           {locations.map((l) => (
             <Card key={l.id}>
-              <CardContent className="pt-4 pb-4 flex justify-between gap-3">
-                <div className="min-w-0">
+              <CardContent className="pt-4 pb-4 flex gap-3">
+                <div className="size-16 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                  {l.image_url ? (
+                    <img src={l.image_url} alt={l.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <MapPin className="size-6 text-muted-foreground/50" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
                   <p className="font-medium truncate">{l.name}</p>
                   {l.address && <p className="text-sm text-muted-foreground truncate">{l.address}</p>}
                   {l.phone && <p className="text-xs text-muted-foreground">{l.phone_country_code} {l.phone}</p>}
@@ -121,6 +129,7 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [hours, setHours] = useState<{ open: boolean; start: string; end: string }[]>(
     () => Array.from({ length: 7 }, () => ({ open: true, start: "09:00", end: "18:00" }))
   );
@@ -135,6 +144,7 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
   useEffect(() => {
     if (!open) {
       setName(""); setAddress(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
+      setImageUrl(null);
       setHours(Array.from({ length: 7 }, () => ({ open: true, start: "09:00", end: "18:00" })));
       setSelectedPros(new Set());
       return;
@@ -144,6 +154,7 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
     setAddress(editing.address ?? "");
     setPhone(editing.phone ?? "");
     setCountryCode(editing.phone_country_code ?? DEFAULT_COUNTRY_CODE);
+    setImageUrl(editing.image_url ?? null);
     (async () => {
       const { data: lh } = await supabase.from("location_hours").select("*").eq("location_id", editing.id);
       if (lh) {
@@ -166,12 +177,12 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
       let id = editing?.id as string | undefined;
       if (id) {
         const { error } = await supabase.from("locations").update({
-          name, address: address || null, phone: phone || null, phone_country_code: phone ? countryCode : null,
+          name, address: address || null, phone: phone || null, phone_country_code: phone ? countryCode : null, image_url: imageUrl,
         }).eq("id", id);
         if (error) throw error;
       } else {
         const { data, error } = await supabase.from("locations").insert({
-          business_id: businessId, name, address: address || null, phone: phone || null, phone_country_code: phone ? countryCode : null,
+          business_id: businessId, name, address: address || null, phone: phone || null, phone_country_code: phone ? countryCode : null, image_url: imageUrl,
         }).select().single();
         if (error) throw error;
         id = data.id;
@@ -214,6 +225,13 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
             <Label>Teléfono</Label>
             <div className="mt-1.5"><PhoneInput countryCode={countryCode} number={phone} onCountryCodeChange={setCountryCode} onNumberChange={setPhone} /></div>
           </div>
+          <ImagePicker
+            value={imageUrl}
+            onChange={setImageUrl}
+            templates={LOCATION_TEMPLATES}
+            label="Imagen de la sucursal"
+            shape="rounded"
+          />
           <div>
             <Label className="mb-2 block">Horario de atención</Label>
             <div className="space-y-2">
