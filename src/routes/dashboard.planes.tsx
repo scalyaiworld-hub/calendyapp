@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/planes")({
-  head: () => ({ meta: [{ title: "Planes — Agendy" }] }),
+  head: () => ({ meta: [{ title: "Planes — Calendia" }] }),
   component: PlanesPage,
 });
 
