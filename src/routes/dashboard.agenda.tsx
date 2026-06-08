@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2 } from "lucide-react";
-import { DAY_NAMES_SHORT, formatTime } from "@/lib/format";
+import { DAY_NAMES_SHORT, formatTime, formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PhoneInput } from "@/components/PhoneInput";
@@ -246,72 +246,152 @@ function DayCalendar({
   const nowMinutes = (now.getHours() - startHour) * 60 + now.getMinutes();
   const nowVisible = isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
 
+  const active = appts.filter((a) => a.status !== "cancelled" && a.status !== "no_show");
+  const totalRevenueCents = active
+    .filter((a) => a.status === "completed")
+    .reduce((sum, a) => sum + (a.services?.price_cents ?? 0), 0);
+  const totalMinutes = active.reduce((sum, a) => sum + (a.services?.duration_minutes ?? 0), 0);
+
+  const STATUS_DOT: Record<string, string> = {
+    pending: "bg-amber-500",
+    booked: "bg-primary",
+    completed: "bg-emerald-500",
+    cancelled: "bg-muted-foreground/40",
+    no_show: "bg-destructive",
+  };
+
   return (
-    <Card>
+    <Card className="overflow-hidden">
+      {/* Day summary strip */}
+      <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-b border-border bg-muted/30 text-xs">
+        <div className="flex items-center gap-4 flex-wrap">
+          <span className="flex items-center gap-1.5">
+            <span className="font-display text-base text-foreground tabular-nums">{active.length}</span>
+            <span className="text-muted-foreground">{active.length === 1 ? "cita" : "citas"}</span>
+          </span>
+          {totalMinutes > 0 && (
+            <span className="text-muted-foreground">
+              <span className="text-foreground font-medium tabular-nums">{Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m</span> reservadas
+            </span>
+          )}
+          {totalRevenueCents > 0 && (
+            <span className="text-muted-foreground">
+              <span className="text-foreground font-medium tabular-nums">{formatPriceCents(totalRevenueCents)}</span> facturado
+            </span>
+          )}
+        </div>
+        <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground">
+          <LegendDot color="bg-amber-500" label="Pendiente" />
+          <LegendDot color="bg-primary" label="Confirmada" />
+          <LegendDot color="bg-emerald-500" label="Completada" />
+        </div>
+      </div>
       <CardContent className="p-0">
-        <div className="relative flex">
-          <div className="w-16 shrink-0 border-r border-border">
-            {hours.map((h) => (
-              <div key={h} style={{ height: 60 * pxPerMinute }} className="text-xs text-muted-foreground text-right pr-2 pt-1">
-                {String(h).padStart(2, "0")}:00
-              </div>
-            ))}
+        {active.length === 0 && !nowVisible && (
+          <div className="absolute inset-x-0 z-10 pointer-events-none flex justify-center" style={{ top: 120 }}>
+            <div className="pointer-events-auto bg-background/90 backdrop-blur border border-border rounded-full px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
+              Sin citas este día. Comparte tu link o crea una nueva.
+            </div>
           </div>
-          <div className="relative flex-1">
+        )}
+        <div className="relative flex max-h-[70vh] overflow-y-auto">
+          {/* Time gutter */}
+          <div className="w-14 sm:w-16 shrink-0 sticky left-0 bg-card z-10 border-r border-border">
             {hours.map((h) => (
               <div
                 key={h}
                 style={{ height: 60 * pxPerMinute }}
-                className="border-b border-border/60"
-              />
+                className="relative text-[11px] text-muted-foreground text-right pr-2"
+              >
+                <span className="absolute -top-2 right-2 bg-card px-1 tabular-nums">
+                  {String(h).padStart(2, "0")}:00
+                </span>
+              </div>
             ))}
+          </div>
+
+          {/* Day grid */}
+          <div className="relative flex-1 min-w-0">
+            {hours.map((h) => (
+              <div
+                key={h}
+                style={{ height: 60 * pxPerMinute }}
+                className="border-b border-border/70 relative"
+              >
+                {/* 30-min line */}
+                <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/40" />
+              </div>
+            ))}
+
             {nowVisible && (
               <div
-                className="absolute left-0 right-0 flex items-center pointer-events-none"
+                className="absolute left-0 right-0 flex items-center pointer-events-none z-20"
                 style={{ top: nowMinutes * pxPerMinute }}
               >
-                <div className="size-2 rounded-full bg-destructive -ml-1" />
+                <div className="ml-1 text-[10px] font-semibold text-destructive bg-background border border-destructive/40 rounded-full px-1.5 py-0.5 tabular-nums shadow-sm">
+                  {formatTime(now)}
+                </div>
                 <div className="h-px flex-1 bg-destructive" />
+                <div className="size-2 rounded-full bg-destructive -mr-1 ring-2 ring-background" />
               </div>
             )}
+
             {appts.map((a: any) => {
               const start = new Date(a.starts_at);
               const startMin = (start.getHours() - startHour) * 60 + start.getMinutes();
               const dur = a.services?.duration_minutes ?? 30;
               if (startMin + dur < 0 || startMin > (endHour - startHour) * 60) return null;
               const top = Math.max(0, startMin) * pxPerMinute;
-              const height = Math.max(28, dur * pxPerMinute - 2);
-              const colorMap: Record<string, string> = {
-                pending: "bg-yellow-100 border-yellow-300 text-yellow-900",
-                booked: "bg-primary/15 border-primary/40 text-foreground",
-                completed: "bg-green-100 border-green-300 text-green-900",
-                cancelled: "bg-muted border-border text-muted-foreground line-through",
-                no_show: "bg-destructive/15 border-destructive/40 text-destructive",
+              const height = Math.max(34, dur * pxPerMinute - 3);
+              const colorMap: Record<string, { bg: string; border: string; text: string; bar: string }> = {
+                pending:   { bg: "bg-amber-50",     border: "border-amber-300/70",     text: "text-amber-950",     bar: "bg-amber-500" },
+                booked:    { bg: "bg-primary/10",   border: "border-primary/40",       text: "text-foreground",    bar: "bg-primary" },
+                completed: { bg: "bg-emerald-50",   border: "border-emerald-300/70",   text: "text-emerald-950",   bar: "bg-emerald-500" },
+                cancelled: { bg: "bg-muted/60",     border: "border-border",           text: "text-muted-foreground line-through", bar: "bg-muted-foreground/30" },
+                no_show:   { bg: "bg-destructive/10", border: "border-destructive/40", text: "text-destructive",   bar: "bg-destructive" },
               };
+              const c = colorMap[a.status] ?? colorMap.booked;
+              const compact = height < 48;
               return (
                 <Popover key={a.id}>
                   <PopoverTrigger asChild>
                     <button
                       type="button"
                       className={cn(
-                        "absolute left-1 right-1 rounded-md border px-2 py-1 text-left text-xs overflow-hidden hover:shadow-md transition",
-                        colorMap[a.status] ?? colorMap.booked
+                        "group absolute left-1.5 right-1.5 rounded-lg border pl-2.5 pr-2 py-1 text-left overflow-hidden",
+                        "hover:shadow-md hover:-translate-y-px transition-all duration-150",
+                        "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                        c.bg, c.border, c.text
                       )}
                       style={{ top, height }}
                     >
-                      <div className="font-medium truncate">{formatTime(a.starts_at)} · {a.clients?.name}</div>
-                      <div className="truncate opacity-80">{a.services?.name}</div>
+                      {/* Left status bar */}
+                      <span className={cn("absolute left-0 top-1 bottom-1 w-1 rounded-full", c.bar)} />
+                      <div className="flex items-baseline gap-1.5 leading-tight">
+                        <span className="font-display text-[13px] tabular-nums">{formatTime(a.starts_at)}</span>
+                        <span className="text-[10px] opacity-60 tabular-nums">· {dur}m</span>
+                      </div>
+                      <div className="text-xs font-medium truncate leading-tight mt-0.5">{a.clients?.name ?? "Sin cliente"}</div>
+                      {!compact && (
+                        <div className="text-[11px] truncate opacity-75 leading-tight">{a.services?.name}</div>
+                      )}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64" align="start">
-                    <div className="space-y-2">
-                      <div>
-                        <p className="font-medium">{a.clients?.name}</p>
-                        <p className="text-xs text-muted-foreground">{a.clients?.phone}</p>
+                  <PopoverContent className="w-72" align="start">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{a.clients?.name ?? "Sin cliente"}</p>
+                          {a.clients?.phone && <p className="text-xs text-muted-foreground truncate">{a.clients.phone}</p>}
+                        </div>
+                        <span className={cn("size-2 rounded-full mt-1.5 shrink-0", STATUS_DOT[a.status] ?? STATUS_DOT.booked)} />
                       </div>
-                      <div className="text-sm">
-                        <p>{a.services?.name} · {a.services?.duration_minutes}m</p>
-                        <p className="text-muted-foreground">{formatTime(a.starts_at)}</p>
+                      <div className="text-sm space-y-0.5 border-t border-border pt-2">
+                        <p className="font-medium">{a.services?.name}</p>
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          {formatTime(a.starts_at)} · {a.services?.duration_minutes}m
+                          {a.services?.price_cents ? ` · ${formatPriceCents(a.services.price_cents)}` : ""}
+                        </p>
                       </div>
                       <Select value={a.status} onValueChange={(v) => onChangeStatus(a.id, v as ApptStatus)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -332,6 +412,15 @@ function DayCalendar({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={cn("size-1.5 rounded-full", color)} />
+      <span>{label}</span>
+    </span>
   );
 }
 
