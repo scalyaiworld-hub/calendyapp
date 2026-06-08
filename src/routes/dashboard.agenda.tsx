@@ -241,8 +241,13 @@ function DayCalendar({
   const endHour = 22;
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2; // 72px per hour
-  const isToday = date.toDateString() === new Date().toDateString();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
   const nowMinutes = (now.getHours() - startHour) * 60 + now.getMinutes();
   const nowVisible = isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
 
