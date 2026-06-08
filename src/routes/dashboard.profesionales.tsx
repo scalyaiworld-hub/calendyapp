@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, User } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
@@ -58,6 +59,20 @@ function ProsTab() {
     },
   });
 
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("professionals").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pros-full"] });
+      qc.invalidateQueries({ queryKey: ["pros"] });
+      qc.invalidateQueries({ queryKey: ["pros-count"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -70,7 +85,7 @@ function ProsTab() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {pros.map((p) => (
-            <Card key={p.id}>
+            <Card key={p.id} className={p.is_active === false ? "opacity-60" : ""}>
               <CardContent className="pt-4 pb-4 flex gap-3">
                 <div className="size-12 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center">
                   {p.avatar_url ? (
@@ -80,10 +95,20 @@ function ProsTab() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{p.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium truncate">{p.name}</p>
+                    {p.is_active === false && (
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactivo</span>
+                    )}
+                  </div>
                   {p.phone && <p className="text-xs text-muted-foreground">{p.phone_country_code} {p.phone}</p>}
                 </div>
-                <div className="flex gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  <Switch
+                    checked={p.is_active !== false}
+                    onCheckedChange={(v) => toggleActive.mutate({ id: p.id, is_active: v })}
+                    aria-label="Activo"
+                  />
                   <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="size-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar profesional?")) del.mutate(p.id); }}><Trash2 className="size-4" /></Button>
                 </div>
