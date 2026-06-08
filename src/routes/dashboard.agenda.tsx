@@ -44,6 +44,20 @@ function timeFromOffset(offsetY: number, startHour: number, pxPerMinute: number,
   const m = total % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+
+function computeDayRange(appts: any[]): { startHour: number; endHour: number } {
+  let minH = 7;
+  let maxH = 22;
+  for (const a of appts) {
+    const s = new Date(a.starts_at);
+    const dur = a.services?.duration_minutes ?? 30;
+    const e = new Date(s.getTime() + dur * 60000);
+    minH = Math.min(minH, s.getHours());
+    const endHourCeil = e.getHours() + (e.getMinutes() > 0 ? 1 : 0);
+    maxH = Math.max(maxH, endHourCeil);
+  }
+  return { startHour: Math.max(0, minH), endHour: Math.min(24, Math.max(maxH, minH + 1)) };
+}
 function startOfWeek(d: Date) {
   const x = startOfDay(d);
   const day = x.getDay(); // 0 = domingo
@@ -313,8 +327,7 @@ function WeekCalendar({
   onChangeStatus: (id: string, status: ApptStatus) => void;
   onSlotClick?: (date: Date, time: string) => void;
 }) {
-  const startHour = 7;
-  const endHour = 22;
+  const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2;
   const [tick, setTick] = useState(0);
@@ -537,8 +550,7 @@ function DayCalendar({
   onChangeStatus: (id: string, status: ApptStatus) => void;
   onSlotClick?: (time: string) => void;
 }) {
-  const startHour = 7;
-  const endHour = 22;
+  const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2;
   const [tick, setTick] = useState(0);
