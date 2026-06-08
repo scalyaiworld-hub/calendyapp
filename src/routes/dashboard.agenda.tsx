@@ -411,7 +411,16 @@ function WeekCalendar({
                 </div>
 
                 {/* Grid */}
-                <div className="relative">
+                <div
+                  className={cn("relative", onSlotClick && "cursor-cell")}
+                  onClick={(e) => {
+                    if (!onSlotClick) return;
+                    if ((e.target as HTMLElement).closest("[data-appt]")) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+                    onSlotClick(day, time);
+                  }}
+                >
                   {hours.map((h) => (
                     <div
                       key={h}
