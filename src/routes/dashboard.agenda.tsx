@@ -295,10 +295,12 @@ function WeekCalendar({
   weekStart,
   appts,
   onChangeStatus,
+  onSlotClick,
 }: {
   weekStart: Date;
   appts: any[];
   onChangeStatus: (id: string, status: ApptStatus) => void;
+  onSlotClick?: (date: Date, time: string) => void;
 }) {
   const startHour = 7;
   const endHour = 22;
