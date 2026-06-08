@@ -79,6 +79,7 @@ function HorariosPage() {
   const dirty = initial ? JSON.stringify(initial) !== JSON.stringify(days) : false;
   const openCount = days.filter((d) => d.enabled).length;
   const totalMinutes = days.reduce((acc, d) => acc + (d.enabled ? minutesBetween(d.start, d.end) : 0), 0);
+  const hasInvalid = days.some((d) => d.enabled && minutesBetween(d.start, d.end) <= 0);
 
   function setAll(start: string, end: string, indices: number[]) {
     setDays((prev) => prev.map((x, i) => indices.includes(i) ? { enabled: true, start, end } : x));
@@ -202,13 +203,15 @@ function HorariosPage() {
 
       <div className="sticky bottom-4 flex items-center justify-between gap-3 bg-card border border-border rounded-xl px-4 py-3 shadow-soft">
         <p className="text-sm text-muted-foreground">
-          {dirty ? "Tienes cambios sin guardar" : "Todos los cambios guardados"}
+          {hasInvalid
+            ? <span className="text-destructive">Corrige los horarios marcados antes de guardar.</span>
+            : dirty ? "Tienes cambios sin guardar" : "Todos los cambios guardados"}
         </p>
         <div className="flex gap-2">
           {dirty && initial && (
             <Button variant="ghost" onClick={() => setDays(initial)}>Descartar</Button>
           )}
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !dirty}>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !dirty || hasInvalid}>
             {save.isPending ? "Guardando…" : "Guardar cambios"}
           </Button>
         </div>
