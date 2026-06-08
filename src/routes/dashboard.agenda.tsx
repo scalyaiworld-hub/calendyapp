@@ -462,6 +462,7 @@ function WeekCalendar({
                         <PopoverTrigger asChild>
                           <button
                             type="button"
+                            data-appt="1"
                             className={cn(
                               "group absolute left-1 right-1 rounded-md border pl-2 pr-1.5 py-0.5 text-left overflow-hidden",
                               "hover:shadow-md hover:-translate-y-px transition-all duration-150",
