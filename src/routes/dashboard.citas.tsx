@@ -356,52 +356,51 @@ function CitasPage() {
       )}
 
       <Dialog open={!!selectedAppt} onOpenChange={(v) => !v && setSelectedAppt(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalle de cita</DialogTitle>
+            <DialogTitle>Editar cita</DialogTitle>
           </DialogHeader>
           {selectedAppt && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", STATUS_STYLES[selectedAppt.status as ApptStatus])}>
-                  {STATUS_LABEL[selectedAppt.status as ApptStatus]}
-                </span>
+              {selectedAppt.locations?.name && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {selectedAppt.locations.name}</p>
+              )}
+              <div>
+                <Label>Cliente</Label>
+                <Select value={editClientId} onValueChange={setEditClientId}>
+                  <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
+                  <SelectContent>
+                    {clientsList?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="size-4 text-muted-foreground" />
-                  <span>{formatDateLabel(selectedAppt.starts_at)} · {formatTime(selectedAppt.starts_at)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.services?.duration_minutes} minutos</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.clients?.name} · {selectedAppt.clients?.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Scissors className="size-4 text-muted-foreground" />
-                  <span>{selectedAppt.services?.name} · {formatPriceCents(selectedAppt.services?.price_cents ?? 0)}</span>
-                </div>
-                {selectedAppt.locations?.name && (
-                  <p className="text-muted-foreground">{selectedAppt.locations?.name}</p>
-                )}
-                {selectedAppt.notes && (
-                  <div className="bg-muted/40 rounded-md p-3 text-sm">
-                    <p className="text-muted-foreground text-xs mb-1">Notas</p>
-                    <p>{selectedAppt.notes}</p>
-                  </div>
-                )}
+              <div>
+                <Label>Servicio</Label>
+                <Select value={editServiceId} onValueChange={setEditServiceId}>
+                  <SelectTrigger><SelectValue placeholder="Elegir servicio" /></SelectTrigger>
+                  <SelectContent>
+                    {servicesList?.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} · {s.duration_minutes}m · {formatPriceCents(s.price_cents)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <DialogFooter className="flex-col sm:flex-row gap-2">
-                <Select
-                  value={selectedAppt.status}
-                  onValueChange={(v) => updateStatus.mutate({ id: selectedAppt.id, status: v as ApptStatus })}
-                >
-                  <SelectTrigger className="w-full sm:w-44">
-                    <SelectValue placeholder="Cambiar estado" />
-                  </SelectTrigger>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Fecha</Label>
+                  <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Hora</Label>
+                  <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>Estado</Label>
+                <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ApptStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="booked">Confirmada</SelectItem>
@@ -410,6 +409,16 @@ function CitasPage() {
                     <SelectItem value="no_show">No-show</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Notas</Label>
+                <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} maxLength={1000} placeholder="Notas internas (opcional)" />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedAppt(null)}>Cancelar</Button>
+                <Button onClick={() => saveAppt.mutate()} disabled={saveAppt.isPending}>
+                  {saveAppt.isPending ? "Guardando…" : "Guardar cambios"}
+                </Button>
               </DialogFooter>
             </div>
           )}
