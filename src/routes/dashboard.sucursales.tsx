@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Search, Users, Phone, Clock, Store } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
@@ -41,6 +41,7 @@ function LocationsTab() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const { data: locations } = useQuery({
     queryKey: ["locations", businessId],
@@ -64,6 +65,20 @@ function LocationsTab() {
       const counts: Record<string, number> = {};
       (data ?? []).forEach((r: any) => { counts[r.location_id] = (counts[r.location_id] ?? 0) + 1; });
       return counts;
+    },
+  });
+
+  const { data: hoursByLoc } = useQuery({
+    queryKey: ["loc-hours-summary", businessId],
+    enabled: !!locations?.length,
+    queryFn: async () => {
+      const ids = locations!.map((l) => l.id);
+      const { data } = await supabase.from("location_hours").select("location_id,day_of_week,start_time,end_time").in("location_id", ids);
+      const map: Record<string, { day_of_week: number; start_time: string; end_time: string }[]> = {};
+      (data ?? []).forEach((r: any) => {
+        (map[r.location_id] ??= []).push(r);
+      });
+      return map;
     },
   });
 
@@ -95,51 +110,90 @@ function LocationsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre o dirección…" className="pl-9" />
+        </div>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground px-2">
+          <span className="flex items-center gap-1.5"><Store className="size-3.5" />{locations?.length ?? 0} total</span>
+          <span className="hidden sm:flex items-center gap-1.5 text-primary">
+            <span className="size-1.5 rounded-full bg-primary" />
+            {locations?.filter((l) => l.is_active !== false).length ?? 0} activas
+          </span>
+        </div>
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Nueva sucursal</Button>
       </div>
 
       {!locations?.length ? (
-        <Card><CardContent className="py-10 text-center text-muted-foreground">
-          Aún no tienes sucursales. Crea la primera para empezar.
-        </CardContent></Card>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {locations.map((l) => (
-            <Card key={l.id} className={l.is_active === false ? "opacity-60" : ""}>
-              <CardContent className="pt-4 pb-4 flex gap-3">
-                <div className="size-16 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
-                  {l.image_url ? (
-                    <img src={l.image_url} alt={l.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <MapPin className="size-6 text-muted-foreground/50" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{l.name}</p>
-                    {l.is_active === false && (
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactiva</span>
-                    )}
-                  </div>
-                  {l.address && <p className="text-sm text-muted-foreground truncate">{l.address}</p>}
-                  {l.phone && <p className="text-xs text-muted-foreground">{l.phone_country_code} {l.phone}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">{assignCounts?.[l.id] ?? 0} profesional(es)</p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Switch
-                    checked={l.is_active !== false}
-                    onCheckedChange={(v) => toggleActive.mutate({ id: l.id, is_active: v })}
-                    aria-label="Activa"
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => { setEditing(l); setOpen(true); }}><Pencil className="size-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar sucursal?")) del.mutate(l.id); }}><Trash2 className="size-4" /></Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><MapPin className="size-6 text-primary" /></div>
+            <div>
+              <p className="font-medium">Aún no tienes sucursales</p>
+              <p className="text-sm text-muted-foreground">Crea la primera para que tus clientes puedan elegir dónde atenderse.</p>
+            </div>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Crear sucursal</Button>
+          </CardContent>
+        </Card>
+      ) : (() => {
+        const q = search.trim().toLowerCase();
+        const filtered = q ? locations.filter((l) => l.name?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(q)) : locations;
+        if (!filtered.length) return <p className="text-sm text-muted-foreground text-center py-6">Sin resultados para “{search}”.</p>;
+        return (
+          <div className="grid gap-3 md:grid-cols-2">
+            {filtered.map((l) => {
+              const hours = hoursByLoc?.[l.id] ?? [];
+              const daysOpen = hours.length;
+              const sample = hours[0];
+              return (
+                <Card key={l.id} className={cn("transition-all hover:shadow-md hover:border-primary/40", l.is_active === false && "opacity-60")}>
+                  <CardContent className="pt-4 pb-4 flex gap-3">
+                    <div className="size-16 rounded-xl overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                      {l.image_url ? (
+                        <img src={l.image_url} alt={l.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <MapPin className="size-6 text-muted-foreground/50" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">{l.name}</p>
+                        {l.is_active === false && (
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactiva</span>
+                        )}
+                      </div>
+                      {l.address && <p className="text-xs text-muted-foreground truncate flex items-center gap-1"><MapPin className="size-3 shrink-0" /> {l.address}</p>}
+                      {l.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="size-3" /> {l.phone_country_code} {l.phone}</p>}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                          <Users className="size-3" /> {assignCounts?.[l.id] ?? 0}
+                        </span>
+                        {daysOpen > 0 && sample && (
+                          <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                            <Clock className="size-3" /> {sample.start_time.slice(0,5)}–{sample.end_time.slice(0,5)} · {daysOpen}d
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Switch
+                        checked={l.is_active !== false}
+                        onCheckedChange={(v) => toggleActive.mutate({ id: l.id, is_active: v })}
+                        aria-label="Activa"
+                      />
+                      <div className="flex">
+                        <Button size="icon" variant="ghost" onClick={() => { setEditing(l); setOpen(true); }}><Pencil className="size-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar sucursal?")) del.mutate(l.id); }}><Trash2 className="size-4" /></Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       <LocationDialog open={open} onOpenChange={setOpen} businessId={businessId} editing={editing} />
     </div>
