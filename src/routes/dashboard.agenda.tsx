@@ -24,14 +24,6 @@ type ViewMode = "day" | "week";
 
 type RescheduleInput = { id: string; newDate: Date; newTime: string; durationMin: number };
 
-const STATUS_LABEL: Record<ApptStatus, string> = {
-  pending: "Pendiente",
-  booked: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-  no_show: "No-show",
-};
-
 export const Route = createFileRoute("/dashboard/agenda")({
   component: AgendaPage,
 });
