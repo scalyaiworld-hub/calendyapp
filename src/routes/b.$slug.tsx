@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { createPublicBooking } from "@/lib/api/public-booking.functions";
@@ -49,6 +49,7 @@ function BookingPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["public-biz", slug],
@@ -279,14 +280,33 @@ function BookingPage() {
 
           {step !== "done" ? (
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Tu reserva</p>
-              <div className="rounded-2xl border border-border bg-background/50 divide-y divide-border">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Tu reserva</p>
+                <button onClick={() => setSummaryOpen((v) => !v)} className="lg:hidden text-xs text-primary flex items-center gap-1 font-medium">
+                  {summaryOpen ? <><X className="size-3" /> Ocultar</> : <><Menu className="size-3" /> Ver detalle</>}
+                </button>
+              </div>
+              {/* Desktop / expanded mobile */}
+              <div className={cn("rounded-2xl border border-border bg-background/50 divide-y divide-border", !summaryOpen && "hidden lg:block")}>
                 <SummaryRow icon={MapPin} label="Sucursal" value={location?.name ?? (hasLocations ? "Por elegir" : "—")} />
                 <SummaryRow icon={User2} label="Profesional" value={professional?.name ?? "Por elegir"} />
                 <SummaryRow icon={Scissors} label="Servicio" value={service ? `${service.name} · ${formatPriceCents(service.price_cents)}` : "Por elegir"} />
                 <SummaryRow icon={Calendar} label="Día" value={slot ? slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : (step === "datetime" ? date.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : "Por elegir")} />
                 <SummaryRow icon={Clock} label="Hora" value={slot ? formatTime(slot.starts_at) : "Por elegir"} />
               </div>
+              {/* Collapsed mobile summary */}
+              {!summaryOpen && (
+                <div className="lg:hidden grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl border border-border bg-background/50 px-3 py-2 truncate">
+                    <span className="text-muted-foreground">Sucursal:</span>{" "}
+                    <span className="font-medium">{location?.name ?? (hasLocations ? "Por elegir" : "—")}</span>
+                  </div>
+                  <div className="rounded-xl border border-border bg-background/50 px-3 py-2 truncate">
+                    <span className="text-muted-foreground">Servicio:</span>{" "}
+                    <span className="font-medium">{service ? service.name : "Por elegir"}</span>
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-2">
                 <Sparkles className="size-3.5" /> Confirmación por WhatsApp
               </p>
@@ -296,7 +316,7 @@ function BookingPage() {
       </aside>
 
       {/* Main: paso actual */}
-      <main className="max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6">
+      <main className={cn("max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6", (step === "datetime" && slot) || (step === "client" && slot) ? "pb-24 lg:pb-8" : "pb-8")}>
         {step !== "done" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -318,13 +338,13 @@ function BookingPage() {
                       done ? "bg-primary" : active ? "bg-primary/70" : "bg-muted"
                     )} />
                     <p className={cn(
-                      "text-[10px] font-medium leading-tight truncate",
+                      "text-[10px] font-medium leading-tight truncate hidden sm:block",
                       done || active ? "text-foreground" : "text-muted-foreground"
                     )}>{label}</p>
-                    <p className={cn(
-                      "text-[10px] leading-tight truncate hidden sm:block",
-                      done || active ? "text-muted-foreground" : "text-muted-foreground/60"
-                    )}>{stepDescriptions[i]}</p>
+                    {/* Mobile: only show current step text */}
+                    {active && (
+                      <p className="sm:hidden text-[10px] font-medium leading-tight truncate text-foreground">{label}</p>
+                    )}
                   </div>
                 );
               })}
@@ -341,9 +361,9 @@ function BookingPage() {
             ) : (
               <div className="grid gap-3">
                 {locations.map((l) => (
-                  <button key={l.id} onClick={() => { setLocationId(l.id); setStep("mode"); }} className="text-left">
+                  <button key={l.id} onClick={() => { setLocationId(l.id); setStep("mode"); }} className="text-left active:scale-[0.98] transition-transform">
                     <Card className="hover:border-primary transition-colors">
-                      <CardContent className="pt-4 pb-4 flex items-start gap-3">
+                      <CardContent className="pt-5 pb-5 flex items-start gap-3">
                         <MapPin className="size-5 text-primary mt-0.5 shrink-0" />
                         <div className="min-w-0">
                           <p className="font-medium">{l.name}</p>
@@ -364,7 +384,7 @@ function BookingPage() {
             <h2 className="font-display text-2xl">¿Cómo prefieres reservar?</h2>
             <p className="text-sm text-muted-foreground">{location?.name}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <button onClick={() => { setMode("pro"); setStep("pickPro"); }} className="text-left">
+              <button onClick={() => { setMode("pro"); setStep("pickPro"); }} className="text-left active:scale-[0.98] transition-transform">
                 <Card className="hover:border-primary transition-colors h-full">
                   <CardContent className="pt-6 pb-6 text-center space-y-2">
                     <User2 className="size-8 text-primary mx-auto" />
@@ -373,7 +393,7 @@ function BookingPage() {
                   </CardContent>
                 </Card>
               </button>
-              <button onClick={() => { setMode("svc"); setStep("pickSvc"); }} className="text-left">
+              <button onClick={() => { setMode("svc"); setStep("pickSvc"); }} className="text-left active:scale-[0.98] transition-transform">
                 <Card className="hover:border-primary transition-colors h-full">
                   <CardContent className="pt-6 pb-6 text-center space-y-2">
                     <Scissors className="size-8 text-primary mx-auto" />
@@ -398,9 +418,9 @@ function BookingPage() {
                   setProfessionalId(p.id);
                   if (mode === "pro") setStep("pickSvc");
                   else setStep("datetime");
-                }} className="text-left">
+                }} className="text-left active:scale-[0.98] transition-transform">
                   <Card className="hover:border-primary transition-colors">
-                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                    <CardContent className="pt-4 pb-4 flex items-center gap-3">
                       <div className="size-10 rounded-full bg-primary/10 grid place-items-center text-primary font-medium">
                         {p.name.charAt(0).toUpperCase()}
                       </div>
@@ -454,9 +474,9 @@ function BookingPage() {
             </CardContent></Card>
             <div>
               <Label className="mb-2 block">Día</Label>
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth -mx-4 px-4">
                 {next7.map((d) => (
-                  <button key={d.toDateString()} onClick={() => setDate(d)} className={cn("flex-shrink-0 px-3 py-2 rounded-md border text-center min-w-16", d.toDateString() === date.toDateString() ? "border-primary bg-primary/10" : "border-border")}>
+                  <button key={d.toDateString()} onClick={() => setDate(d)} className={cn("flex-shrink-0 px-4 py-3 rounded-xl border text-center min-w-[4.5rem] snap-center active:scale-95 transition-transform", d.toDateString() === date.toDateString() ? "border-primary bg-primary/10" : "border-border")}>
                     <p className="text-xs text-muted-foreground">{d.toLocaleDateString("es-PE", { weekday: "short" })}</p>
                     <p className="font-medium">{d.getDate()}</p>
                   </button>
@@ -475,7 +495,7 @@ function BookingPage() {
                         key={s.starts_at.toISOString()}
                         onClick={() => setSlot(s)}
                         className={cn(
-                          "px-3 py-2 rounded-md border text-sm transition-colors",
+                          "px-3 py-3 rounded-xl border text-sm transition-colors min-h-[44px]",
                           slot?.starts_at.toISOString() === s.starts_at.toISOString()
                             ? "border-primary bg-primary/10 text-primary font-medium"
                             : "border-border hover:border-primary"
@@ -485,14 +505,23 @@ function BookingPage() {
                       </button>
                     ))}
                   </div>
-                  {slot && (
-                    <Button className="w-full mt-4" size="lg" onClick={() => setStep("client")}>
-                    Siguiente <ChevronRight className="size-4" />
-                    </Button>
-                  )}
                 </>
               )}
             </div>
+            {/* Mobile sticky CTA */}
+            {slot && (
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
+                <Button className="w-full" size="lg" onClick={() => setStep("client")}>
+                  Siguiente <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            )}
+            {/* Desktop inline CTA */}
+            {slot && (
+              <Button className="hidden lg:flex w-full mt-4" size="lg" onClick={() => setStep("client")}>
+                Siguiente <ChevronRight className="size-4" />
+              </Button>
+            )}
           </>
         )}
 
@@ -517,6 +546,14 @@ function BookingPage() {
                   />
                 </div>
               </div>
+              {/* Desktop inline CTA */}
+              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+                <Check className="size-4" />
+                {book.isPending ? "Reservando…" : "Confirmar reserva"}
+              </Button>
+            </div>
+            {/* Mobile sticky CTA */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
               <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
