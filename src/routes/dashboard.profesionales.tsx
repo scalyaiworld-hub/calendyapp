@@ -16,6 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, PRO_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CardGridSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/profesionales")({
   component: ProfesionalesPage,
