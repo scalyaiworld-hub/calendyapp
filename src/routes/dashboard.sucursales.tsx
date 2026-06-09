@@ -44,7 +44,7 @@ function LocationsTab() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: locations } = useQuery({
+  const { data: locations, isLoading } = useQuery({
     queryKey: ["locations", businessId],
     enabled: !!businessId,
     queryFn: async () => {
