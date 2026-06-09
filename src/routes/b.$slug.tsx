@@ -384,7 +384,7 @@ function BookingPage() {
             <h2 className="font-display text-2xl">¿Cómo prefieres reservar?</h2>
             <p className="text-sm text-muted-foreground">{location?.name}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <button onClick={() => { setMode("pro"); setStep("pickPro"); }} className="text-left">
+              <button onClick={() => { setMode("pro"); setStep("pickPro"); }} className="text-left active:scale-[0.98] transition-transform">
                 <Card className="hover:border-primary transition-colors h-full">
                   <CardContent className="pt-6 pb-6 text-center space-y-2">
                     <User2 className="size-8 text-primary mx-auto" />
@@ -393,7 +393,7 @@ function BookingPage() {
                   </CardContent>
                 </Card>
               </button>
-              <button onClick={() => { setMode("svc"); setStep("pickSvc"); }} className="text-left">
+              <button onClick={() => { setMode("svc"); setStep("pickSvc"); }} className="text-left active:scale-[0.98] transition-transform">
                 <Card className="hover:border-primary transition-colors h-full">
                   <CardContent className="pt-6 pb-6 text-center space-y-2">
                     <Scissors className="size-8 text-primary mx-auto" />
