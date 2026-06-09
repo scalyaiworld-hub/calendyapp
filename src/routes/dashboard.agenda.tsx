@@ -375,7 +375,8 @@ function WeekCalendar({
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2;
-  const [tick, setTick] = useState(0);
+  // Forzar re-render cada minuto para que la línea de "ahora" avance.
+  const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
@@ -383,7 +384,6 @@ function WeekCalendar({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = new Date();
-  const todayIndex = now.getDay(); // 0 = domingo
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
