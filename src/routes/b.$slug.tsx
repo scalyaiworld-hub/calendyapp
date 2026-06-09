@@ -338,13 +338,13 @@ function BookingPage() {
                       done ? "bg-primary" : active ? "bg-primary/70" : "bg-muted"
                     )} />
                     <p className={cn(
-                      "text-[10px] font-medium leading-tight truncate",
+                      "text-[10px] font-medium leading-tight truncate hidden sm:block",
                       done || active ? "text-foreground" : "text-muted-foreground"
                     )}>{label}</p>
-                    <p className={cn(
-                      "text-[10px] leading-tight truncate hidden sm:block",
-                      done || active ? "text-muted-foreground" : "text-muted-foreground/60"
-                    )}>{stepDescriptions[i]}</p>
+                    {/* Mobile: only show current step text */}
+                    {active && (
+                      <p className="sm:hidden text-[10px] font-medium leading-tight truncate text-foreground">{label}</p>
+                    )}
                   </div>
                 );
               })}
