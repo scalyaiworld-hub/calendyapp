@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { AVAILABLE_FONTS, BrandTheme } from "@/lib/brand-theme";
+import { slugify } from "@/lib/format";
 
 export const Route = createFileRoute("/dashboard/ajustes")({
   component: AjustesPage,
@@ -20,6 +21,8 @@ function AjustesPage() {
   const { data: business } = useMyBusiness();
   const qc = useQueryClient();
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [waCountry, setWaCountry] = useState(DEFAULT_COUNTRY_CODE);
   const [waNumber, setWaNumber] = useState("");
   const [brandPrimary, setBrandPrimary] = useState<string>("#3b82f6");
@@ -32,6 +35,7 @@ function AjustesPage() {
     if (business && !prefilledRef.current) {
       prefilledRef.current = true;
       setName(business.name);
+      setSlug(business.slug);
       setWaCountry((business as any).whatsapp_country_code ?? DEFAULT_COUNTRY_CODE);
       setWaNumber((business as any).whatsapp_number ?? business.phone ?? "");
       setBrandPrimary((business as any).brand_primary ?? "#3b82f6");
@@ -40,12 +44,35 @@ function AjustesPage() {
     }
   }, [business]);
 
+  // Auto-sugerir slug a partir del nombre mientras el usuario no lo edite manualmente.
+  useEffect(() => {
+    if (!slugTouched && name) {
+      const next = slugify(name);
+      if (next && next.length >= 3) setSlug(next);
+    }
+  }, [name, slugTouched]);
+
   const save = useMutation({
     mutationFn: async () => {
+      const cleanSlug = slug.trim().toLowerCase();
+      if (!/^[a-z0-9-]+$/.test(cleanSlug) || cleanSlug.length < 3 || cleanSlug.length > 60) {
+        throw new Error("El link debe tener entre 3 y 60 caracteres: letras, números y guiones.");
+      }
+      if (cleanSlug !== business!.slug) {
+        const { data: dup } = await supabase
+          .from("businesses")
+          .select("id")
+          .eq("slug", cleanSlug)
+          .neq("id", business!.id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (dup) throw new Error("Ese link ya está en uso. Elige otro.");
+      }
       const { error } = await supabase
         .from("businesses")
         .update({
           name,
+          slug: cleanSlug,
           whatsapp_country_code: waCountry,
           whatsapp_number: waNumber || null,
           phone: waNumber ? `${waCountry} ${waNumber}` : null,
@@ -161,6 +188,22 @@ function AjustesPage() {
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div>
+            <Label>Link público</Label>
+            <div className="flex items-center gap-1 mt-1.5">
+              <span className="text-sm text-muted-foreground shrink-0">{typeof window !== "undefined" ? `${window.location.origin}/b/` : "/b/"}</span>
+              <Input
+                value={slug}
+                onChange={(e) => { setSlugTouched(true); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-")); }}
+                placeholder="mi-salon"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {slug !== business.slug
+                ? "⚠️ Al guardar, el link anterior dejará de funcionar. Comparte el nuevo con tus clientes."
+                : "Se sugiere automáticamente desde el nombre. Puedes editarlo."}
+            </p>
+          </div>
           <div>
             <Label>WhatsApp</Label>
             <div className="mt-1.5">
