@@ -470,11 +470,25 @@ function BookingPage() {
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {slots.map((s) => (
-                    <button key={s.starts_at.toISOString()} onClick={() => { setSlot(s); setStep("client"); }} className="px-3 py-2 rounded-md border border-border hover:border-primary text-sm">
+                    <button
+                      key={s.starts_at.toISOString()}
+                      onClick={() => setSlot(s)}
+                      className={cn(
+                        "px-3 py-2 rounded-md border text-sm transition-colors",
+                        slot?.starts_at.toISOString() === s.starts_at.toISOString()
+                          ? "border-primary bg-primary/10 text-primary font-medium"
+                          : "border-border hover:border-primary"
+                      )}
+                    >
                       {formatTime(s.starts_at)}
                     </button>
                   ))}
                 </div>
+                {slot && (
+                  <Button className="w-full mt-4" size="lg" onClick={() => setStep("client")}>
+                    Siguiente <ChevronLeft className="size-4 rotate-180" />
+                  </Button>
+                )}
               )}
             </div>
           </>
