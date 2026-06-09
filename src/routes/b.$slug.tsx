@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X, Sun, Sunset, Moon, Phone, UserCircle2 } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { createPublicBooking } from "@/lib/api/public-booking.functions";
@@ -32,6 +32,25 @@ function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; va
       </div>
     </div>
   );
+}
+
+function groupSlotsByPartOfDay(slots: { starts_at: Date; ends_at: Date }[]) {
+  const groups: Record<"morning" | "afternoon" | "evening", typeof slots> = { morning: [], afternoon: [], evening: [] };
+  slots.forEach((s) => {
+    const h = s.starts_at.getHours();
+    if (h < 12) groups.morning.push(s);
+    else if (h < 18) groups.afternoon.push(s);
+    else groups.evening.push(s);
+  });
+  return groups;
+}
+
+function dateLabel(d: Date) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Mañana";
+  return d.toLocaleDateString("es-PE", { weekday: "short" });
 }
 
 type Step = "location" | "mode" | "pickPro" | "pickSvc" | "datetime" | "client" | "done";
@@ -355,24 +374,33 @@ function BookingPage() {
         {/* Step 1: Sucursal */}
         {step === "location" && (
           <>
-            <h2 className="font-display text-2xl">Elige una sucursal</h2>
+            <div className="space-y-1">
+              <h2 className="font-display text-2xl">Elige una sucursal</h2>
+              <p className="text-sm text-muted-foreground">Selecciona el local donde quieres tu cita.</p>
+            </div>
             {!locations?.length ? (
               <p className="text-muted-foreground">Este salón aún no tiene sucursales activas.</p>
             ) : (
               <div className="grid gap-3">
-                {locations.map((l) => (
-                  <button key={l.id} onClick={() => { setLocationId(l.id); setStep("mode"); }} className="text-left active:scale-[0.98] transition-transform">
-                    <Card className="hover:border-primary transition-colors">
-                      <CardContent className="pt-5 pb-5 flex items-start gap-3">
-                        <MapPin className="size-5 text-primary mt-0.5 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="font-medium">{l.name}</p>
-                          {l.address && <p className="text-sm text-muted-foreground">{l.address}</p>}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </button>
-                ))}
+                {locations.map((l) => {
+                  const selected = l.id === locationId;
+                  return (
+                    <button key={l.id} onClick={() => { setLocationId(l.id); setStep("mode"); }} className="text-left active:scale-[0.98] transition-transform group">
+                      <Card className={cn("transition-all", selected ? "border-primary ring-2 ring-primary/20" : "hover:border-primary hover:shadow-md")}>
+                        <CardContent className="pt-5 pb-5 flex items-center gap-4">
+                          <div className="size-12 rounded-2xl bg-primary/10 grid place-items-center shrink-0">
+                            <MapPin className="size-5 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium">{l.name}</p>
+                            {l.address && <p className="text-sm text-muted-foreground truncate">{l.address}</p>}
+                          </div>
+                          <ChevronRight className="size-5 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0" />
+                        </CardContent>
+                      </Card>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </>
@@ -409,22 +437,33 @@ function BookingPage() {
         {/* Step 2b: Pick professional (mode = pro) */}
         {step === "pickPro" && (
           <>
-            <h2 className="font-display text-2xl">{mode === "pro" ? "Elige un profesional" : "Elige un profesional"}</h2>
+            <div className="space-y-1">
+              <h2 className="font-display text-2xl">Elige un profesional</h2>
+              <p className="text-sm text-muted-foreground">{mode === "svc" && service ? `Disponibles para ${service.name}` : "Quien te atenderá"}</p>
+            </div>
             {!locPros?.length && mode === "pro" && <p className="text-muted-foreground">No hay profesionales en esta sucursal.</p>}
             {mode === "svc" && !svcPros?.length && <p className="text-muted-foreground">Nadie ofrece este servicio en esta sucursal.</p>}
-            <div className="grid gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {(mode === "pro" ? locPros : svcPros)?.map((p: any) => (
                 <button key={p.id} onClick={() => {
                   setProfessionalId(p.id);
                   if (mode === "pro") setStep("pickSvc");
                   else setStep("datetime");
-                }} className="text-left active:scale-[0.98] transition-transform">
-                  <Card className="hover:border-primary transition-colors">
+                }} className="text-left active:scale-[0.98] transition-transform group">
+                  <Card className="hover:border-primary hover:shadow-md transition-all h-full">
                     <CardContent className="pt-4 pb-4 flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-primary/10 grid place-items-center text-primary font-medium">
-                        {p.name.charAt(0).toUpperCase()}
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} alt={p.name} className="size-12 rounded-full object-cover border border-border shrink-0" />
+                      ) : (
+                        <div className="size-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 grid place-items-center text-primary font-medium shrink-0">
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">Profesional</p>
                       </div>
-                      <p className="font-medium">{p.name}</p>
+                      <ChevronRight className="size-4 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0" />
                     </CardContent>
                   </Card>
                 </button>
@@ -436,7 +475,10 @@ function BookingPage() {
         {/* Step 2b: Pick service */}
         {step === "pickSvc" && (
           <>
-            <h2 className="font-display text-2xl">Elige un servicio</h2>
+            <div className="space-y-1">
+              <h2 className="font-display text-2xl">Elige un servicio</h2>
+              <p className="text-sm text-muted-foreground">{mode === "pro" && professional ? `Ofrecidos por ${professional.name}` : "Lo que necesitas hoy"}</p>
+            </div>
             {(() => {
               const list = mode === "pro" ? proServices : locServices;
               if (!list?.length) return <p className="text-muted-foreground">No hay servicios disponibles.</p>;
@@ -447,14 +489,22 @@ function BookingPage() {
                       setServiceId(s.id);
                       if (mode === "svc") setStep("pickPro");
                       else setStep("datetime");
-                    }} className="text-left">
-                      <Card className="hover:border-primary transition-colors">
-                        <CardContent className="pt-4 pb-4 flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{s.name}</p>
-                            <p className="text-sm text-muted-foreground">{s.duration_minutes} min{s.description ? ` · ${s.description}` : ""}</p>
+                    }} className="text-left active:scale-[0.98] transition-transform group">
+                      <Card className="hover:border-primary hover:shadow-md transition-all">
+                        <CardContent className="pt-4 pb-4 flex items-start gap-4">
+                          <div className="size-11 rounded-xl bg-primary/10 grid place-items-center shrink-0">
+                            <Scissors className="size-5 text-primary" />
                           </div>
-                          <p className="font-semibold text-primary">{formatPriceCents(s.price_cents)}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium">{s.name}</p>
+                            {s.description && <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">{s.description}</p>}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+                                <Clock className="size-3" /> {s.duration_minutes} min
+                              </span>
+                            </div>
+                          </div>
+                          <p className="font-semibold text-primary text-lg shrink-0">{formatPriceCents(s.price_cents)}</p>
                         </CardContent>
                       </Card>
                     </button>
@@ -467,50 +517,85 @@ function BookingPage() {
 
         {step === "datetime" && service && (
           <>
-            <Card><CardContent className="pt-4 pb-4 text-sm space-y-0.5">
-              {location?.name && <p><strong>{location.name}</strong></p>}
-              <p>{service.name} · {service.duration_minutes} min · {formatPriceCents(service.price_cents)}</p>
-              <p className="text-muted-foreground">con {professional?.name}</p>
-            </CardContent></Card>
+            <div className="space-y-1">
+              <h2 className="font-display text-2xl">¿Cuándo te viene bien?</h2>
+              <p className="text-sm text-muted-foreground">Elige día y hora disponible.</p>
+            </div>
             <div>
-              <Label className="mb-2 block">Día</Label>
+              <Label className="mb-2 block text-xs uppercase tracking-wider text-muted-foreground">Día</Label>
               <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth -mx-4 px-4">
-                {next7.map((d) => (
-                  <button key={d.toDateString()} onClick={() => setDate(d)} className={cn("flex-shrink-0 px-4 py-3 rounded-xl border text-center min-w-[4.5rem] snap-center active:scale-95 transition-transform", d.toDateString() === date.toDateString() ? "border-primary bg-primary/10" : "border-border")}>
-                    <p className="text-xs text-muted-foreground">{d.toLocaleDateString("es-PE", { weekday: "short" })}</p>
-                    <p className="font-medium">{d.getDate()}</p>
-                  </button>
-                ))}
+                {next7.map((d) => {
+                  const active = d.toDateString() === date.toDateString();
+                  return (
+                    <button key={d.toDateString()} onClick={() => { setDate(d); setSlot(null); }} className={cn("flex-shrink-0 px-3 py-2.5 rounded-2xl border text-center min-w-[4.75rem] snap-center active:scale-95 transition-all", active ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border hover:border-primary/50 bg-card")}>
+                      <p className={cn("text-[10px] uppercase tracking-wider font-medium", active ? "text-primary-foreground/80" : "text-muted-foreground")}>{dateLabel(d)}</p>
+                      <p className="font-semibold text-lg leading-tight">{d.getDate()}</p>
+                      <p className={cn("text-[10px]", active ? "text-primary-foreground/80" : "text-muted-foreground")}>{d.toLocaleDateString("es-PE", { month: "short" })}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div>
-              <Label className="mb-2 block">Hora disponible</Label>
+              <Label className="mb-2 block text-xs uppercase tracking-wider text-muted-foreground">Hora disponible</Label>
               {!slots ? <p className="text-sm text-muted-foreground">Cargando…</p> : !slots.length ? (
-                <p className="text-sm text-muted-foreground">No hay horarios disponibles este día.</p>
+                <div className="rounded-2xl border border-dashed border-border p-6 text-center space-y-1">
+                  <Calendar className="size-6 text-muted-foreground/50 mx-auto" />
+                  <p className="text-sm font-medium">Sin horarios este día</p>
+                  <p className="text-xs text-muted-foreground">Prueba otra fecha de la lista.</p>
+                </div>
               ) : (
-                <>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {slots.map((s) => (
-                      <button
-                        key={s.starts_at.toISOString()}
-                        onClick={() => setSlot(s)}
-                        className={cn(
-                          "px-3 py-3 rounded-xl border text-sm transition-colors min-h-[44px]",
-                          slot?.starts_at.toISOString() === s.starts_at.toISOString()
-                            ? "border-primary bg-primary/10 text-primary font-medium"
-                            : "border-border hover:border-primary"
-                        )}
-                      >
-                        {formatTime(s.starts_at)}
-                      </button>
-                    ))}
-                  </div>
-                </>
+                <div className="space-y-4">
+                  {(() => {
+                    const grouped = groupSlotsByPartOfDay(slots);
+                    const sections: { key: keyof typeof grouped; label: string; icon: any }[] = [
+                      { key: "morning", label: "Mañana", icon: Sun },
+                      { key: "afternoon", label: "Tarde", icon: Sunset },
+                      { key: "evening", label: "Noche", icon: Moon },
+                    ];
+                    return sections.map(({ key, label, icon: Icon }) => {
+                      const list = grouped[key];
+                      if (!list.length) return null;
+                      return (
+                        <div key={key}>
+                          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                            <Icon className="size-3.5" />
+                            <span className="font-medium">{label}</span>
+                            <span className="text-muted-foreground/60">· {list.length} horarios</span>
+                          </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {list.map((s) => {
+                              const active = slot?.starts_at.toISOString() === s.starts_at.toISOString();
+                              return (
+                                <button
+                                  key={s.starts_at.toISOString()}
+                                  onClick={() => setSlot(s)}
+                                  className={cn(
+                                    "px-3 py-3 rounded-xl border text-sm transition-all min-h-[44px] active:scale-95",
+                                    active
+                                      ? "border-primary bg-primary text-primary-foreground font-semibold shadow-md"
+                                      : "border-border hover:border-primary bg-card"
+                                  )}
+                                >
+                                  {formatTime(s.starts_at)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               )}
             </div>
             {/* Mobile sticky CTA */}
             {slot && (
               <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
+                <div className="flex items-center justify-between mb-2 text-xs">
+                  <span className="text-muted-foreground">Seleccionado</span>
+                  <span className="font-medium">{formatTime(slot.starts_at)}</span>
+                </div>
                 <Button className="w-full" size="lg" onClick={() => setStep("client")}>
                   Siguiente <ChevronRight className="size-4" />
                 </Button>
@@ -527,34 +612,50 @@ function BookingPage() {
 
         {step === "client" && slot && service && (
           <>
-            <h2 className="font-display text-2xl">Tus datos</h2>
-            <Card><CardContent className="pt-4 pb-4 text-sm">
-              <p><strong>{service.name}</strong></p>
-              <p className="text-muted-foreground">{location?.name ? `${location.name} · ` : ""}con {professional?.name}</p>
-              <p className="text-muted-foreground">{slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })} · {formatTime(slot.starts_at)}</p>
-            </CardContent></Card>
-            <div className="space-y-3">
-              <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-              <div>
-                <Label>WhatsApp</Label>
-                <div className="mt-1.5">
-                  <PhoneInput
-                    countryCode={countryCode}
-                    number={phone}
-                    onCountryCodeChange={setCountryCode}
-                    onNumberChange={setPhone}
-                  />
+            <div className="space-y-1">
+              <h2 className="font-display text-2xl">Tus datos</h2>
+              <p className="text-sm text-muted-foreground">Te enviaremos la confirmación por WhatsApp.</p>
+            </div>
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <div className="flex items-center gap-2 text-xs text-primary font-medium uppercase tracking-wider">
+                  <Sparkles className="size-3.5" /> Resumen
                 </div>
+                <p className="font-semibold">{service.name}</p>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2"><User2 className="size-3.5" /> {professional?.name}</p>
+                  {location?.name && <p className="flex items-center gap-2"><MapPin className="size-3.5" /> {location.name}</p>}
+                  <p className="flex items-center gap-2"><Calendar className="size-3.5" /> {slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</p>
+                  <p className="flex items-center gap-2"><Clock className="size-3.5" /> {formatTime(slot.starts_at)} · {service.duration_minutes} min</p>
+                </div>
+                <p className="text-lg font-semibold text-primary pt-1">{formatPriceCents(service.price_cents)}</p>
+              </CardContent>
+            </Card>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><UserCircle2 className="size-3.5" /> Nombre completo</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Cómo te llamamos" />
+                {name && name.trim().length < 2 && <p className="text-xs text-destructive">Escribe al menos 2 caracteres.</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Phone className="size-3.5" /> WhatsApp</Label>
+                <PhoneInput
+                  countryCode={countryCode}
+                  number={phone}
+                  onCountryCodeChange={setCountryCode}
+                  onNumberChange={setPhone}
+                />
+                <p className="text-xs text-muted-foreground">Usaremos este número solo para confirmar tu cita.</p>
               </div>
               {/* Desktop inline CTA */}
-              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
             </div>
             {/* Mobile sticky CTA */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
-              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
