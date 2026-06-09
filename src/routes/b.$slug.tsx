@@ -21,6 +21,19 @@ export const Route = createFileRoute("/b/$slug")({
   component: BookingPage,
 });
 
+function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  const empty = value === "Por elegir" || value === "—";
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <Icon className={cn("size-4 shrink-0", empty ? "text-muted-foreground/50" : "text-primary")} />
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className={cn("text-sm truncate", empty ? "text-muted-foreground/70" : "font-medium text-foreground")}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
 type Step = "location" | "mode" | "pickPro" | "pickSvc" | "datetime" | "client" | "done";
 type Mode = "pro" | "svc" | null;
 
