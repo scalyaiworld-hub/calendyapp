@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Filter, CalendarDays, Scissors, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid } from "lucide-react";
+import { Search, Filter, CalendarDays, Scissors, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid, Clock, CheckCircle2, XCircle, AlertCircle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
@@ -38,7 +38,17 @@ const STATUS_STYLES: Record<ApptStatus, string> = {
   no_show: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+const STATUS_DOT: Record<ApptStatus, string> = {
+  pending: "bg-yellow-500",
+  booked: "bg-primary",
+  completed: "bg-green-500",
+  cancelled: "bg-muted-foreground",
+  no_show: "bg-destructive",
+};
+
 const KANBAN_COLS: ApptStatus[] = ["pending", "booked", "completed", "cancelled", "no_show"];
+
+type QuickRange = "all" | "today" | "tomorrow" | "week" | "upcoming";
 
 function CitasPage() {
   const { data: business } = useMyBusiness();
@@ -53,6 +63,7 @@ function CitasPage() {
   const [page, setPage] = useState(0);
   const [selectedAppt, setSelectedAppt] = useState<any>(null);
   const [view, setView] = useState<"list" | "kanban">("list");
+  const [quickRange, setQuickRange] = useState<QuickRange>("all");
   const pageSize = 20;
   const trimmedSearch = search.trim();
   // En Kanban y al buscar, traemos un lote grande sin paginar para que la
@@ -198,10 +209,37 @@ function CitasPage() {
   const filteredItems = appointments?.items ?? [];
   const totalPages = usePagination ? Math.ceil((appointments?.count ?? 0) / pageSize) : 1;
 
-  const hasFilters = statusFilter !== "all" || locationFilter !== "all" || !!dateFrom || !!dateTo || !!search.trim();
+  const hasFilters = statusFilter !== "all" || locationFilter !== "all" || !!dateFrom || !!dateTo || !!search.trim() || quickRange !== "all";
   function clearFilters() {
-    setStatusFilter("all"); setLocationFilter("all"); setDateFrom(""); setDateTo(""); setSearch(""); setPage(0);
+    setStatusFilter("all"); setLocationFilter("all"); setDateFrom(""); setDateTo(""); setSearch(""); setQuickRange("all"); setPage(0);
   }
+
+  function applyQuickRange(r: QuickRange) {
+    setQuickRange(r);
+    setPage(0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const today = new Date();
+    if (r === "today") { setDateFrom(fmt(today)); setDateTo(fmt(today)); }
+    else if (r === "tomorrow") { const t = new Date(today); t.setDate(t.getDate() + 1); setDateFrom(fmt(t)); setDateTo(fmt(t)); }
+    else if (r === "week") { const end = new Date(today); end.setDate(end.getDate() + 6); setDateFrom(fmt(today)); setDateTo(fmt(end)); }
+    else if (r === "upcoming") { setDateFrom(fmt(today)); setDateTo(""); }
+    else { setDateFrom(""); setDateTo(""); }
+  }
+
+  // Quick stats for header (based on currently loaded items)
+  const todayStr = new Date().toDateString();
+  const stats = (() => {
+    const items = filteredItems as any[];
+    let todayCount = 0, pendingCount = 0, completedRevenue = 0;
+    for (const a of items) {
+      const d = new Date(a.starts_at);
+      if (d.toDateString() === todayStr) todayCount++;
+      if (a.status === "pending") pendingCount++;
+      if (a.status === "completed") completedRevenue += a.services?.price_cents ?? 0;
+    }
+    return { todayCount, pendingCount, completedRevenue };
+  })();
 
   function initials(name?: string | null) {
     if (!name) return "?";
@@ -212,6 +250,29 @@ function CitasPage() {
     const d = new Date(iso);
     return `${DAY_NAMES_SHORT[d.getDay()]} ${d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}`;
   }
+
+  function dayGroupLabel(iso: string) {
+    const d = new Date(iso); d.setHours(0,0,0,0);
+    const t = new Date(); t.setHours(0,0,0,0);
+    const diff = Math.round((d.getTime() - t.getTime()) / 86400000);
+    if (diff === 0) return "Hoy";
+    if (diff === 1) return "Mañana";
+    if (diff === -1) return "Ayer";
+    return d.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  // Group items by date (only useful in list view)
+  const grouped: { key: string; label: string; items: any[] }[] = (() => {
+    const map = new Map<string, { label: string; items: any[] }>();
+    for (const a of filteredItems as any[]) {
+      const d = new Date(a.starts_at);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const entry = map.get(key) ?? { label: dayGroupLabel(a.starts_at), items: [] };
+      entry.items.push(a);
+      map.set(key, entry);
+    }
+    return Array.from(map.entries()).map(([key, v]) => ({ key, ...v }));
+  })();
 
   function getLocationName(locationId?: string | null) {
     return locationsList?.find((l) => l.id === locationId)?.name ?? "";
@@ -224,6 +285,27 @@ function CitasPage() {
         <p className="text-muted-foreground">Historial y gestión de todas las citas.</p>
       </div>
 
+      {/* Stats summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5"><CalendarDays className="size-3.5" /> Hoy</p>
+          <p className="font-display text-2xl">{stats.todayCount}</p>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5"><AlertCircle className="size-3.5" /> Pendientes</p>
+          <p className="font-display text-2xl text-yellow-600">{stats.pendingCount}</p>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="size-3.5" /> Completadas (S/)</p>
+          <p className="font-display text-2xl text-green-600">{formatPriceCents(stats.completedRevenue)}</p>
+        </CardContent></Card>
+        <Card><CardContent className="py-3 px-4">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5"><List className="size-3.5" /> En vista</p>
+          <p className="font-display text-2xl">{appointments?.count ?? 0}</p>
+        </CardContent></Card>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 flex-wrap">
       <div className="inline-flex rounded-md border border-border bg-background p-0.5 w-fit">
         <button
           type="button"
@@ -239,6 +321,26 @@ function CitasPage() {
         >
           <LayoutGrid className="size-3.5" /> Kanban
         </button>
+      </div>
+        {/* Quick date filters */}
+        <div className="inline-flex rounded-md border border-border bg-background p-0.5 flex-wrap">
+          {([
+            { id: "all", label: "Todas" },
+            { id: "today", label: "Hoy" },
+            { id: "tomorrow", label: "Mañana" },
+            { id: "week", label: "7 días" },
+            { id: "upcoming", label: "Próximas" },
+          ] as { id: QuickRange; label: string }[]).map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => applyQuickRange(r.id)}
+              className={cn("px-2.5 py-1.5 text-xs rounded-sm transition", quickRange === r.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -317,44 +419,81 @@ function CitasPage() {
           onSelect={(a) => setSelectedAppt(a)}
         />
       ) : (
-        <div className="space-y-2">
-          {filteredItems.map((a: any) => (
-            <Card key={a.id} className="hover:shadow-soft transition-shadow cursor-pointer" onClick={() => setSelectedAppt(a)}>
-              <CardContent className="py-4 px-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-start gap-4">
-                    <div className="text-center min-w-[64px]">
-                      <p className="font-display text-xl leading-none">{formatTime(a.starts_at)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{formatDateLabel(a.starts_at)}</p>
-                    </div>
-                    <div className="size-10 rounded-full bg-primary/10 text-primary font-medium flex items-center justify-center text-sm shrink-0">
-                      {initials(a.clients?.name)}
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{a.clients?.name}</p>
-                        <span className="text-xs text-muted-foreground">{a.clients?.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Scissors className="size-3.5 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">{a.services?.name}</p>
-                        <span className="text-xs text-muted-foreground">· {a.services?.duration_minutes}m</span>
-                      </div>
-                      {getLocationName(a.location_id) && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {getLocationName(a.location_id)}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 self-start sm:self-center">
-                    <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", STATUS_STYLES[a.status as ApptStatus])}>
-                      {STATUS_LABEL[a.status as ApptStatus]}
-                    </span>
-                    <p className="text-sm font-medium text-right hidden sm:block">{formatPriceCents(a.services?.price_cents ?? 0)}</p>
-                  </div>
+        <div className="space-y-5">
+          {grouped.map((g) => {
+            const dayRevenue = g.items.reduce((acc: number, a: any) => acc + (a.status === "completed" ? (a.services?.price_cents ?? 0) : 0), 0);
+            return (
+              <div key={g.key} className="space-y-2">
+                <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur z-10 py-1.5">
+                  <div className="h-px flex-1 bg-border" />
+                  <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground capitalize">{g.label}</p>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{g.items.length}</span>
+                  {dayRevenue > 0 && <span className="text-[11px] text-green-600 font-medium">{formatPriceCents(dayRevenue)}</span>}
+                  <div className="h-px flex-1 bg-border" />
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                {g.items.map((a: any) => (
+                  <Card
+                    key={a.id}
+                    className={cn("group hover:shadow-md hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden", a.status === "cancelled" && "opacity-60")}
+                    onClick={() => setSelectedAppt(a)}
+                  >
+                    <div className={cn("absolute left-0 top-0 bottom-0 w-1", STATUS_DOT[a.status as ApptStatus])} />
+                    <CardContent className="py-4 px-5 pl-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-4">
+                          <div className="text-center min-w-[64px]">
+                            <p className="font-display text-xl leading-none">{formatTime(a.starts_at)}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1 flex items-center justify-center gap-1"><Clock className="size-3" />{a.services?.duration_minutes}m</p>
+                          </div>
+                          <div className="size-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-medium flex items-center justify-center text-sm shrink-0">
+                            {initials(a.clients?.name)}
+                          </div>
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{a.clients?.name}</p>
+                              {a.clients?.phone && <span className="text-xs text-muted-foreground">{a.clients.phone}</span>}
+                            </div>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Scissors className="size-3.5" />
+                              <p className="text-sm truncate">{a.services?.name}</p>
+                            </div>
+                            {getLocationName(a.location_id) && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {getLocationName(a.location_id)}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 self-start sm:self-center">
+                          {/* Quick actions on hover for pending/booked */}
+                          {(a.status === "pending" || a.status === "booked") && (
+                            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                              {a.status === "pending" && (
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: a.id, status: "booked" })}>
+                                  <CheckCircle2 className="size-3.5 mr-1" /> Confirmar
+                                </Button>
+                              )}
+                              {a.status === "booked" && (
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: a.id, status: "completed" })}>
+                                  <CheckCircle2 className="size-3.5 mr-1" /> Completar
+                                </Button>
+                              )}
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => updateStatus.mutate({ id: a.id, status: "cancelled" })}>
+                                <XCircle className="size-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          )}
+                          <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium inline-flex items-center gap-1.5", STATUS_STYLES[a.status as ApptStatus])}>
+                            <span className={cn("size-1.5 rounded-full", STATUS_DOT[a.status as ApptStatus])} />
+                            {STATUS_LABEL[a.status as ApptStatus]}
+                          </span>
+                          <p className="text-sm font-medium text-right hidden sm:block">{formatPriceCents(a.services?.price_cents ?? 0)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -480,10 +619,13 @@ function KanbanBoard({
               if (current && current.status !== col) onChangeStatus(id, col);
             }
           }}
-          className="bg-muted/30 border border-border rounded-lg p-3 min-h-[200px]"
+          className={cn("border border-border rounded-lg p-3 min-h-[200px] transition-colors", draggingId ? "bg-primary/5" : "bg-muted/30")}
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
+            <div className="flex items-center gap-2">
+              <span className={cn("size-2 rounded-full", STATUS_DOT[col])} />
+              <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
+            </div>
             <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
               {grouped[col].length}
             </span>
@@ -501,20 +643,28 @@ function KanbanBoard({
                 onDragEnd={() => setDraggingId(null)}
                 onClick={() => onSelect(a)}
                 className={cn(
-                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition",
+                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 hover:shadow-sm transition relative",
                   draggingId === a.id && "opacity-50"
                 )}
               >
+                <div className={cn("absolute left-0 top-2 bottom-2 w-0.5 rounded-r", STATUS_DOT[col])} />
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-display text-base">{formatTime(a.starts_at)}</span>
                   <span className="text-xs text-muted-foreground">{a.services?.duration_minutes}m</span>
                 </div>
-                <p className="text-sm font-medium truncate">{a.clients?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
+                <div className="flex items-center gap-2">
+                  <div className="size-6 rounded-full bg-primary/10 text-primary text-[10px] font-medium flex items-center justify-center shrink-0">
+                    {(a.clients?.name ?? "?").split(" ").slice(0,2).map((n: string) => n[0]?.toUpperCase()).join("")}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate leading-tight">{a.clients?.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
+                  </div>
+                </div>
               </div>
             ))}
             {grouped[col].length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Sin citas</p>
+              <p className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded">Sin citas</p>
             )}
           </div>
         </div>
