@@ -244,15 +244,16 @@ function BookingPage() {
     setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
   };
 
-  const stepNum = step === "location" ? 1 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 2 : step === "datetime" || step === "client" ? 3 : 3;
+  const stepIndex = step === "location" ? 0 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 1 : step === "datetime" ? 2 : step === "client" ? 3 : 4;
+  const totalSteps = 4;
 
-  const stepLabel =
-    step === "location" ? "Sucursal" :
-    step === "mode" ? "Modo de reserva" :
-    step === "pickPro" ? "Profesional" :
-    step === "pickSvc" ? "Servicio" :
-    step === "datetime" ? "Día y hora" :
-    step === "client" ? "Tus datos" : "Listo";
+  const stepLabels = ["Sucursal", "Profesional o servicio", "Día y hora", "Tus datos"];
+  const stepDescriptions = [
+    "Elige dónde atenderte",
+    "Selecciona quién y qué",
+    "Escoge la fecha",
+    "Completa tus datos",
+  ];
 
   const initials = business.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
