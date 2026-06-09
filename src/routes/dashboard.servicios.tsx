@@ -16,6 +16,7 @@ import { INDUSTRIES, SERVICE_TEMPLATES, type Industry } from "@/lib/service-temp
 import { formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CardListSkeleton, StatGridSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/servicios")({
   component: ServicesPage,
@@ -159,7 +160,12 @@ function ServicesPage() {
         </div>
       </div>
 
-      {!services?.length ? (
+      {isLoading ? (
+        <div className="space-y-4">
+          <StatGridSkeleton count={3} />
+          <CardListSkeleton rows={5} />
+        </div>
+      ) : !services?.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center space-y-3">
             <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><Scissors className="size-6 text-primary" /></div>
