@@ -14,6 +14,7 @@ import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, Chevr
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
+import { invalidateAppointments } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/dashboard/citas")({
   component: CitasPage,
@@ -136,8 +137,7 @@ function CitasPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["citas"] });
-      qc.invalidateQueries({ queryKey: ["appts"] });
+      invalidateAppointments(qc);
       toast.success("Estado actualizado");
       setSelectedAppt(null);
     },
@@ -188,9 +188,7 @@ function CitasPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["citas"] });
-      qc.invalidateQueries({ queryKey: ["appts"] });
-      qc.invalidateQueries({ queryKey: ["today-appts"] });
+      invalidateAppointments(qc);
       toast.success("Cita actualizada");
       setSelectedAppt(null);
     },
