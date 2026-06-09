@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneInput, formatPhone } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
+import { invalidateClients } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/dashboard/clientes")({
   component: ClientsPage,
@@ -62,7 +63,7 @@ function ClientsPage() {
         if (error) throw error;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Guardado"); },
+    onSuccess: () => { invalidateClients(qc); toast.success("Guardado"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -71,7 +72,7 @@ function ClientsPage() {
       const { error } = await supabase.from("clients").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Eliminado"); },
+    onSuccess: () => { invalidateClients(qc); toast.success("Eliminado"); },
   });
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
