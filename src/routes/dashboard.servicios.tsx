@@ -11,10 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Sparkles } from "lucide-react";
+import { Pencil, Trash2, Plus, Sparkles, Search, Clock, Users, Scissors } from "lucide-react";
 import { INDUSTRIES, SERVICE_TEMPLATES, type Industry } from "@/lib/service-templates";
 import { formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/servicios")({
   component: ServicesPage,
@@ -24,6 +25,8 @@ function ServicesPage() {
   const { data: business } = useMyBusiness();
   const qc = useQueryClient();
   const businessId = business?.id;
+  const [search, setSearch] = useState("");
+  const [showInactive, setShowInactive] = useState(true);
 
   const { data: services } = useQuery({
     queryKey: ["services", businessId],
@@ -37,6 +40,18 @@ function ServicesPage() {
         .order("display_order");
       if (error) throw error;
       return data;
+    },
+  });
+
+  const serviceIds = (services ?? []).map((s) => s.id);
+  const { data: proCounts } = useQuery({
+    queryKey: ["svc-pro-counts", businessId, serviceIds.join(",")],
+    enabled: serviceIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("professional_services").select("service_id").in("service_id", serviceIds);
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => { map[r.service_id] = (map[r.service_id] ?? 0) + 1; });
+      return map;
     },
   });
 
@@ -122,6 +137,15 @@ function ServicesPage() {
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
+  const activeCount = services?.filter((s) => s.is_active).length ?? 0;
+  const avgPrice = services?.length ? Math.round(services.reduce((a, s) => a + (s.price_cents ?? 0), 0) / services.length) : 0;
+  const q = search.trim().toLowerCase();
+  const filtered = (services ?? []).filter((s) => {
+    if (!showInactive && !s.is_active) return false;
+    if (!q) return true;
+    return s.name?.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-2 flex-wrap">
@@ -136,37 +160,79 @@ function ServicesPage() {
       </div>
 
       {!services?.length ? (
-        <Card><CardContent className="pt-6 text-center text-muted-foreground">Aún no tienes servicios. Crea uno o usa el catálogo sugerido.</CardContent></Card>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><Scissors className="size-6 text-primary" /></div>
+            <div>
+              <p className="font-medium">Aún no tienes servicios</p>
+              <p className="text-sm text-muted-foreground">Crea uno desde cero o explora plantillas de tu rubro.</p>
+            </div>
+            <div className="flex gap-2 justify-center pt-1">
+              <CatalogDialog defaultIndustry={(business as any)?.industry as Industry | undefined} onAdd={(sel) => addCatalog.mutate(sel)} />
+              <ServiceDialog onSave={(s) => upsert.mutate(s)} trigger={<Button><Plus className="size-4" /> Nuevo</Button>} />
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {services.map((s) => (
-            <Card key={s.id} className={s.is_active ? "" : "opacity-60"}>
-              <CardContent className="pt-5 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.description}</p>
-                  </div>
-                  <Switch checked={s.is_active} onCheckedChange={(v) => toggleActive.mutate({ id: s.id, is_active: v })} />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{s.duration_minutes} min</span>
-                  <span className="font-semibold text-primary">{formatPriceCents(s.price_cents)}</span>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <ServiceDialog
-                    initial={s}
-                    onSave={(v) => upsert.mutate({ ...v, id: s.id })}
-                    trigger={<Button variant="outline" size="sm"><Pencil className="size-3.5" /></Button>}
-                  />
-                  <Button variant="ghost" size="sm" onClick={() => { if (confirm("¿Eliminar este servicio?")) del.mutate(s.id); }}>
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">Activos</p><p className="font-display text-2xl">{activeCount}<span className="text-sm text-muted-foreground font-sans">/{services.length}</span></p></CardContent></Card>
+            <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">Precio promedio</p><p className="font-display text-2xl text-primary">{formatPriceCents(avgPrice)}</p></CardContent></Card>
+            <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">Duración promedio</p><p className="font-display text-2xl">{Math.round((services.reduce((a, s) => a + (s.duration_minutes ?? 0), 0)) / services.length)}<span className="text-sm text-muted-foreground font-sans"> min</span></p></CardContent></Card>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar servicio…" className="pl-9" />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Switch checked={showInactive} onCheckedChange={setShowInactive} />
+              Mostrar inactivos
+            </label>
+          </div>
+
+          {!filtered.length ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Sin resultados.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map((s) => (
+                <Card key={s.id} className={cn("group transition-all hover:shadow-md hover:border-primary/40", !s.is_active && "opacity-60")}>
+                  <CardContent className="pt-5 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{s.name}</p>
+                        {s.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{s.description}</p>}
+                      </div>
+                      <Switch checked={s.is_active} onCheckedChange={(v) => toggleActive.mutate({ id: s.id, is_active: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-1.5">
+                        <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                          <Clock className="size-3" /> {s.duration_minutes} min
+                        </span>
+                        <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                          <Users className="size-3" /> {proCounts?.[s.id] ?? 0}
+                        </span>
+                      </div>
+                      <span className="font-semibold text-primary">{formatPriceCents(s.price_cents)}</span>
+                    </div>
+                    <div className="flex gap-1 pt-1 border-t border-border/50 -mx-6 px-6 pt-3">
+                      <ServiceDialog
+                        initial={s}
+                        onSave={(v) => upsert.mutate({ ...v, id: s.id })}
+                        trigger={<Button variant="ghost" size="sm" className="flex-1"><Pencil className="size-3.5 mr-1" /> Editar</Button>}
+                      />
+                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("¿Eliminar este servicio?")) del.mutate(s.id); }}>
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
