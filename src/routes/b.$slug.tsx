@@ -517,7 +517,8 @@ function BookingPage() {
                   />
                 </div>
               </div>
-              <Button className="w-full" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+                <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
             </div>
