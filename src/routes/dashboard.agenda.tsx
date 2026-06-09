@@ -848,17 +848,6 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    booked: "bg-primary/15 text-primary",
-    completed: "bg-green-100 text-green-800",
-    cancelled: "bg-muted text-muted-foreground",
-    no_show: "bg-destructive/15 text-destructive",
-  };
-  return <span className={cn("text-xs px-2 py-0.5 rounded-full hidden sm:inline-block", map[status])}>{status}</span>;
-}
-
 function NewApptDialog({
   businessId,
   initialDate,
