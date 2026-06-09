@@ -106,21 +106,6 @@ function AjustesPage() {
     setBrandFont("Inter");
   };
 
-  const { data: locations } = useQuery({
-    queryKey: ["locations-count", business?.id],
-    enabled: !!business?.id,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("locations")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return { count: count ?? 0 };
-    },
-  });
-
   const { data: prosCount } = useQuery({
     queryKey: ["pros-count", business?.id],
     enabled: !!business?.id,
