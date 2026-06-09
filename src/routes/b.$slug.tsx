@@ -49,6 +49,7 @@ function BookingPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ["public-biz", slug],
