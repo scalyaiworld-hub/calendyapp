@@ -298,17 +298,36 @@ function BookingPage() {
       {/* Main: paso actual */}
       <main className="max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6">
         {step !== "done" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               {step !== "location" ? (
                 <button onClick={goBack} className="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors">
                   <ChevronLeft className="size-4" /> Atrás
                 </button>
               ) : <span />}
-              <span className="text-xs font-medium text-muted-foreground">{stepLabel} · {stepNum}/3</span>
+              <span className="text-xs font-medium text-muted-foreground">Paso {stepIndex + 1} de {totalSteps}</span>
             </div>
-            <div className="h-1 rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${(stepNum / 3) * 100}%` }} />
+            <div className="flex items-center gap-2">
+              {stepLabels.map((label, i) => {
+                const done = i < stepIndex;
+                const active = i === stepIndex;
+                return (
+                  <div key={label} className="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <div className={cn(
+                      "h-1.5 rounded-full transition-all duration-500",
+                      done ? "bg-primary" : active ? "bg-primary/70" : "bg-muted"
+                    )} />
+                    <p className={cn(
+                      "text-[10px] font-medium leading-tight truncate",
+                      done || active ? "text-foreground" : "text-muted-foreground"
+                    )}>{label}</p>
+                    <p className={cn(
+                      "text-[10px] leading-tight truncate hidden sm:block",
+                      done || active ? "text-muted-foreground" : "text-muted-foreground/60"
+                    )}>{stepDescriptions[i]}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
