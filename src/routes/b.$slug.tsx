@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronLeft, MapPin, User2, Scissors, Calendar, Clock, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { createPublicBooking } from "@/lib/api/public-booking.functions";
@@ -244,15 +244,16 @@ function BookingPage() {
     setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
   };
 
-  const stepNum = step === "location" ? 1 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 2 : step === "datetime" || step === "client" ? 3 : 3;
+  const stepIndex = step === "location" ? 0 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 1 : step === "datetime" ? 2 : step === "client" ? 3 : 4;
+  const totalSteps = 4;
 
-  const stepLabel =
-    step === "location" ? "Sucursal" :
-    step === "mode" ? "Modo de reserva" :
-    step === "pickPro" ? "Profesional" :
-    step === "pickSvc" ? "Servicio" :
-    step === "datetime" ? "Día y hora" :
-    step === "client" ? "Tus datos" : "Listo";
+  const stepLabels = ["Sucursal", "Profesional o servicio", "Día y hora", "Tus datos"];
+  const stepDescriptions = [
+    "Elige dónde atenderte",
+    "Selecciona quién y qué",
+    "Escoge la fecha",
+    "Completa tus datos",
+  ];
 
   const initials = business.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
@@ -297,17 +298,36 @@ function BookingPage() {
       {/* Main: paso actual */}
       <main className="max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6">
         {step !== "done" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               {step !== "location" ? (
                 <button onClick={goBack} className="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors">
                   <ChevronLeft className="size-4" /> Atrás
                 </button>
               ) : <span />}
-              <span className="text-xs font-medium text-muted-foreground">{stepLabel} · {stepNum}/3</span>
+              <span className="text-xs font-medium text-muted-foreground">Paso {stepIndex + 1} de {totalSteps}</span>
             </div>
-            <div className="h-1 rounded-full bg-muted overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${(stepNum / 3) * 100}%` }} />
+            <div className="flex items-center gap-2">
+              {stepLabels.map((label, i) => {
+                const done = i < stepIndex;
+                const active = i === stepIndex;
+                return (
+                  <div key={label} className="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <div className={cn(
+                      "h-1.5 rounded-full transition-all duration-500",
+                      done ? "bg-primary" : active ? "bg-primary/70" : "bg-muted"
+                    )} />
+                    <p className={cn(
+                      "text-[10px] font-medium leading-tight truncate",
+                      done || active ? "text-foreground" : "text-muted-foreground"
+                    )}>{label}</p>
+                    <p className={cn(
+                      "text-[10px] leading-tight truncate hidden sm:block",
+                      done || active ? "text-muted-foreground" : "text-muted-foreground/60"
+                    )}>{stepDescriptions[i]}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -448,13 +468,29 @@ function BookingPage() {
               {!slots ? <p className="text-sm text-muted-foreground">Cargando…</p> : !slots.length ? (
                 <p className="text-sm text-muted-foreground">No hay horarios disponibles este día.</p>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {slots.map((s) => (
-                    <button key={s.starts_at.toISOString()} onClick={() => { setSlot(s); setStep("client"); }} className="px-3 py-2 rounded-md border border-border hover:border-primary text-sm">
-                      {formatTime(s.starts_at)}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {slots.map((s) => (
+                      <button
+                        key={s.starts_at.toISOString()}
+                        onClick={() => setSlot(s)}
+                        className={cn(
+                          "px-3 py-2 rounded-md border text-sm transition-colors",
+                          slot?.starts_at.toISOString() === s.starts_at.toISOString()
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border hover:border-primary"
+                        )}
+                      >
+                        {formatTime(s.starts_at)}
+                      </button>
+                    ))}
+                  </div>
+                  {slot && (
+                    <Button className="w-full mt-4" size="lg" onClick={() => setStep("client")}>
+                    Siguiente <ChevronRight className="size-4" />
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </>
@@ -481,7 +517,8 @@ function BookingPage() {
                   />
                 </div>
               </div>
-              <Button className="w-full" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+                <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
             </div>
