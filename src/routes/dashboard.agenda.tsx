@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
+import { invalidateAppointments } from "@/lib/query-keys";
 
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
 type ViewMode = "day" | "week";
@@ -193,9 +194,7 @@ function AgendaPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["appts"] });
-      qc.invalidateQueries({ queryKey: ["today-appts"] });
-      qc.invalidateQueries({ queryKey: ["citas"] });
+      invalidateAppointments(qc);
       toast.success("Actualizado");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -240,9 +239,7 @@ function AgendaPage() {
       toast.success("Cita reprogramada");
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["appts"] });
-      qc.invalidateQueries({ queryKey: ["today-appts"] });
-      qc.invalidateQueries({ queryKey: ["citas"] });
+      invalidateAppointments(qc);
     },
   });
 
@@ -952,9 +949,7 @@ function NewApptDialog({
     },
     onSuccess: () => {
       toast.success("Cita creada");
-      qc.invalidateQueries({ queryKey: ["appts"] });
-      qc.invalidateQueries({ queryKey: ["today-appts"] });
-      qc.invalidateQueries({ queryKey: ["citas"] });
+      invalidateAppointments(qc);
       setOpen(false);
       setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false);
     },
