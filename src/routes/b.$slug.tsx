@@ -280,14 +280,33 @@ function BookingPage() {
 
           {step !== "done" ? (
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Tu reserva</p>
-              <div className="rounded-2xl border border-border bg-background/50 divide-y divide-border">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Tu reserva</p>
+                <button onClick={() => setSummaryOpen((v) => !v)} className="lg:hidden text-xs text-primary flex items-center gap-1 font-medium">
+                  {summaryOpen ? <><X className="size-3" /> Ocultar</> : <><Menu className="size-3" /> Ver detalle</>}
+                </button>
+              </div>
+              {/* Desktop / expanded mobile */}
+              <div className={cn("rounded-2xl border border-border bg-background/50 divide-y divide-border", !summaryOpen && "hidden lg:block")}>
                 <SummaryRow icon={MapPin} label="Sucursal" value={location?.name ?? (hasLocations ? "Por elegir" : "—")} />
                 <SummaryRow icon={User2} label="Profesional" value={professional?.name ?? "Por elegir"} />
                 <SummaryRow icon={Scissors} label="Servicio" value={service ? `${service.name} · ${formatPriceCents(service.price_cents)}` : "Por elegir"} />
                 <SummaryRow icon={Calendar} label="Día" value={slot ? slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : (step === "datetime" ? date.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : "Por elegir")} />
                 <SummaryRow icon={Clock} label="Hora" value={slot ? formatTime(slot.starts_at) : "Por elegir"} />
               </div>
+              {/* Collapsed mobile summary */}
+              {!summaryOpen && (
+                <div className="lg:hidden grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl border border-border bg-background/50 px-3 py-2 truncate">
+                    <span className="text-muted-foreground">Sucursal:</span>{" "}
+                    <span className="font-medium">{location?.name ?? (hasLocations ? "Por elegir" : "—")}</span>
+                  </div>
+                  <div className="rounded-xl border border-border bg-background/50 px-3 py-2 truncate">
+                    <span className="text-muted-foreground">Servicio:</span>{" "}
+                    <span className="font-medium">{service ? service.name : "Por elegir"}</span>
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-2">
                 <Sparkles className="size-3.5" /> Confirmación por WhatsApp
               </p>
