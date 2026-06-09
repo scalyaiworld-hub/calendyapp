@@ -619,10 +619,13 @@ function KanbanBoard({
               if (current && current.status !== col) onChangeStatus(id, col);
             }
           }}
-          className="bg-muted/30 border border-border rounded-lg p-3 min-h-[200px]"
+          className={cn("border border-border rounded-lg p-3 min-h-[200px] transition-colors", draggingId ? "bg-primary/5" : "bg-muted/30")}
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
+            <div className="flex items-center gap-2">
+              <span className={cn("size-2 rounded-full", STATUS_DOT[col])} />
+              <h3 className="font-medium text-sm">{STATUS_LABEL[col]}</h3>
+            </div>
             <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
               {grouped[col].length}
             </span>
@@ -640,20 +643,28 @@ function KanbanBoard({
                 onDragEnd={() => setDraggingId(null)}
                 onClick={() => onSelect(a)}
                 className={cn(
-                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition",
+                  "bg-card border border-border rounded-md p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 hover:shadow-sm transition relative",
                   draggingId === a.id && "opacity-50"
                 )}
               >
+                <div className={cn("absolute left-0 top-2 bottom-2 w-0.5 rounded-r", STATUS_DOT[col])} />
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-display text-base">{formatTime(a.starts_at)}</span>
                   <span className="text-xs text-muted-foreground">{a.services?.duration_minutes}m</span>
                 </div>
-                <p className="text-sm font-medium truncate">{a.clients?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
+                <div className="flex items-center gap-2">
+                  <div className="size-6 rounded-full bg-primary/10 text-primary text-[10px] font-medium flex items-center justify-center shrink-0">
+                    {(a.clients?.name ?? "?").split(" ").slice(0,2).map((n: string) => n[0]?.toUpperCase()).join("")}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate leading-tight">{a.clients?.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{a.services?.name}</p>
+                  </div>
+                </div>
               </div>
             ))}
             {grouped[col].length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Sin citas</p>
+              <p className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border rounded">Sin citas</p>
             )}
           </div>
         </div>
