@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getPlan, MODULE_LABELS } from "@/lib/plans";
 import { Sparkles, Lock, Crown } from "lucide-react";
+import { StatGridSkeleton, BlockSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardHome,
@@ -18,14 +19,30 @@ export const Route = createFileRoute("/dashboard/")({
 
 function DashboardHome() {
   const { data: business, isLoading } = useMyBusiness();
-  if (isLoading) return <p className="text-muted-foreground">Cargando…</p>;
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <BlockSkeleton className="h-4 w-32" />
+          <BlockSkeleton className="h-9 w-64" />
+          <BlockSkeleton className="h-3 w-48" />
+        </div>
+        <StatGridSkeleton count={4} />
+        <BlockSkeleton className="h-40 w-full" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <BlockSkeleton className="h-56 lg:col-span-1" />
+          <BlockSkeleton className="h-56 lg:col-span-2" />
+        </div>
+      </div>
+    );
+  }
   if (!business) return null;
   return <Summary businessId={business.id} businessName={business.name} slug={business.slug} plan={(business as any).plan ?? "free"} />;
 }
 
 function Summary({ businessId, businessName, slug, plan: planId }: { businessId: string; businessName: string; slug: string; plan: string }) {
   const plan = getPlan(planId);
-  const { data: today } = useQuery({
+  const { data: today, isLoading: loadingToday } = useQuery({
     queryKey: ["today-appts", businessId],
     queryFn: async () => {
       const start = new Date();
@@ -45,8 +62,9 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
     },
   });
 
-  const { data: counts } = useQuery({
+  const { data: counts, isLoading: loadingCounts } = useQuery({
     queryKey: ["counts", businessId],
+    staleTime: 30_000,
     queryFn: async () => {
       const [services, clients, pros, locs, pending] = await Promise.all([
         supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null),
@@ -67,6 +85,7 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
 
   const { data: monthApptsCount } = useQuery({
     queryKey: ["month-appts-count", businessId],
+    staleTime: 60_000,
     queryFn: async () => {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -138,12 +157,16 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Stat icon={CalendarDays} label="Citas hoy" value={today?.length ?? 0} hint={completedToday > 0 ? `${completedToday} completadas` : undefined} />
-          <Stat icon={Clock3} label="Pendientes" value={counts?.pending ?? 0} accent={(counts?.pending ?? 0) > 0} />
-          <Stat icon={Scissors} label="Servicios" value={counts?.services ?? 0} />
-          <Stat icon={Users} label="Clientes" value={counts?.clients ?? 0} />
-        </div>
+        {loadingCounts && loadingToday ? (
+          <StatGridSkeleton count={4} />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Stat icon={CalendarDays} label="Citas hoy" value={today?.length ?? 0} hint={completedToday > 0 ? `${completedToday} completadas` : undefined} />
+            <Stat icon={Clock3} label="Pendientes" value={counts?.pending ?? 0} accent={(counts?.pending ?? 0) > 0} />
+            <Stat icon={Scissors} label="Servicios" value={counts?.services ?? 0} />
+            <Stat icon={Users} label="Clientes" value={counts?.clients ?? 0} />
+          </div>
+        )}
 
         {/* Plan card */}
         <PlanCard
