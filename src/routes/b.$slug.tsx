@@ -316,7 +316,7 @@ function BookingPage() {
       </aside>
 
       {/* Main: paso actual */}
-      <main className="max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6">
+      <main className={cn("max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6", (step === "datetime" && slot) || (step === "client" && slot) ? "pb-24 lg:pb-8" : "pb-8")}>
         {step !== "done" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
