@@ -115,7 +115,7 @@ function ProsTab() {
       </div>
 
       {isLoading ? (
-        <ProGridSkeleton />
+        <CardGridSkeleton count={4} />
       ) : !pros?.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center space-y-3">
