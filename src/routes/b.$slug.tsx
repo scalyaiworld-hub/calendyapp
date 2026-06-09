@@ -361,9 +361,9 @@ function BookingPage() {
             ) : (
               <div className="grid gap-3">
                 {locations.map((l) => (
-                  <button key={l.id} onClick={() => { setLocationId(l.id); setStep("mode"); }} className="text-left">
+                  <button key={l.id} onClick={() => { setLocationId(l.id); setStep("mode"); }} className="text-left active:scale-[0.98] transition-transform">
                     <Card className="hover:border-primary transition-colors">
-                      <CardContent className="pt-4 pb-4 flex items-start gap-3">
+                      <CardContent className="pt-5 pb-5 flex items-start gap-3">
                         <MapPin className="size-5 text-primary mt-0.5 shrink-0" />
                         <div className="min-w-0">
                           <p className="font-medium">{l.name}</p>
