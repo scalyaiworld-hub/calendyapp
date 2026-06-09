@@ -10,11 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, User } from "lucide-react";
+import { Plus, Pencil, Trash2, User, Search, Scissors, MapPin, Phone, Users } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, PRO_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/profesionales")({
   component: ProfesionalesPage,
@@ -38,11 +39,34 @@ function ProsTab() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: pros } = useQuery({
     queryKey: ["pros-full", businessId],
     enabled: !!businessId,
     queryFn: async () => (await supabase.from("professionals").select("*").eq("business_id", businessId!).is("deleted_at", null).order("created_at")).data ?? [],
+  });
+
+  const proIds = (pros ?? []).map((p) => p.id);
+  const { data: svcCounts } = useQuery({
+    queryKey: ["pro-svc-counts", businessId, proIds.join(",")],
+    enabled: proIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("professional_services").select("professional_id").in("professional_id", proIds);
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => { map[r.professional_id] = (map[r.professional_id] ?? 0) + 1; });
+      return map;
+    },
+  });
+  const { data: locCounts } = useQuery({
+    queryKey: ["pro-loc-counts", businessId, proIds.join(",")],
+    enabled: proIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("location_professionals").select("professional_id").in("professional_id", proIds);
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => { map[r.professional_id] = (map[r.professional_id] ?? 0) + 1; });
+      return map;
+    },
   });
 
   const del = useMutation({
@@ -75,48 +99,82 @@ function ProsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar profesional…" className="pl-9" />
+        </div>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground px-2">
+          <span className="flex items-center gap-1.5"><Users className="size-3.5" />{pros?.length ?? 0} total</span>
+          <span className="hidden sm:flex items-center gap-1.5 text-primary">
+            <span className="size-1.5 rounded-full bg-primary" />
+            {pros?.filter((p) => p.is_active !== false).length ?? 0} activos
+          </span>
+        </div>
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Nuevo profesional</Button>
       </div>
+
       {!pros?.length ? (
-        <Card><CardContent className="py-10 text-center text-muted-foreground">
-          Aún no tienes profesionales. Agrega uno para asignarlo a sucursales y servicios.
-        </CardContent></Card>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {pros.map((p) => (
-            <Card key={p.id} className={p.is_active === false ? "opacity-60" : ""}>
-              <CardContent className="pt-4 pb-4 flex gap-3">
-                <div className="size-12 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center">
-                  {p.avatar_url ? (
-                    <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="size-5 text-muted-foreground/50" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{p.name}</p>
-                    {p.is_active === false && (
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactivo</span>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><User className="size-6 text-primary" /></div>
+            <div>
+              <p className="font-medium">Aún no tienes profesionales</p>
+              <p className="text-sm text-muted-foreground">Agrega a tu equipo para asignarles servicios y sucursales.</p>
+            </div>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Agregar profesional</Button>
+          </CardContent>
+        </Card>
+      ) : (() => {
+        const q = search.trim().toLowerCase();
+        const filtered = q ? pros.filter((p) => p.name?.toLowerCase().includes(q)) : pros;
+        if (!filtered.length) return <p className="text-sm text-muted-foreground text-center py-6">Sin resultados.</p>;
+        return (
+          <div className="grid gap-3 md:grid-cols-2">
+            {filtered.map((p) => (
+              <Card key={p.id} className={cn("transition-all hover:shadow-md hover:border-primary/40", p.is_active === false && "opacity-60")}>
+                <CardContent className="pt-4 pb-4 flex gap-3">
+                  <div className="size-14 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center text-primary font-medium">
+                    {p.avatar_url ? (
+                      <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-lg">{p.name?.charAt(0)?.toUpperCase() ?? <User className="size-5" />}</span>
                     )}
                   </div>
-                  {p.phone && <p className="text-xs text-muted-foreground">{p.phone_country_code} {p.phone}</p>}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Switch
-                    checked={p.is_active !== false}
-                    onCheckedChange={(v) => toggleActive.mutate({ id: p.id, is_active: v })}
-                    aria-label="Activo"
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="size-4" /></Button>
-                  <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar profesional?")) del.mutate(p.id); }}><Trash2 className="size-4" /></Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{p.name}</p>
+                      {p.is_active === false && (
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactivo</span>
+                      )}
+                    </div>
+                    {p.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="size-3" /> {p.phone_country_code} {p.phone}</p>}
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                        <Scissors className="size-3" /> {svcCounts?.[p.id] ?? 0} servicios
+                      </span>
+                      <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                        <MapPin className="size-3" /> {locCounts?.[p.id] ?? 0} sucursales
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Switch
+                      checked={p.is_active !== false}
+                      onCheckedChange={(v) => toggleActive.mutate({ id: p.id, is_active: v })}
+                      aria-label="Activo"
+                    />
+                    <div className="flex">
+                      <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="size-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar profesional?")) del.mutate(p.id); }}><Trash2 className="size-4" /></Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        );
+      })()}
       <ProDialog open={open} onOpenChange={setOpen} businessId={businessId} editing={editing} />
     </div>
   );
