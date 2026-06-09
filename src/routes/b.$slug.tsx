@@ -495,7 +495,7 @@ function BookingPage() {
                         key={s.starts_at.toISOString()}
                         onClick={() => setSlot(s)}
                         className={cn(
-                          "px-3 py-2 rounded-md border text-sm transition-colors",
+                          "px-3 py-3 rounded-xl border text-sm transition-colors min-h-[44px]",
                           slot?.starts_at.toISOString() === s.starts_at.toISOString()
                             ? "border-primary bg-primary/10 text-primary font-medium"
                             : "border-border hover:border-primary"
@@ -505,14 +505,23 @@ function BookingPage() {
                       </button>
                     ))}
                   </div>
-                  {slot && (
-                    <Button className="w-full mt-4" size="lg" onClick={() => setStep("client")}>
-                    Siguiente <ChevronRight className="size-4" />
-                    </Button>
-                  )}
                 </>
               )}
             </div>
+            {/* Mobile sticky CTA */}
+            {slot && (
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
+                <Button className="w-full" size="lg" onClick={() => setStep("client")}>
+                  Siguiente <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            )}
+            {/* Desktop inline CTA */}
+            {slot && (
+              <Button className="hidden lg:flex w-full mt-4" size="lg" onClick={() => setStep("client")}>
+                Siguiente <ChevronRight className="size-4" />
+              </Button>
+            )}
           </>
         )}
 
