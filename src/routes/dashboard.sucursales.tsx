@@ -15,6 +15,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/sucursales")({
   component: SucursalesPage,
