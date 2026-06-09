@@ -24,14 +24,6 @@ type ViewMode = "day" | "week";
 
 type RescheduleInput = { id: string; newDate: Date; newTime: string; durationMin: number };
 
-const STATUS_LABEL: Record<ApptStatus, string> = {
-  pending: "Pendiente",
-  booked: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-  no_show: "No-show",
-};
-
 export const Route = createFileRoute("/dashboard/agenda")({
   component: AgendaPage,
 });
@@ -383,7 +375,8 @@ function WeekCalendar({
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2;
-  const [tick, setTick] = useState(0);
+  // Forzar re-render cada minuto para que la línea de "ahora" avance.
+  const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
@@ -391,7 +384,6 @@ function WeekCalendar({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = new Date();
-  const todayIndex = now.getDay(); // 0 = domingo
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -630,7 +622,8 @@ function DayCalendar({
   const { startHour, endHour } = computeDayRange(appts);
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
   const pxPerMinute = 1.2;
-  const [tick, setTick] = useState(0);
+  // Forzar re-render cada minuto para que la línea de "ahora" avance.
+  const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
@@ -853,17 +846,6 @@ function LegendDot({ color, label }: { color: string; label: string }) {
       <span>{label}</span>
     </span>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    booked: "bg-primary/15 text-primary",
-    completed: "bg-green-100 text-green-800",
-    cancelled: "bg-muted text-muted-foreground",
-    no_show: "bg-destructive/15 text-destructive",
-  };
-  return <span className={cn("text-xs px-2 py-0.5 rounded-full hidden sm:inline-block", map[status])}>{status}</span>;
 }
 
 function NewApptDialog({

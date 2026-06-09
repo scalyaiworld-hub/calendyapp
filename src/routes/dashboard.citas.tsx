@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Filter, CalendarDays, User, Scissors, Clock, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid } from "lucide-react";
+import { Search, Filter, CalendarDays, Scissors, ChevronLeft, ChevronRight, MapPin, X, List, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
