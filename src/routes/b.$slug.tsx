@@ -487,7 +487,7 @@ function BookingPage() {
                   </div>
                   {slot && (
                     <Button className="w-full mt-4" size="lg" onClick={() => setStep("client")}>
-                      Siguiente <ChevronLeft className="size-4 rotate-180" />
+                    Siguiente <ChevronRight className="size-4" />
                     </Button>
                   )}
                 </>
