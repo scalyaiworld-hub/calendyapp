@@ -95,7 +95,7 @@ function CitasPage() {
       }
       let q = supabase
         .from("appointments")
-        .select("*, clients(name, phone), services(name, duration_minutes, price_cents), locations(name)", { count: "exact" })
+        .select("*, clients(name, phone), services(name, duration_minutes, price_cents)", { count: "exact" })
         .eq("business_id", businessId!)
         .order("starts_at", { ascending: false });
       if (usePagination) {
@@ -211,6 +211,10 @@ function CitasPage() {
   function formatDateLabel(iso: string) {
     const d = new Date(iso);
     return `${DAY_NAMES_SHORT[d.getDay()]} ${d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}`;
+  }
+
+  function getLocationName(locationId?: string | null) {
+    return locationsList?.find((l) => l.id === locationId)?.name ?? "";
   }
 
   return (
@@ -336,8 +340,8 @@ function CitasPage() {
                         <p className="text-sm text-muted-foreground">{a.services?.name}</p>
                         <span className="text-xs text-muted-foreground">· {a.services?.duration_minutes}m</span>
                       </div>
-                      {a.locations?.name && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {a.locations?.name}</p>
+                      {getLocationName(a.location_id) && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {getLocationName(a.location_id)}</p>
                       )}
                     </div>
                   </div>
@@ -378,8 +382,8 @@ function CitasPage() {
           </DialogHeader>
           {selectedAppt && (
             <div className="space-y-4">
-              {selectedAppt.locations?.name && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {selectedAppt.locations.name}</p>
+              {getLocationName(selectedAppt.location_id) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="size-3" /> {getLocationName(selectedAppt.location_id)}</p>
               )}
               <div>
                 <Label>Cliente</Label>
