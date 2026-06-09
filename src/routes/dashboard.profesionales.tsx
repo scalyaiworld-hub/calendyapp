@@ -16,6 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, PRO_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CardGridSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/profesionales")({
   component: ProfesionalesPage,
@@ -41,7 +42,7 @@ function ProsTab() {
   const [editing, setEditing] = useState<any | null>(null);
   const [search, setSearch] = useState("");
 
-  const { data: pros } = useQuery({
+  const { data: pros, isLoading } = useQuery({
     queryKey: ["pros-full", businessId],
     enabled: !!businessId,
     queryFn: async () => (await supabase.from("professionals").select("*").eq("business_id", businessId!).is("deleted_at", null).order("created_at")).data ?? [],
@@ -114,7 +115,9 @@ function ProsTab() {
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Nuevo profesional</Button>
       </div>
 
-      {!pros?.length ? (
+      {isLoading ? (
+        <CardGridSkeleton count={4} />
+      ) : !pros?.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center space-y-3">
             <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><User className="size-6 text-primary" /></div>

@@ -16,6 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CardGridSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/sucursales")({
   component: SucursalesPage,
@@ -44,7 +45,7 @@ function LocationsTab() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: locations } = useQuery({
+  const { data: locations, isLoading } = useQuery({
     queryKey: ["locations", businessId],
     enabled: !!businessId,
     queryFn: async () => {
@@ -126,7 +127,9 @@ function LocationsTab() {
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Nueva sucursal</Button>
       </div>
 
-      {!locations?.length ? (
+      {isLoading ? (
+        <CardGridSkeleton count={4} />
+      ) : !locations?.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center space-y-3">
             <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><MapPin className="size-6 text-primary" /></div>
