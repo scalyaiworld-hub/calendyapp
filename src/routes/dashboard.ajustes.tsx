@@ -189,6 +189,22 @@ function AjustesPage() {
         <CardContent className="pt-6 space-y-4">
           <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div>
+            <Label>Link público</Label>
+            <div className="flex items-center gap-1 mt-1.5">
+              <span className="text-sm text-muted-foreground shrink-0">{typeof window !== "undefined" ? `${window.location.origin}/b/` : "/b/"}</span>
+              <Input
+                value={slug}
+                onChange={(e) => { setSlugTouched(true); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-")); }}
+                placeholder="mi-salon"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {slug !== business.slug
+                ? "⚠️ Al guardar, el link anterior dejará de funcionar. Comparte el nuevo con tus clientes."
+                : "Se sugiere automáticamente desde el nombre. Puedes editarlo."}
+            </p>
+          </div>
+          <div>
             <Label>WhatsApp</Label>
             <div className="mt-1.5">
               <PhoneInput
