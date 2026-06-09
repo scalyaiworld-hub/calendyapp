@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2, Users, Clock, Search } from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime, formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -90,6 +90,7 @@ function AgendaPage() {
   const [view, setView] = useState<ViewMode>("week");
   const [newApptOpen, setNewApptOpen] = useState(false);
   const [newApptSlot, setNewApptSlot] = useState<{ date: Date; time: string }>({ date: new Date(), time: "10:00" });
+  const [proFilter, setProFilter] = useState<string>("all");
 
   function openNewAppt(slotDate: Date, time = "10:00") {
     setNewApptSlot({ date: slotDate, time });
@@ -123,6 +124,22 @@ function AgendaPage() {
         .eq("is_active", true);
       if (error) throw error;
       return count ?? 0;
+    },
+  });
+
+  const { data: prosList } = useQuery({
+    queryKey: ["pros-list-agenda", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("professionals")
+        .select("id,name")
+        .eq("business_id", businessId!)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -160,7 +177,7 @@ function AgendaPage() {
     queryFn: async () => {
       let query = supabase
         .from("appointments")
-        .select("*, clients(name, phone), services(name, duration_minutes, price_cents)")
+        .select("*, clients(name, phone), services(name, duration_minutes, price_cents), professionals(name)")
         .eq("business_id", businessId!)
         .order("starts_at");
 
@@ -177,6 +194,16 @@ function AgendaPage() {
       return data ?? [];
     },
   });
+
+  const filteredAppts = (appts ?? []).filter((a) =>
+    proFilter === "all" ? true : a.professional_id === proFilter,
+  );
+
+  // Próxima cita activa de hoy (para destacar en el header)
+  const nowTs = Date.now();
+  const nextAppt = filteredAppts
+    .filter((a) => (a.status === "booked" || a.status === "pending") && new Date(a.starts_at).getTime() >= nowTs)
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: any }) => {
@@ -262,6 +289,20 @@ function AgendaPage() {
           <p className="text-muted-foreground">Citas de la semana.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {prosList && prosList.length > 1 && (
+            <Select value={proFilter} onValueChange={setProFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <Users className="size-4 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los profesionales</SelectItem>
+                {prosList.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <div className="inline-flex rounded-md border border-border bg-background p-0.5">
             <button
               type="button"
@@ -326,12 +367,29 @@ function AgendaPage() {
         <Button variant="outline" size="sm" onClick={goNext}><ChevronRight className="size-4" /></Button>
       </div>
 
+      {nextAppt && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-3 py-3 px-4 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
+              <Clock className="size-3.5" /> Próxima cita
+            </span>
+            <span className="font-display text-base tabular-nums">{formatTime(nextAppt.starts_at)}</span>
+            <span className="text-sm text-foreground truncate min-w-0">
+              {nextAppt.clients?.name ?? "Sin cliente"} · <span className="text-muted-foreground">{nextAppt.services?.name}</span>
+            </span>
+            {nextAppt.professionals?.name && (
+              <span className="text-xs text-muted-foreground ml-auto">con {nextAppt.professionals.name}</span>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {apptsError ? (
         <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
       ) : view === "week" ? (
         <WeekCalendar
           weekStart={weekStart}
-          appts={appts ?? []}
+          appts={filteredAppts}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
           onReschedule={(v) => reschedule.mutate(v)}
@@ -339,7 +397,7 @@ function AgendaPage() {
       ) : (
         <DayCalendar
           date={date}
-          appts={appts ?? []}
+          appts={filteredAppts}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(time) => openNewAppt(date, time)}
           onReschedule={(v) => reschedule.mutate(v)}
@@ -352,6 +410,7 @@ function AgendaPage() {
           onOpenChange={setNewApptOpen}
           initialDate={newApptSlot.date}
           initialTime={newApptSlot.time}
+          initialProfessionalId={proFilter !== "all" ? proFilter : undefined}
         />
       )}
     </div>
