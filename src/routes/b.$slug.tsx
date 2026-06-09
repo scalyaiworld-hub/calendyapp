@@ -418,9 +418,9 @@ function BookingPage() {
                   setProfessionalId(p.id);
                   if (mode === "pro") setStep("pickSvc");
                   else setStep("datetime");
-                }} className="text-left">
+                }} className="text-left active:scale-[0.98] transition-transform">
                   <Card className="hover:border-primary transition-colors">
-                    <CardContent className="pt-3 pb-3 flex items-center gap-3">
+                    <CardContent className="pt-4 pb-4 flex items-center gap-3">
                       <div className="size-10 rounded-full bg-primary/10 grid place-items-center text-primary font-medium">
                         {p.name.charAt(0).toUpperCase()}
                       </div>
