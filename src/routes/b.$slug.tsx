@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronLeft, MapPin, User2, Scissors } from "lucide-react";
+import { Check, ChevronLeft, MapPin, User2, Scissors, Calendar, Clock, Sparkles } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { createPublicBooking } from "@/lib/api/public-booking.functions";
@@ -20,6 +20,19 @@ export const Route = createFileRoute("/b/$slug")({
   head: ({ params }) => ({ meta: [{ title: `Reservar — ${params.slug}` }] }),
   component: BookingPage,
 });
+
+function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  const empty = value === "Por elegir" || value === "—";
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <Icon className={cn("size-4 shrink-0", empty ? "text-muted-foreground/50" : "text-primary")} />
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className={cn("text-sm truncate", empty ? "text-muted-foreground/70" : "font-medium text-foreground")}>{value}</p>
+      </div>
+    </div>
+  );
+}
 
 type Step = "location" | "mode" | "pickPro" | "pickSvc" | "datetime" | "client" | "done";
 type Mode = "pro" | "svc" | null;
@@ -233,24 +246,69 @@ function BookingPage() {
 
   const stepNum = step === "location" ? 1 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 2 : step === "datetime" || step === "client" ? 3 : 3;
 
+  const stepLabel =
+    step === "location" ? "Sucursal" :
+    step === "mode" ? "Modo de reserva" :
+    step === "pickPro" ? "Profesional" :
+    step === "pickSvc" ? "Servicio" :
+    step === "datetime" ? "Día y hora" :
+    step === "client" ? "Tus datos" : "Listo";
+
+  const initials = business.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
   return (
     <BrandTheme brand={business as any}>
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
-          <h1 className="font-display text-3xl gradient-rose-text">{business.name}</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+      {/* Aside: Brand + resumen */}
+      <aside className="bg-card border-b border-border lg:border-b-0 lg:border-r lg:min-h-screen lg:sticky lg:top-0">
+        <div className="px-6 py-8 lg:px-10 lg:py-12 max-w-xl mx-auto lg:mx-0 lg:ml-auto lg:w-full lg:max-w-md space-y-8">
+          <div className="flex items-center gap-4">
+            {business.logo_url ? (
+              <img src={business.logo_url} alt={business.name} className="size-14 rounded-2xl object-cover border border-border" />
+            ) : (
+              <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center text-primary font-display text-xl">
+                {initials}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Reservar online</p>
+              <h1 className="font-display text-2xl gradient-rose-text truncate">{business.name}</h1>
+            </div>
+          </div>
 
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+          {step !== "done" ? (
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Tu reserva</p>
+              <div className="rounded-2xl border border-border bg-background/50 divide-y divide-border">
+                <SummaryRow icon={MapPin} label="Sucursal" value={location?.name ?? (hasLocations ? "Por elegir" : "—")} />
+                <SummaryRow icon={User2} label="Profesional" value={professional?.name ?? "Por elegir"} />
+                <SummaryRow icon={Scissors} label="Servicio" value={service ? `${service.name} · ${formatPriceCents(service.price_cents)}` : "Por elegir"} />
+                <SummaryRow icon={Calendar} label="Día" value={slot ? slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : (step === "datetime" ? date.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : "Por elegir")} />
+                <SummaryRow icon={Clock} label="Hora" value={slot ? formatTime(slot.starts_at) : "Por elegir"} />
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-2">
+                <Sparkles className="size-3.5" /> Confirmación por WhatsApp
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+
+      {/* Main: paso actual */}
+      <main className="max-w-2xl w-full mx-auto px-4 py-8 lg:px-12 lg:py-14 space-y-6">
         {step !== "done" && (
-          <div className="flex items-center justify-between">
-            {step !== "location" ? (
-              <button onClick={goBack} className="text-sm text-muted-foreground flex items-center gap-1">
-                <ChevronLeft className="size-4" /> Atrás
-              </button>
-            ) : <span />}
-            <span className="text-xs text-muted-foreground">Paso {stepNum} de 3</span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              {step !== "location" ? (
+                <button onClick={goBack} className="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors">
+                  <ChevronLeft className="size-4" /> Atrás
+                </button>
+              ) : <span />}
+              <span className="text-xs font-medium text-muted-foreground">{stepLabel} · {stepNum}/3</span>
+            </div>
+            <div className="h-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${(stepNum / 3) * 100}%` }} />
+            </div>
           </div>
         )}
 
