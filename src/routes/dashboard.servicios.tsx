@@ -28,7 +28,7 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(true);
 
-  const { data: services } = useQuery({
+  const { data: services, isLoading } = useQuery({
     queryKey: ["services", businessId],
     enabled: !!businessId,
     queryFn: async () => {
