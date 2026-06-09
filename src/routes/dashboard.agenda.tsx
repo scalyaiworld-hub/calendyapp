@@ -177,7 +177,7 @@ function AgendaPage() {
     queryFn: async () => {
       let query = supabase
         .from("appointments")
-        .select("*, clients(name, phone), services(name, duration_minutes, price_cents), professionals(name)")
+        .select("*, clients(name, phone), services(name, duration_minutes, price_cents)")
         .eq("business_id", businessId!)
         .order("starts_at");
 
@@ -377,9 +377,12 @@ function AgendaPage() {
             <span className="text-sm text-foreground truncate min-w-0">
               {nextAppt.clients?.name ?? "Sin cliente"} · <span className="text-muted-foreground">{nextAppt.services?.name}</span>
             </span>
-            {nextAppt.professionals?.name && (
-              <span className="text-xs text-muted-foreground ml-auto">con {nextAppt.professionals.name}</span>
-            )}
+            {(() => {
+              const proName = prosList?.find((p) => p.id === nextAppt.professional_id)?.name;
+              return proName ? (
+                <span className="text-xs text-muted-foreground ml-auto">con {proName}</span>
+              ) : null;
+            })()}
           </CardContent>
         </Card>
       )}
