@@ -16,6 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { invalidateClients } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { formatTime, formatPriceCents } from "@/lib/format";
+import { CardListSkeleton, StatGridSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/clientes")({
   component: ClientsPage,
@@ -58,7 +59,7 @@ function ClientsPage() {
   const [sort, setSort] = useState<Sort>("name");
   const [detailClient, setDetailClient] = useState<any>(null);
 
-  const { data: clients } = useQuery({
+  const { data: clients, isLoading } = useQuery({
     queryKey: ["clients", business?.id],
     enabled: !!business?.id,
     queryFn: async () => {
@@ -212,7 +213,9 @@ function ClientsPage() {
         ))}
       </div>
 
-      {!clients?.length ? (
+      {isLoading ? (
+        <CardListSkeleton rows={6} withAvatar />
+      ) : !clients?.length ? (
         <Card className="border-dashed">
           <CardContent className="pt-10 pb-10 text-center space-y-3">
             <div className="mx-auto size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
