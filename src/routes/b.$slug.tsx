@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X, Sun, Sunset, Moon, Phone, UserCircle2 } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { createPublicBooking } from "@/lib/api/public-booking.functions";
@@ -32,6 +32,25 @@ function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; va
       </div>
     </div>
   );
+}
+
+function groupSlotsByPartOfDay(slots: { starts_at: Date; ends_at: Date }[]) {
+  const groups: Record<"morning" | "afternoon" | "evening", typeof slots> = { morning: [], afternoon: [], evening: [] };
+  slots.forEach((s) => {
+    const h = s.starts_at.getHours();
+    if (h < 12) groups.morning.push(s);
+    else if (h < 18) groups.afternoon.push(s);
+    else groups.evening.push(s);
+  });
+  return groups;
+}
+
+function dateLabel(d: Date) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Mañana";
+  return d.toLocaleDateString("es-PE", { weekday: "short" });
 }
 
 type Step = "location" | "mode" | "pickPro" | "pickSvc" | "datetime" | "client" | "done";
