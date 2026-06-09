@@ -16,7 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { invalidateClients } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { formatTime, formatPriceCents } from "@/lib/format";
-import { CardListSkeleton, StatGridSkeleton } from "@/components/Skeletons";
+import { CardListSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/clientes")({
   component: ClientsPage,
