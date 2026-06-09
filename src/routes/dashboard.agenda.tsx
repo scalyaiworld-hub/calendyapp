@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2, Users, Clock, Search } from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime, formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -90,6 +90,7 @@ function AgendaPage() {
   const [view, setView] = useState<ViewMode>("week");
   const [newApptOpen, setNewApptOpen] = useState(false);
   const [newApptSlot, setNewApptSlot] = useState<{ date: Date; time: string }>({ date: new Date(), time: "10:00" });
+  const [proFilter, setProFilter] = useState<string>("all");
 
   function openNewAppt(slotDate: Date, time = "10:00") {
     setNewApptSlot({ date: slotDate, time });
@@ -123,6 +124,22 @@ function AgendaPage() {
         .eq("is_active", true);
       if (error) throw error;
       return count ?? 0;
+    },
+  });
+
+  const { data: prosList } = useQuery({
+    queryKey: ["pros-list-agenda", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("professionals")
+        .select("id,name")
+        .eq("business_id", businessId!)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -177,6 +194,16 @@ function AgendaPage() {
       return data ?? [];
     },
   });
+
+  const filteredAppts = (appts ?? []).filter((a) =>
+    proFilter === "all" ? true : a.professional_id === proFilter,
+  );
+
+  // Próxima cita activa de hoy (para destacar en el header)
+  const nowTs = Date.now();
+  const nextAppt = filteredAppts
+    .filter((a) => (a.status === "booked" || a.status === "pending") && new Date(a.starts_at).getTime() >= nowTs)
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: any }) => {
@@ -262,6 +289,20 @@ function AgendaPage() {
           <p className="text-muted-foreground">Citas de la semana.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {prosList && prosList.length > 1 && (
+            <Select value={proFilter} onValueChange={setProFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <Users className="size-4 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los profesionales</SelectItem>
+                {prosList.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <div className="inline-flex rounded-md border border-border bg-background p-0.5">
             <button
               type="button"
@@ -326,12 +367,32 @@ function AgendaPage() {
         <Button variant="outline" size="sm" onClick={goNext}><ChevronRight className="size-4" /></Button>
       </div>
 
+      {nextAppt && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-3 py-3 px-4 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
+              <Clock className="size-3.5" /> Próxima cita
+            </span>
+            <span className="font-display text-base tabular-nums">{formatTime(nextAppt.starts_at)}</span>
+            <span className="text-sm text-foreground truncate min-w-0">
+              {nextAppt.clients?.name ?? "Sin cliente"} · <span className="text-muted-foreground">{nextAppt.services?.name}</span>
+            </span>
+            {(() => {
+              const proName = prosList?.find((p) => p.id === nextAppt.professional_id)?.name;
+              return proName ? (
+                <span className="text-xs text-muted-foreground ml-auto">con {proName}</span>
+              ) : null;
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {apptsError ? (
         <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
       ) : view === "week" ? (
         <WeekCalendar
           weekStart={weekStart}
-          appts={appts ?? []}
+          appts={filteredAppts}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
           onReschedule={(v) => reschedule.mutate(v)}
@@ -339,7 +400,7 @@ function AgendaPage() {
       ) : (
         <DayCalendar
           date={date}
-          appts={appts ?? []}
+          appts={filteredAppts}
           onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
           onSlotClick={(time) => openNewAppt(date, time)}
           onReschedule={(v) => reschedule.mutate(v)}
@@ -352,6 +413,7 @@ function AgendaPage() {
           onOpenChange={setNewApptOpen}
           initialDate={newApptSlot.date}
           initialTime={newApptSlot.time}
+          initialProfessionalId={proFilter !== "all" ? proFilter : undefined}
         />
       )}
     </div>
@@ -855,6 +917,7 @@ function NewApptDialog({
   trigger,
   open: openProp,
   onOpenChange,
+  initialProfessionalId,
 }: {
   businessId: string;
   initialDate: Date;
@@ -862,6 +925,7 @@ function NewApptDialog({
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
+  initialProfessionalId?: string;
 }) {
   const qc = useQueryClient();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -873,6 +937,9 @@ function NewApptDialog({
   };
   const [serviceId, setServiceId] = useState("");
   const [clientId, setClientId] = useState("");
+  const [professionalId, setProfessionalId] = useState<string>(initialProfessionalId ?? "");
+  const [locationId, setLocationId] = useState<string>("");
+  const [clientSearch, setClientSearch] = useState("");
   const [newClientName, setNewClientName] = useState("");
   const [newClientCountry, setNewClientCountry] = useState(DEFAULT_COUNTRY_CODE);
   const [newClientPhone, setNewClientPhone] = useState("");
@@ -884,8 +951,9 @@ function NewApptDialog({
     if (open) {
       setDateStr(toLocalDateInput(initialDate));
       setTime(initialTime);
+      setProfessionalId(initialProfessionalId ?? "");
     }
-  }, [open, initialDate, initialTime]);
+  }, [open, initialDate, initialTime, initialProfessionalId]);
 
   const { data: services } = useQuery({
     queryKey: ["services-active", businessId],
@@ -897,6 +965,22 @@ function NewApptDialog({
     enabled: open,
     queryFn: async () => (await supabase.from("clients").select("id,name,phone").eq("business_id", businessId).is("deleted_at", null).order("name")).data ?? [],
   });
+  const { data: pros } = useQuery({
+    queryKey: ["pros-active-dialog", businessId],
+    enabled: open,
+    queryFn: async () => (await supabase.from("professionals").select("id,name").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+  });
+  const { data: locs } = useQuery({
+    queryKey: ["locs-active-dialog", businessId],
+    enabled: open,
+    queryFn: async () => (await supabase.from("locations").select("id,name").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+  });
+
+  const filteredClients = (clients ?? []).filter((c) => {
+    if (!clientSearch.trim()) return true;
+    const q = clientSearch.toLowerCase();
+    return c.name?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q);
+  }).slice(0, 50);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -926,6 +1010,8 @@ function NewApptDialog({
         business_id: businessId, client_id: cid, service_id: serviceId,
         starts_at: starts.toISOString(), ends_at: ends.toISOString(),
         source: "manual", status: "booked",
+        professional_id: professionalId || null,
+        location_id: locationId || null,
       });
       if (error) throw error;
     },
@@ -933,7 +1019,7 @@ function NewApptDialog({
       toast.success("Cita creada");
       invalidateAppointments(qc);
       setOpen(false);
-      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false);
+      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false); setClientSearch(""); setLocationId("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -953,6 +1039,28 @@ function NewApptDialog({
               </SelectContent>
             </Select>
           </div>
+          {(pros?.length ?? 0) > 0 && (
+            <div>
+              <Label>Profesional</Label>
+              <Select value={professionalId} onValueChange={setProfessionalId}>
+                <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                <SelectContent>
+                  {pros?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {(locs?.length ?? 0) > 1 && (
+            <div>
+              <Label>Sucursal</Label>
+              <Select value={locationId} onValueChange={setLocationId}>
+                <SelectTrigger><SelectValue placeholder="Elegir sucursal" /></SelectTrigger>
+                <SelectContent>
+                  {locs?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <div className="flex items-center justify-between">
               <Label>Cliente</Label>
@@ -971,18 +1079,45 @@ function NewApptDialog({
                 />
               </div>
             ) : (
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
-                <SelectContent>
-                  {clients?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.phone}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {(clients?.length ?? 0) > 8 && (
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre o teléfono"
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      className="pl-7 h-8 text-xs"
+                    />
+                  </div>
+                )}
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
+                  <SelectContent>
+                    {filteredClients.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin resultados</div>
+                    ) : (
+                      filteredClients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.phone}</SelectItem>)
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Fecha</Label><Input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} /></div>
             <div><Label>Hora</Label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
+          {serviceId && (() => {
+            const svc = services?.find((s) => s.id === serviceId);
+            if (!svc) return null;
+            return (
+              <p className="text-xs text-muted-foreground">
+                Duración: <span className="text-foreground font-medium">{svc.duration_minutes} min</span>
+                {svc.price_cents ? <> · Precio: <span className="text-foreground font-medium">{formatPriceCents(svc.price_cents)}</span></> : null}
+              </p>
+            );
+          })()}
         </div>
         <DialogFooter>
           <Button onClick={() => create.mutate()} disabled={create.isPending}>Crear cita</Button>
