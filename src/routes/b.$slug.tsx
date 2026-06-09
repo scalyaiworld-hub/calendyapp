@@ -474,9 +474,9 @@ function BookingPage() {
             </CardContent></Card>
             <div>
               <Label className="mb-2 block">Día</Label>
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth -mx-4 px-4">
                 {next7.map((d) => (
-                  <button key={d.toDateString()} onClick={() => setDate(d)} className={cn("flex-shrink-0 px-3 py-2 rounded-md border text-center min-w-16", d.toDateString() === date.toDateString() ? "border-primary bg-primary/10" : "border-border")}>
+                  <button key={d.toDateString()} onClick={() => setDate(d)} className={cn("flex-shrink-0 px-4 py-3 rounded-xl border text-center min-w-[4.5rem] snap-center active:scale-95 transition-transform", d.toDateString() === date.toDateString() ? "border-primary bg-primary/10" : "border-border")}>
                     <p className="text-xs text-muted-foreground">{d.toLocaleDateString("es-PE", { weekday: "short" })}</p>
                     <p className="font-medium">{d.getDate()}</p>
                   </button>
