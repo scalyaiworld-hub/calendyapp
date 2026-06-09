@@ -546,6 +546,14 @@ function BookingPage() {
                   />
                 </div>
               </div>
+              {/* Desktop inline CTA */}
+              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
+                <Check className="size-4" />
+                {book.isPending ? "Reservando…" : "Confirmar reserva"}
+              </Button>
+            </div>
+            {/* Mobile sticky CTA */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
               <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || !phone || book.isPending}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
