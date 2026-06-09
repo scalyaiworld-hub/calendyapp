@@ -917,6 +917,7 @@ function NewApptDialog({
   trigger,
   open: openProp,
   onOpenChange,
+  initialProfessionalId,
 }: {
   businessId: string;
   initialDate: Date;
@@ -924,6 +925,7 @@ function NewApptDialog({
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
+  initialProfessionalId?: string;
 }) {
   const qc = useQueryClient();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -935,6 +937,9 @@ function NewApptDialog({
   };
   const [serviceId, setServiceId] = useState("");
   const [clientId, setClientId] = useState("");
+  const [professionalId, setProfessionalId] = useState<string>(initialProfessionalId ?? "");
+  const [locationId, setLocationId] = useState<string>("");
+  const [clientSearch, setClientSearch] = useState("");
   const [newClientName, setNewClientName] = useState("");
   const [newClientCountry, setNewClientCountry] = useState(DEFAULT_COUNTRY_CODE);
   const [newClientPhone, setNewClientPhone] = useState("");
@@ -946,8 +951,9 @@ function NewApptDialog({
     if (open) {
       setDateStr(toLocalDateInput(initialDate));
       setTime(initialTime);
+      setProfessionalId(initialProfessionalId ?? "");
     }
-  }, [open, initialDate, initialTime]);
+  }, [open, initialDate, initialTime, initialProfessionalId]);
 
   const { data: services } = useQuery({
     queryKey: ["services-active", businessId],
@@ -959,6 +965,22 @@ function NewApptDialog({
     enabled: open,
     queryFn: async () => (await supabase.from("clients").select("id,name,phone").eq("business_id", businessId).is("deleted_at", null).order("name")).data ?? [],
   });
+  const { data: pros } = useQuery({
+    queryKey: ["pros-active-dialog", businessId],
+    enabled: open,
+    queryFn: async () => (await supabase.from("professionals").select("id,name").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+  });
+  const { data: locs } = useQuery({
+    queryKey: ["locs-active-dialog", businessId],
+    enabled: open,
+    queryFn: async () => (await supabase.from("locations").select("id,name").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+  });
+
+  const filteredClients = (clients ?? []).filter((c) => {
+    if (!clientSearch.trim()) return true;
+    const q = clientSearch.toLowerCase();
+    return c.name?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q);
+  }).slice(0, 50);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -988,6 +1010,8 @@ function NewApptDialog({
         business_id: businessId, client_id: cid, service_id: serviceId,
         starts_at: starts.toISOString(), ends_at: ends.toISOString(),
         source: "manual", status: "booked",
+        professional_id: professionalId || null,
+        location_id: locationId || null,
       });
       if (error) throw error;
     },
@@ -995,7 +1019,7 @@ function NewApptDialog({
       toast.success("Cita creada");
       invalidateAppointments(qc);
       setOpen(false);
-      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false);
+      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false); setClientSearch(""); setLocationId("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1015,6 +1039,28 @@ function NewApptDialog({
               </SelectContent>
             </Select>
           </div>
+          {(pros?.length ?? 0) > 0 && (
+            <div>
+              <Label>Profesional</Label>
+              <Select value={professionalId} onValueChange={setProfessionalId}>
+                <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                <SelectContent>
+                  {pros?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {(locs?.length ?? 0) > 1 && (
+            <div>
+              <Label>Sucursal</Label>
+              <Select value={locationId} onValueChange={setLocationId}>
+                <SelectTrigger><SelectValue placeholder="Elegir sucursal" /></SelectTrigger>
+                <SelectContent>
+                  {locs?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <div className="flex items-center justify-between">
               <Label>Cliente</Label>
@@ -1033,18 +1079,45 @@ function NewApptDialog({
                 />
               </div>
             ) : (
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
-                <SelectContent>
-                  {clients?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.phone}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {(clients?.length ?? 0) > 8 && (
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre o teléfono"
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      className="pl-7 h-8 text-xs"
+                    />
+                  </div>
+                )}
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
+                  <SelectContent>
+                    {filteredClients.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin resultados</div>
+                    ) : (
+                      filteredClients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.phone}</SelectItem>)
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Fecha</Label><Input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} /></div>
             <div><Label>Hora</Label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
+          {serviceId && (() => {
+            const svc = services?.find((s) => s.id === serviceId);
+            if (!svc) return null;
+            return (
+              <p className="text-xs text-muted-foreground">
+                Duración: <span className="text-foreground font-medium">{svc.duration_minutes} min</span>
+                {svc.price_cents ? <> · Precio: <span className="text-foreground font-medium">{formatPriceCents(svc.price_cents)}</span></> : null}
+              </p>
+            );
+          })()}
         </div>
         <DialogFooter>
           <Button onClick={() => create.mutate()} disabled={create.isPending}>Crear cita</Button>
