@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatPriceCents, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { createPublicBooking } from "@/lib/api/public-booking.functions";
