@@ -97,35 +97,9 @@ function AgendaPage() {
     setNewApptOpen(true);
   }
 
-  const { data: locations } = useQuery({
-    queryKey: ["locations-count", businessId],
-    enabled: !!businessId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("locations")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", businessId!)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return { count: count ?? 0 };
-    },
-  });
-
-  const { data: prosCount } = useQuery({
-    queryKey: ["pros-count", businessId],
-    enabled: !!businessId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("professionals")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", businessId!)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
+  const { data: entityCounts } = useEntityCounts(businessId);
+  const locations = entityCounts ? { count: entityCounts.locations } : undefined;
+  const prosCount = entityCounts?.pros;
 
   const { data: prosList } = useQuery({
     queryKey: ["pros-list-agenda", businessId],
@@ -143,20 +117,7 @@ function AgendaPage() {
     },
   });
 
-  const { data: servicesCount } = useQuery({
-    queryKey: ["services-count", businessId],
-    enabled: !!businessId,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("services")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", businessId!)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
+  const servicesCount = entityCounts?.services;
 
   const hasPros = (prosCount ?? 0) > 0;
   const hasServices = (servicesCount ?? 0) > 0;
