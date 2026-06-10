@@ -12,6 +12,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { AVAILABLE_FONTS, BrandTheme } from "@/lib/brand-theme";
 import { slugify } from "@/lib/format";
+import { useEntityCounts } from "@/lib/entity-counts";
 
 export const Route = createFileRoute("/dashboard/ajustes")({
   component: AjustesPage,
