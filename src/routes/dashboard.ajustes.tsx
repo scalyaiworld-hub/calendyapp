@@ -12,6 +12,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { AVAILABLE_FONTS, BrandTheme } from "@/lib/brand-theme";
 import { slugify } from "@/lib/format";
+import { useEntityCounts } from "@/lib/entity-counts";
 
 export const Route = createFileRoute("/dashboard/ajustes")({
   component: AjustesPage,
@@ -106,56 +107,16 @@ function AjustesPage() {
     setBrandFont("Inter");
   };
 
-  const { data: prosCount } = useQuery({
-    queryKey: ["pros-count", business?.id],
-    enabled: !!business?.id,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("professionals")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-
-  const { data: servicesCount } = useQuery({
-    queryKey: ["services-count", business?.id],
-    enabled: !!business?.id,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("services")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
-
-  const { data: locationsCount } = useQuery({
-    queryKey: ["locations-count", business?.id],
-    enabled: !!business?.id,
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("locations")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true);
-      if (error) throw error;
-      return count ?? 0;
-    },
-  });
+  const { data: entityCounts } = useEntityCounts(business?.id);
+  const prosCount = entityCounts?.pros ?? 0;
+  const servicesCount = entityCounts?.services ?? 0;
+  const locationsCount = entityCounts?.locations ?? 0;
 
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
-  const hasPros = (prosCount ?? 0) > 0;
-  const hasServices = (servicesCount ?? 0) > 0;
-  const hasLocations = (locationsCount ?? 0) > 0;
+  const hasPros = prosCount > 0;
+  const hasServices = servicesCount > 0;
+  const hasLocations = locationsCount > 0;
   const canShare = hasPros && hasServices && hasLocations;
   const missing: string[] = [];
   if (!hasLocations) missing.push("una sucursal");
