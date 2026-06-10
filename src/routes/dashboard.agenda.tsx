@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { invalidateAppointments } from "@/lib/query-keys";
+import { useEntityCounts } from "@/lib/entity-counts";
 
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
 type ViewMode = "day" | "week";
