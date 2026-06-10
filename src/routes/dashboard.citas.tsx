@@ -227,19 +227,52 @@ function CitasPage() {
     else { setDateFrom(""); setDateTo(""); }
   }
 
-  // Quick stats for header (based on currently loaded items)
-  const todayStr = new Date().toDateString();
-  const stats = (() => {
-    const items = filteredItems as any[];
-    let todayCount = 0, pendingCount = 0, completedRevenue = 0;
-    for (const a of items) {
-      const d = new Date(a.starts_at);
-      if (d.toDateString() === todayStr) todayCount++;
-      if (a.status === "pending") pendingCount++;
-      if (a.status === "completed") completedRevenue += a.services?.price_cents ?? 0;
-    }
-    return { todayCount, pendingCount, completedRevenue };
-  })();
+  // Quick stats: agregadas sobre TODO el negocio (no solo la página visible),
+  // así "Hoy", "Pendientes" e "Ingresos" no dependen del filtro/paginación.
+  const { data: stats } = useQuery({
+    queryKey: ["citas-stats", businessId],
+    enabled: !!businessId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const end = new Date(start); end.setDate(end.getDate() + 1);
+      const [todayRes, pendingRes, revenueRes] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId!)
+          .gte("starts_at", start.toISOString())
+          .lt("starts_at", end.toISOString())
+          .neq("status", "cancelled"),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId!)
+          .eq("status", "pending"),
+        supabase
+          .from("appointments")
+          .select("services(price_cents)")
+          .eq("business_id", businessId!)
+          .eq("status", "completed")
+          .limit(5000),
+      ]);
+      if (todayRes.error) throw todayRes.error;
+      if (pendingRes.error) throw pendingRes.error;
+      if (revenueRes.error) throw revenueRes.error;
+      const completedRevenue = ((revenueRes.data ?? []) as any[]).reduce(
+        (sum, r) => sum + (r.services?.price_cents ?? 0),
+        0,
+      );
+      return {
+        todayCount: todayRes.count ?? 0,
+        pendingCount: pendingRes.count ?? 0,
+        completedRevenue,
+      };
+    },
+  });
+  const todayCount = stats?.todayCount ?? 0;
+  const pendingCount = stats?.pendingCount ?? 0;
+  const completedRevenue = stats?.completedRevenue ?? 0;
 
   function initials(name?: string | null) {
     if (!name) return "?";
@@ -289,15 +322,15 @@ function CitasPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><CalendarDays className="size-3.5" /> Hoy</p>
-          <p className="font-display text-2xl">{stats.todayCount}</p>
+          <p className="font-display text-2xl">{todayCount}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><AlertCircle className="size-3.5" /> Pendientes</p>
-          <p className="font-display text-2xl text-yellow-600">{stats.pendingCount}</p>
+          <p className="font-display text-2xl text-yellow-600">{pendingCount}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="size-3.5" /> Completadas (S/)</p>
-          <p className="font-display text-2xl text-green-600">{formatPriceCents(stats.completedRevenue)}</p>
+          <p className="font-display text-2xl text-green-600">{formatPriceCents(completedRevenue)}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><List className="size-3.5" /> En vista</p>

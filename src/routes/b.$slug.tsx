@@ -224,6 +224,12 @@ function BookingPage() {
     queryFn: () => getAvailableSlots({ businessId: business!.id, serviceId, date, locationId: locationId || undefined, professionalId }),
   });
 
+  // Limpiar el horario seleccionado cuando cambian los criterios de búsqueda,
+  // para que el botón "Siguiente" no avance con una hora que ya no aplica.
+  useEffect(() => {
+    setSlot(null);
+  }, [serviceId, professionalId, locationId, date]);
+
   const book = useMutation({
     mutationFn: async () => {
       if (!business || !service || !slot) throw new Error("Faltan datos");
