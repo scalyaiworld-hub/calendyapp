@@ -322,15 +322,15 @@ function CitasPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><CalendarDays className="size-3.5" /> Hoy</p>
-          <p className="font-display text-2xl">{stats.todayCount}</p>
+          <p className="font-display text-2xl">{todayCount}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><AlertCircle className="size-3.5" /> Pendientes</p>
-          <p className="font-display text-2xl text-yellow-600">{stats.pendingCount}</p>
+          <p className="font-display text-2xl text-yellow-600">{pendingCount}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><TrendingUp className="size-3.5" /> Completadas (S/)</p>
-          <p className="font-display text-2xl text-green-600">{formatPriceCents(stats.completedRevenue)}</p>
+          <p className="font-display text-2xl text-green-600">{formatPriceCents(completedRevenue)}</p>
         </CardContent></Card>
         <Card><CardContent className="py-3 px-4">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5"><List className="size-3.5" /> En vista</p>
