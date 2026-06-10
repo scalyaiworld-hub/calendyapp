@@ -6,11 +6,12 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Cachear datos por 30s antes de marcar como obsoletos
-        staleTime: 30_000,
-        // Mantener en memoria 5 min para que volver a una pantalla sea instantáneo
-        gcTime: 5 * 60_000,
+        // Cache agresivo para reducir llamadas al backend
+        staleTime: 5 * 60_000,        // 5 min frescos → sin refetch al volver
+        gcTime: 30 * 60_000,          // 30 min en memoria
         refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        refetchOnMount: false,        // si está en caché y fresco, no refetch
         retry: 1,
       },
     },
@@ -20,10 +21,10 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
-    // Precargar la ruta cuando el usuario pasa el mouse / toca el link
-    defaultPreload: "intent",
-    defaultPreloadDelay: 30,
+    // Reusar caché en preloads (evita disparar queries duplicadas al hover)
+    defaultPreloadStaleTime: 5 * 60_000,
+    // Precargar solo al hacer foco/tocar, no al pasar el mouse → menos queries innecesarias
+    defaultPreload: false,
   });
 
   return router;
