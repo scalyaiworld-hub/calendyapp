@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Calendia" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Calendya" }] }),
   component: DashboardLayout,
 });
 
@@ -88,7 +88,7 @@ function DashboardLayout() {
           <div className="size-8 rounded-lg bg-foreground grid place-items-center shadow-soft">
             <span className="font-display font-semibold text-background text-base">A</span>
           </div>
-          <span className="font-display text-lg font-semibold tracking-tight">Calendia</span>
+          <span className="font-display text-lg font-semibold tracking-tight">Calendya</span>
         </Link>
         {business && (
           <div className="mt-4 flex items-center justify-between gap-2">
@@ -180,7 +180,7 @@ function DashboardLayout() {
             <div className="size-7 rounded-md bg-foreground grid place-items-center">
               <span className="font-display font-semibold text-background text-sm">A</span>
             </div>
-            <span className="font-display text-base font-semibold tracking-tight">Calendia</span>
+            <span className="font-display text-base font-semibold tracking-tight">Calendya</span>
           </Link>
           <button
             onClick={() => setMobileOpen(true)}
