@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Ingresar — Calendia" },
-      { name: "description", content: "Ingresa o crea tu cuenta de Calendia." },
+      { title: "Ingresar — Calendya" },
+      { name: "description", content: "Ingresa o crea tu cuenta de Calendya." },
     ],
   }),
   component: AuthPage,
@@ -76,7 +76,7 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-background to-primary/5">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-block font-display text-3xl gradient-rose-text">Calendia</Link>
+          <Link to="/" className="inline-block font-display text-3xl gradient-rose-text">Calendya</Link>
           <h1 className="font-display text-2xl mt-6 mb-2">
             {mode === "signin" ? "Bienvenido de vuelta" : "Crea tu cuenta"}
           </h1>

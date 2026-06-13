@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/planes")({
-  head: () => ({ meta: [{ title: "Planes — Calendia" }] }),
+  head: () => ({ meta: [{ title: "Planes — Calendya" }] }),
   component: PlanesPage,
 });
 
