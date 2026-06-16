@@ -230,11 +230,12 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [industry, setIndustry] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
-    setName(""); setEmail(""); setPhone(""); setMessage(""); setSubmitting(false);
+    setName(""); setEmail(""); setPhone(""); setIndustry(""); setMessage(""); setSubmitting(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -243,6 +244,7 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
     const trimmedEmail = email.trim();
     if (trimmedName.length < 2) return toast.error("Ingresa tu nombre");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return toast.error("Ingresa un email válido");
+    if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
     setSubmitting(true);
     // Simulación de envío — el equipo comercial se pondrá en contacto.
     await new Promise((r) => setTimeout(r, 600));
@@ -272,6 +274,21 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
           <div className="space-y-1.5">
             <Label htmlFor="up-phone">Teléfono (opcional)</Label>
             <Input id="up-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="up-industry">¿Qué tipo de negocio tienes?</Label>
+            <select
+              id="up-industry"
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              required
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Selecciona una opción</option>
+              {BUSINESS_TYPES.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="up-msg">¿Algo que debamos saber? (opcional)</Label>
