@@ -193,9 +193,16 @@ function PlanesPage() {
       </p>
 
       <UpgradeRequestDialog
-        planId={requestPlan}
+        planId={requestPlan === "studio" ? null : requestPlan}
         onClose={() => setRequestPlan(null)}
         businessName={(business as any)?.name ?? ""}
+      />
+      <StudioRequestDialog
+        open={requestPlan === "studio"}
+        onClose={() => setRequestPlan(null)}
+        businessName={(business as any)?.name ?? ""}
+        currentLocations={usage?.locs ?? 0}
+        currentPros={usage?.pros ?? 0}
       />
     </div>
   );
