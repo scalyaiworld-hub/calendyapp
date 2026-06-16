@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Search, MessageCircle, Users, UserPlus, Star, AlertTriangle, CalendarClock, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { translateDbError } from "@/lib/api/error-messages";
 import { PhoneInput, formatPhone } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { invalidateClients } from "@/lib/query-keys";
@@ -103,7 +104,7 @@ function ClientsPage() {
       }
     },
     onSuccess: () => { invalidateClients(qc); toast.success("Guardado"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const del = useMutation({

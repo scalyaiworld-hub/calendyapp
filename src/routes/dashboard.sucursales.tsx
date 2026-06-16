@@ -16,6 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
 import { SmartImage } from "@/components/SmartImage";
 import { toast } from "sonner";
+import { translateDbError } from "@/lib/api/error-messages";
 import { cn } from "@/lib/utils";
 import { CardGridSkeleton } from "@/components/Skeletons";
 
@@ -108,7 +109,7 @@ function LocationsTab() {
       qc.invalidateQueries({ queryKey: ["locations-count"] });
       qc.invalidateQueries({ queryKey: ["public-locations"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   return (
@@ -293,7 +294,7 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
       toast.success("Guardado");
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   return (

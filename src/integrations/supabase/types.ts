@@ -678,6 +678,15 @@ export type Database = {
     }
     Functions: {
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }
+      normalize_phone: { Args: { p: string }; Returns: string }
+      plan_limit: {
+        Args: { _plan: string; _resource: string }
+        Returns: number
+      }
+      recalc_client_counters: {
+        Args: { _client_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       appointment_source: "manual" | "booking_page" | "chat_ai" | "whatsapp"

@@ -13,15 +13,36 @@ const schema = z.object({
   countryCode: z.string().trim().min(1).max(8),
 });
 
+function normalizePhone(p: string): string {
+  return p.replace(/[^0-9+]/g, "");
+}
+
 export const createPublicBooking = createServerFn({ method: "POST" })
   .inputValidator((input) => schema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const startsAt = new Date(data.startsAt);
+    const endsAt = new Date(data.endsAt);
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+      throw new Error("Fecha inválida");
+    }
+    if (endsAt <= startsAt) throw new Error("Rango de tiempo inválido");
+
+    const now = Date.now();
+    const MIN_LEAD_MS = 30 * 60 * 1000;
+    const MAX_AHEAD_MS = 90 * 24 * 60 * 60 * 1000;
+    if (startsAt.getTime() < now + MIN_LEAD_MS) {
+      throw new Error("La reserva debe ser con al menos 30 minutos de anticipación");
+    }
+    if (startsAt.getTime() > now + MAX_AHEAD_MS) {
+      throw new Error("Solo puedes reservar hasta 90 días por adelantado");
+    }
+
     // Validar negocio y servicio activos
     const { data: biz } = await supabaseAdmin
       .from("businesses")
-      .select("id")
+      .select("id, timezone")
       .eq("id", data.businessId)
       .is("deleted_at", null)
       .maybeSingle();
@@ -29,7 +50,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     const { data: svc } = await supabaseAdmin
       .from("services")
-      .select("id")
+      .select("id, duration_minutes")
       .eq("id", data.serviceId)
       .eq("business_id", data.businessId)
       .eq("is_active", true)
@@ -37,13 +58,78 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!svc) throw new Error("Servicio no disponible");
 
+    // Verifica que la duración pedida coincida con la del servicio
+    const requestedMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
+    if (requestedMinutes !== svc.duration_minutes) {
+      throw new Error("Duración del servicio no coincide");
+    }
+
+    // Verifica horario (sucursal o reglas generales del negocio)
+    const tz = biz.timezone ?? "America/Lima";
+    const localStartForDow = new Date(startsAt.toLocaleString("en-US", { timeZone: tz }));
+    const dow = localStartForDow.getDay();
+    let hours: { start_time: string; end_time: string }[] | null = null;
+    if (data.locationId) {
+      const { data: lh } = await supabaseAdmin
+        .from("location_hours")
+        .select("start_time,end_time")
+        .eq("location_id", data.locationId)
+        .eq("day_of_week", dow);
+      hours = lh;
+    }
+    if (!hours || hours.length === 0) {
+      const { data: ar } = await supabaseAdmin
+        .from("availability_rules")
+        .select("start_time,end_time")
+        .eq("business_id", data.businessId)
+        .eq("day_of_week", dow);
+      hours = ar;
+    }
+    if (!hours || hours.length === 0) {
+      throw new Error("El negocio no atiende ese día");
+    }
+    const localStart = localStartForDow;
+    const localEnd = new Date(endsAt.toLocaleString("en-US", { timeZone: tz }));
+    const minutesOfDay = (d: Date) => d.getHours() * 60 + d.getMinutes();
+    const sMin = minutesOfDay(localStart);
+    const eMin = minutesOfDay(localEnd);
+    const fits = hours.some((h) => {
+      const [sh, sm] = h.start_time.split(":").map(Number);
+      const [eh, em] = h.end_time.split(":").map(Number);
+      return sMin >= sh * 60 + sm && eMin <= eh * 60 + em;
+    });
+    if (!fits) throw new Error("Horario fuera del rango de atención");
+
+    // Verifica que el slot no esté ya ocupado (el constraint EXCLUDE es la verdad
+    // última; esto da un error más claro al usuario antes del INSERT).
+    let clashQ = supabaseAdmin
+      .from("appointments")
+      .select("id")
+      .eq("business_id", data.businessId)
+      .in("status", ["pending", "booked"])
+      .lt("starts_at", endsAt.toISOString())
+      .gt("ends_at", startsAt.toISOString())
+      .limit(1);
+    if (data.professionalId) clashQ = clashQ.eq("professional_id", data.professionalId);
+    else if (data.locationId) clashQ = clashQ.eq("location_id", data.locationId).is("professional_id", null);
+    const { data: clash } = await clashQ;
+    if (clash && clash.length > 0) {
+      throw new Error("Ese horario ya fue tomado, elige otro");
+    }
+
+    const normalizedPhone = normalizePhone(data.phone);
+    const normalizedCC = normalizePhone(data.countryCode);
+    if (!/^\+?[0-9]{7,15}$/.test(normalizedPhone)) {
+      throw new Error("Teléfono inválido");
+    }
+
     // Dedupe de cliente por teléfono (con bypass de RLS)
     const { data: existing } = await supabaseAdmin
       .from("clients")
       .select("id, name")
       .eq("business_id", data.businessId)
-      .eq("phone", data.phone)
-      .eq("phone_country_code", data.countryCode)
+      .eq("phone", normalizedPhone)
+      .eq("phone_country_code", normalizedCC)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -56,8 +142,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         .insert({
           business_id: data.businessId,
           name: data.name,
-          phone: data.phone,
-          phone_country_code: data.countryCode,
+          phone: normalizedPhone,
+          phone_country_code: normalizedCC,
         })
         .select("id")
         .single();
@@ -80,7 +166,16 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       source: "booking_page",
       status: "pending",
     });
-    if (apptErr) throw new Error(apptErr.message);
+    if (apptErr) {
+      const msg = apptErr.message ?? "";
+      if (msg.includes("PLAN_LIMIT_APPOINTMENTS")) {
+        throw new Error("Este negocio alcanzó su límite de citas del mes");
+      }
+      if (msg.includes("appts_no_overlap")) {
+        throw new Error("Ese horario ya fue tomado, elige otro");
+      }
+      throw new Error(apptErr.message);
+    }
 
     return { ok: true, clientId };
   });

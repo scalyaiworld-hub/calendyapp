@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
 import { invalidateAppointments } from "@/lib/query-keys";
+import { translateDbError } from "@/lib/api/error-messages";
 
 export const Route = createFileRoute("/dashboard/citas")({
   component: CitasPage,
@@ -152,7 +153,7 @@ function CitasPage() {
       toast.success("Estado actualizado");
       setSelectedAppt(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const [editClientId, setEditClientId] = useState("");
@@ -203,7 +204,7 @@ function CitasPage() {
       toast.success("Cita actualizada");
       setSelectedAppt(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const filteredItems = appointments?.items ?? [];
