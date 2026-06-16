@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useMutation, useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAvailableSlots } from "@/lib/availability";
@@ -13,11 +13,43 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X, Sun, Sunset, Moon, Phone, UserCircle2 } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
-import { createPublicBooking } from "@/lib/api/public-booking.functions";
+import { createPublicBooking, getPublicBusinessBootstrap } from "@/lib/api/public-booking.functions";
 import { BrandTheme } from "@/lib/brand-theme";
 
+const bootstrapOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["public-booking-bootstrap", slug],
+    queryFn: () => getPublicBusinessBootstrap({ data: { slug } }),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
+
 export const Route = createFileRoute("/b/$slug")({
-  head: ({ params }) => ({ meta: [{ title: `Reservar — ${params.slug}` }] }),
+  loader: async ({ params, context }) => {
+    const data = await context.queryClient.ensureQueryData(bootstrapOptions(params.slug));
+    if (!data?.business) throw notFound();
+    return { businessName: data.business.name as string };
+  },
+  head: ({ loaderData, params }) => {
+    const name = loaderData?.businessName ?? params.slug;
+    const title = `Reservar en ${name} — Calendya`;
+    const description = `Agenda tu cita en ${name} de forma rápida y online.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+    };
+  },
+  notFoundComponent: () => (
+    <div className="min-h-screen grid place-items-center text-muted-foreground">Salón no encontrado</div>
+  ),
   component: BookingPage,
 });
 
