@@ -24,6 +24,22 @@ const PLAN_PRICES: Record<PlanId, string> = { free: "$0", pro: "$29", studio: "$
 const PLAN_PERIODS: Record<PlanId, string> = { free: "/ mes", pro: "USD / mes", studio: "USD / mes" };
 const PLAN_ORDER: PlanId[] = ["free", "pro", "studio"];
 
+const BUSINESS_TYPES = [
+  "Barbería",
+  "Peluquería / Salón de belleza",
+  "Spa / Centro de bienestar",
+  "Estética / Tratamientos faciales",
+  "Uñas / Manicura",
+  "Depilación",
+  "Tatuajes y piercings",
+  "Masajes y terapias",
+  "Consultorio médico",
+  "Clínica dental",
+  "Veterinaria",
+  "Entrenamiento personal / Fitness",
+  "Otro",
+];
+
 function PlanesPage() {
   const { data: business } = useMyBusiness();
   const qc = useQueryClient();
