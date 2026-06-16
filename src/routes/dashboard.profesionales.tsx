@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, User, Search, Scissors, MapPin, Phone, Users } fr
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, PRO_TEMPLATES } from "@/components/ImagePicker";
+import { SmartImage } from "@/components/SmartImage";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CardGridSkeleton } from "@/components/Skeletons";
@@ -139,7 +140,7 @@ function ProsTab() {
                 <CardContent className="pt-4 pb-4 flex gap-3">
                   <div className="size-14 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center text-primary font-medium">
                     {p.avatar_url ? (
-                      <img src={p.avatar_url} alt={p.name} className="w-full h-full object-cover" />
+                      <SmartImage src={p.avatar_url} alt={p.name} width={56} height={56} />
                     ) : (
                       <span className="text-lg">{p.name?.charAt(0)?.toUpperCase() ?? <User className="size-5" />}</span>
                     )}
