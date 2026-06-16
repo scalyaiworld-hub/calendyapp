@@ -291,7 +291,16 @@ function BookingPage() {
         <div className="px-6 py-8 lg:px-10 lg:py-12 max-w-xl mx-auto lg:mx-0 lg:ml-auto lg:w-full lg:max-w-md space-y-8">
           <div className="flex items-center gap-4">
             {business.logo_url ? (
-              <img src={business.logo_url} alt={business.name} className="size-14 rounded-2xl object-cover border border-border" />
+              <img
+                src={business.logo_url}
+                alt={business.name}
+                width={56}
+                height={56}
+                decoding="async"
+                // @ts-expect-error fetchpriority not in React types
+                fetchpriority="high"
+                className="size-14 rounded-2xl object-cover border border-border"
+              />
             ) : (
               <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center text-primary font-display text-xl">
                 {initials}
@@ -459,7 +468,15 @@ function BookingPage() {
                   <Card className="hover:border-primary hover:shadow-md transition-all h-full">
                     <CardContent className="pt-4 pb-4 flex items-center gap-3">
                       {p.avatar_url ? (
-                        <img src={p.avatar_url} alt={p.name} className="size-12 rounded-full object-cover border border-border shrink-0" />
+                        <img
+                          src={p.avatar_url}
+                          alt={p.name}
+                          width={48}
+                          height={48}
+                          loading="lazy"
+                          decoding="async"
+                          className="size-12 rounded-full object-cover border border-border shrink-0"
+                        />
                       ) : (
                         <div className="size-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 grid place-items-center text-primary font-medium shrink-0">
                           {p.name.charAt(0).toUpperCase()}

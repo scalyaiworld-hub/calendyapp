@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, MapPin, Search, Users, Phone, Clock, Store } from
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
+import { SmartImage } from "@/components/SmartImage";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CardGridSkeleton } from "@/components/Skeletons";
@@ -155,7 +156,7 @@ function LocationsTab() {
                   <CardContent className="pt-4 pb-4 flex gap-3">
                     <div className="size-16 rounded-xl overflow-hidden bg-muted shrink-0 flex items-center justify-center">
                       {l.image_url ? (
-                        <img src={l.image_url} alt={l.name} className="w-full h-full object-cover" />
+                        <SmartImage src={l.image_url} alt={l.name} width={64} height={64} />
                       ) : (
                         <MapPin className="size-6 text-muted-foreground/50" />
                       )}
