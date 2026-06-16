@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useMutation, useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { getAvailableSlots } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +12,43 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X, Sun, Sunset, Moon, Phone, UserCircle2 } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
-import { createPublicBooking } from "@/lib/api/public-booking.functions";
+import { createPublicBooking, getPublicBusinessBootstrap } from "@/lib/api/public-booking.functions";
 import { BrandTheme } from "@/lib/brand-theme";
 
+const bootstrapOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["public-booking-bootstrap", slug],
+    queryFn: () => getPublicBusinessBootstrap({ data: { slug } }),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
+
 export const Route = createFileRoute("/b/$slug")({
-  head: ({ params }) => ({ meta: [{ title: `Reservar — ${params.slug}` }] }),
+  loader: async ({ params, context }) => {
+    const data = await context.queryClient.ensureQueryData(bootstrapOptions(params.slug));
+    if (!data?.business) throw notFound();
+    return { businessName: data.business.name as string };
+  },
+  head: ({ loaderData, params }) => {
+    const name = loaderData?.businessName ?? params.slug;
+    const title = `Reservar en ${name} — Calendya`;
+    const description = `Agenda tu cita en ${name} de forma rápida y online.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+    };
+  },
+  notFoundComponent: () => (
+    <div className="min-h-screen grid place-items-center text-muted-foreground">Salón no encontrado</div>
+  ),
   component: BookingPage,
 });
 
@@ -70,33 +101,17 @@ function BookingPage() {
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
-  const { data: business, isLoading } = useQuery({
-    queryKey: ["public-biz", slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("businesses")
-        .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font")
-        .eq("slug", slug)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Una sola carga: negocio + sucursales + profesionales + servicios + asignaciones.
+  // Precargado en el loader → la página aparece sin "Cargando…" y sin cascada de queries.
+  const { data: bootstrap } = useSuspenseQuery(bootstrapOptions(slug));
+  const business = bootstrap.business!; // loader ya lanzó notFound si era null
+  const locations = bootstrap.locations;
+  const allPros = bootstrap.professionals;
+  const allServices = bootstrap.services;
+  const locationPros = bootstrap.locationPros;
+  const proServicesMap = bootstrap.professionalServices;
 
-  // Step 1: Sucursales activas del negocio
-  const { data: locations } = useQuery({
-    queryKey: ["public-locations", business?.id],
-    enabled: !!business?.id,
-    queryFn: async () => (await supabase
-      .from("locations")
-      .select("id,business_id,name,address,is_active,created_at")
-      .eq("business_id", business!.id)
-      .is("deleted_at", null)
-      .eq("is_active", true)
-      .order("created_at")).data ?? [],
-  });
-  const location = locations?.find((l) => l.id === locationId);
+  const location = locations.find((l: any) => l.id === locationId);
   const hasLocations = (locations?.length ?? 0) > 0;
 
   // Si el negocio no tiene sucursales, saltamos el paso de elegir sucursal.
@@ -104,124 +119,59 @@ function BookingPage() {
     if (locations && !hasLocations && step === "location") setStep("mode");
   }, [locations, hasLocations, step]);
 
-  // Profesionales asignados a la sucursal
-  const { data: locPros } = useQuery({
-    queryKey: ["public-loc-pros", locationId, business?.id, hasLocations],
-    enabled: !!business?.id && (!!locationId || !hasLocations),
-    queryFn: async () => {
-      // Sin sucursal seleccionada: lista todos los profesionales del negocio
-      if (!locationId) {
-        const { data } = await supabase
-          .from("professionals")
-          .select("id,name,avatar_url,is_active,deleted_at")
-          .eq("business_id", business!.id)
-          .is("deleted_at", null)
-          .eq("is_active", true)
-          .order("name");
-        return data ?? [];
-      }
-      const { data } = await supabase
-        .from("location_professionals")
-        .select("professional_id, professionals!inner(id,name,avatar_url,is_active,deleted_at)")
-        .eq("location_id", locationId);
-      const assigned = (data ?? [])
-        .map((r: any) => r.professionals)
-        .filter((p: any) => p && p.is_active && !p.deleted_at);
-      if (assigned.length > 0) return assigned;
-      // Fallback: si no hay asignaciones, muestra todos los profesionales activos del negocio
-      const { data: all } = await supabase
-        .from("professionals")
-        .select("id,name,avatar_url,is_active,deleted_at")
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .order("name");
-      return all ?? [];
-    },
-  });
+  // Derivaciones en memoria a partir del bootstrap (sin queries adicionales).
+  // Profesionales por sucursal (con fallback a todos si no hay asignaciones).
+  const locPros = (() => {
+    if (!locationId) return allPros;
+    const assignedIds = new Set(
+      locationPros.filter((r: any) => r.location_id === locationId).map((r: any) => r.professional_id),
+    );
+    const assigned = allPros.filter((p: any) => assignedIds.has(p.id));
+    return assigned.length > 0 ? assigned : allPros;
+  })();
+  const proIdsInLoc = locPros.map((p: any) => p.id);
 
-  // Servicios ofrecidos en la sucursal (por al menos un profesional asignado)
-  const proIdsInLoc = (locPros ?? []).map((p: any) => p.id);
-  const { data: locServices } = useQuery({
-    queryKey: ["public-loc-services", locationId, business?.id, proIdsInLoc.join(",")],
-    enabled: !!business?.id && proIdsInLoc.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("professional_services")
-        .select("service_id, services!inner(id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at)")
-        .in("professional_id", proIdsInLoc);
-      const map = new Map<string, any>();
-      (data ?? []).forEach((r: any) => {
-        if (r.services && r.services.is_active && !r.services.deleted_at) map.set(r.services.id, r.services);
-      });
-      const list = Array.from(map.values());
-      if (list.length > 0) return list.sort((a, b) => a.display_order - b.display_order);
-      // Fallback: muestra todos los servicios activos del negocio
-      const { data: all } = await supabase
-        .from("services")
-        .select("id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at")
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .order("display_order");
-      return all ?? [];
-    },
-  });
+  // Servicios ofrecidos en la sucursal (por al menos un profesional asignado).
+  const locServices = (() => {
+    if (proIdsInLoc.length === 0) return allServices;
+    const allowed = new Set(proIdsInLoc);
+    const svcIds = new Set(
+      proServicesMap.filter((r: any) => allowed.has(r.professional_id)).map((r: any) => r.service_id),
+    );
+    const filtered = allServices.filter((s: any) => svcIds.has(s.id));
+    return filtered.length > 0 ? filtered : allServices;
+  })();
 
-  // Servicios del profesional seleccionado
-  const { data: proServices } = useQuery({
-    queryKey: ["public-pro-services", professionalId, business?.id],
-    enabled: !!professionalId && !!business?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("professional_services")
-        .select("service_id, services!inner(id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at)")
-        .eq("professional_id", professionalId);
-      const list = (data ?? [])
-        .map((r: any) => r.services)
-        .filter((s: any) => s && s.is_active && !s.deleted_at)
-        .sort((a: any, b: any) => a.display_order - b.display_order);
-      if (list.length > 0) return list;
-      // Fallback: todos los servicios activos del negocio
-      const { data: all } = await supabase
-        .from("services")
-        .select("id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at")
-        .eq("business_id", business!.id)
-        .is("deleted_at", null)
-        .eq("is_active", true)
-        .order("display_order");
-      return all ?? [];
-    },
-  });
+  // Servicios del profesional seleccionado.
+  const proServices = (() => {
+    if (!professionalId) return [];
+    const svcIds = new Set(
+      proServicesMap.filter((r: any) => r.professional_id === professionalId).map((r: any) => r.service_id),
+    );
+    const filtered = allServices.filter((s: any) => svcIds.has(s.id));
+    return filtered.length > 0 ? filtered : allServices;
+  })();
 
-  // Profesionales que ofrecen el servicio seleccionado dentro de la sucursal
-  const { data: svcPros } = useQuery({
-    queryKey: ["public-svc-pros", serviceId, locationId, proIdsInLoc.join(",")],
-    enabled: !!serviceId && proIdsInLoc.length > 0,
-    queryFn: async () => {
-      const q = supabase
-        .from("professional_services")
-        .select("professional_id, professionals!inner(id,name,avatar_url,is_active,deleted_at)")
-        .eq("service_id", serviceId)
-        .in("professional_id", proIdsInLoc);
-      const { data } = await q;
-      const list = (data ?? [])
-        .map((r: any) => r.professionals)
-        .filter((p: any) => p && p.is_active && !p.deleted_at);
-      if (list.length > 0) return list;
-      // Fallback: todos los profesionales disponibles
-      return locPros ?? [];
-    },
-  });
+  // Profesionales que ofrecen el servicio seleccionado dentro de la sucursal.
+  const svcPros = (() => {
+    if (!serviceId) return locPros;
+    const allowedPros = new Set(proIdsInLoc);
+    const proIds = new Set(
+      proServicesMap
+        .filter((r: any) => r.service_id === serviceId && allowedPros.has(r.professional_id))
+        .map((r: any) => r.professional_id),
+    );
+    const filtered = locPros.filter((p: any) => proIds.has(p.id));
+    return filtered.length > 0 ? filtered : locPros;
+  })();
 
-  // Servicio elegido (puede venir de cualquiera de las dos ramas)
-  const allKnownServices = [...(locServices ?? []), ...(proServices ?? [])];
-  const service = allKnownServices.find((s: any) => s.id === serviceId);
+  const service = allServices.find((s: any) => s.id === serviceId);
 
   const { data: slots } = useQuery({
     queryKey: ["slots", business?.id, serviceId, professionalId, locationId, date.toDateString()],
     enabled: !!business?.id && !!serviceId && !!professionalId,
     queryFn: () => getAvailableSlots({ businessId: business!.id, serviceId, date, locationId: locationId || undefined, professionalId }),
+    staleTime: 60_000, // 1 min — evita refetch al volver al mismo día
   });
 
   // Limpiar el horario seleccionado cuando cambian los criterios de búsqueda,
@@ -251,11 +201,8 @@ function BookingPage() {
     onError: (e: Error) => toast.error("No se pudo reservar: " + e.message),
   });
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
-  if (!business) return <div className="min-h-screen grid place-items-center text-muted-foreground">Salón no encontrado</div>;
-
   const next7 = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+i); return d; });
-  const professional = (locPros ?? []).find((p: any) => p.id === professionalId);
+  const professional = locPros.find((p: any) => p.id === professionalId);
 
   const goBack = () => {
     if (step === "mode") setStep(hasLocations ? "location" : "mode");

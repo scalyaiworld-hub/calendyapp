@@ -84,3 +84,83 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     return { ok: true, clientId };
   });
+
+/**
+ * Single bootstrap call for the public booking page.
+ * Runs all reads in parallel server-side using the admin client so the
+ * browser only does ONE network roundtrip instead of 5–6 cascading queries.
+ * All returned data is intentionally public (visible on the booking page).
+ */
+const bootstrapSchema = z.object({ slug: z.string().trim().min(1).max(120) });
+
+export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
+  .inputValidator((input) => bootstrapSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: business } = await supabaseAdmin
+      .from("businesses")
+      .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font")
+      .eq("slug", data.slug)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (!business) {
+      return {
+        business: null,
+        locations: [],
+        professionals: [],
+        services: [],
+        locationPros: [],
+        professionalServices: [],
+      };
+    }
+
+    const businessId = business.id;
+    // 1) Cargar entidades base en paralelo
+    const [locsRes, prosRes, svcsRes] = await Promise.all([
+      supabaseAdmin
+        .from("locations")
+        .select("id,business_id,name,address,is_active,created_at")
+        .eq("business_id", businessId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("created_at"),
+      supabaseAdmin
+        .from("professionals")
+        .select("id,name,avatar_url,is_active,deleted_at")
+        .eq("business_id", businessId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name"),
+      supabaseAdmin
+        .from("services")
+        .select("id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at")
+        .eq("business_id", businessId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("display_order"),
+    ]);
+
+    const proIds = (prosRes.data ?? []).map((p: any) => p.id);
+    const svcIds = (svcsRes.data ?? []).map((s: any) => s.id);
+
+    // 2) Asignaciones, acotadas a los IDs de este negocio
+    const [locProsRes, proSvcsRes] = await Promise.all([
+      proIds.length
+        ? supabaseAdmin.from("location_professionals").select("location_id, professional_id").in("professional_id", proIds)
+        : Promise.resolve({ data: [] as any[] }),
+      proIds.length && svcIds.length
+        ? supabaseAdmin.from("professional_services").select("professional_id, service_id").in("professional_id", proIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    return {
+      business,
+      locations: locsRes.data ?? [],
+      professionals: prosRes.data ?? [],
+      services: svcsRes.data ?? [],
+      locationPros: (locProsRes as any).data ?? [],
+      professionalServices: (proSvcsRes as any).data ?? [],
+    };
+  });
