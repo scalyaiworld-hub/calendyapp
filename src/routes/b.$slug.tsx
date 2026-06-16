@@ -172,6 +172,7 @@ function BookingPage() {
     queryKey: ["slots", business?.id, serviceId, professionalId, locationId, date.toDateString()],
     enabled: !!business?.id && !!serviceId && !!professionalId,
     queryFn: () => getAvailableSlots({ businessId: business!.id, serviceId, date, locationId: locationId || undefined, professionalId }),
+    staleTime: 60_000, // 1 min — evita refetch al volver al mismo día
   });
 
   // Limpiar el horario seleccionado cuando cambian los criterios de búsqueda,
