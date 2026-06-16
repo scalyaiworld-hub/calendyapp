@@ -354,6 +354,7 @@ function StudioRequestDialog({
   const [phone, setPhone] = useState("");
   const [locations, setLocations] = useState<string>("");
   const [team, setTeam] = useState<string>("");
+  const [industry, setIndustry] = useState<string>("");
   const [appointmentsRange, setAppointmentsRange] = useState<string>("");
   const [currentTool, setCurrentTool] = useState("");
   const [timing, setTiming] = useState<string>("");
@@ -362,7 +363,7 @@ function StudioRequestDialog({
 
   const reset = () => {
     setName(""); setRole(""); setEmail(""); setPhone("");
-    setLocations(""); setTeam(""); setAppointmentsRange("");
+    setLocations(""); setTeam(""); setIndustry(""); setAppointmentsRange("");
     setCurrentTool(""); setTiming(""); setNeeds("");
     setSubmitting(false);
   };
@@ -378,6 +379,7 @@ function StudioRequestDialog({
     e.preventDefault();
     if (name.trim().length < 2) return toast.error("Ingresa tu nombre");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return toast.error("Ingresa un email válido");
+    if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
     if (!timing) return toast.error("Indica cuándo te gustaría empezar");
     setSubmitting(true);
     // Simulación de envío — el equipo comercial se pondrá en contacto.
@@ -425,6 +427,21 @@ function StudioRequestDialog({
           <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-3">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sobre tu operación</p>
             <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="st-industry">¿Qué tipo de negocio tienes? *</Label>
+                <select
+                  id="st-industry"
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  required
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Selecciona una opción</option>
+                  {BUSINESS_TYPES.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="st-locs">Sucursales</Label>
                 <Input id="st-locs" type="number" min={1} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="ej. 4" />
