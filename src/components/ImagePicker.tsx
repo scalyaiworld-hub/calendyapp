@@ -59,7 +59,7 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
       <div className={cn("relative w-full bg-muted/40 border border-dashed border-border overflow-hidden flex items-center justify-center", shapeCls, previewClassName)}>
         {value ? (
           <>
-            <img src={value} alt="" className="w-full h-full object-cover" />
+            <img src={value} alt="" decoding="async" className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={() => { onChange(null); setUrl(""); }}
@@ -125,7 +125,7 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
                   value === t ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/60"
                 )}
               >
-                <img src={t} alt="" className="w-full h-full object-cover" />
+                <img src={t} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
