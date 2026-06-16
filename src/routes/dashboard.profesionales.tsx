@@ -16,6 +16,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, PRO_TEMPLATES } from "@/components/ImagePicker";
 import { SmartImage } from "@/components/SmartImage";
 import { toast } from "sonner";
+import { translateDbError } from "@/lib/api/error-messages";
 import { cn } from "@/lib/utils";
 import { CardGridSkeleton } from "@/components/Skeletons";
 
@@ -96,7 +97,7 @@ function ProsTab() {
       qc.invalidateQueries({ queryKey: ["pros-count"] });
       qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   return (
@@ -248,7 +249,7 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
       toast.success("Guardado");
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   return (

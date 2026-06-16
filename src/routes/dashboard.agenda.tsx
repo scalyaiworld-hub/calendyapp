@@ -14,6 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2, Users, Clock, Search } from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime, formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
+import { translateDbError } from "@/lib/api/error-messages";
 import { cn } from "@/lib/utils";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
@@ -178,7 +179,7 @@ function AgendaPage() {
       invalidateAppointments(qc);
       toast.success("Actualizado");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const reschedule = useMutation({
@@ -214,7 +215,7 @@ function AgendaPage() {
     },
     onError: (e: Error, _vars, ctx) => {
       ctx?.snapshots.forEach((s: any) => qc.setQueryData(s.key, s.data));
-      toast.error(e.message || "No se pudo mover la cita");
+      toast.error(translateDbError(e) || "No se pudo mover la cita");
     },
     onSuccess: () => {
       toast.success("Cita reprogramada");
@@ -983,7 +984,7 @@ function NewApptDialog({
       setOpen(false);
       setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false); setClientSearch(""); setLocationId("");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   return (
