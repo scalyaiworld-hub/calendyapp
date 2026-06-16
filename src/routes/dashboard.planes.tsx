@@ -13,7 +13,7 @@ import { PLANS, MODULE_LABELS, getPlan, type PlanId } from "@/lib/plans";
 import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/dashboard/planes")({
   head: () => ({ meta: [{ title: "Planes — Calendya" }] }),
@@ -334,14 +334,12 @@ function StudioRequestDialog({
     setSubmitting(false);
   };
 
-  // Prefill aproximado con los datos actuales del negocio cuando se abre.
-  if (open && !locations && currentLocations > 0) {
-    // setState durante render solo si el valor cambia: hacemos prefill una vez.
-    queueMicrotask(() => {
-      setLocations(String(currentLocations));
-      if (currentPros > 0) setTeam(String(currentPros));
-    });
-  }
+  // Prefill con los datos actuales del negocio cuando se abre.
+  useEffect(() => {
+    if (!open) return;
+    if (currentLocations > 0) setLocations((v) => v || String(currentLocations));
+    if (currentPros > 0) setTeam((v) => v || String(currentPros));
+  }, [open, currentLocations, currentPros]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
