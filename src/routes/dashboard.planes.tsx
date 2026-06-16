@@ -24,6 +24,22 @@ const PLAN_PRICES: Record<PlanId, string> = { free: "$0", pro: "$29", studio: "$
 const PLAN_PERIODS: Record<PlanId, string> = { free: "/ mes", pro: "USD / mes", studio: "USD / mes" };
 const PLAN_ORDER: PlanId[] = ["free", "pro", "studio"];
 
+const BUSINESS_TYPES = [
+  "Barbería",
+  "Peluquería / Salón de belleza",
+  "Spa / Centro de bienestar",
+  "Estética / Tratamientos faciales",
+  "Uñas / Manicura",
+  "Depilación",
+  "Tatuajes y piercings",
+  "Masajes y terapias",
+  "Consultorio médico",
+  "Clínica dental",
+  "Veterinaria",
+  "Entrenamiento personal / Fitness",
+  "Otro",
+];
+
 function PlanesPage() {
   const { data: business } = useMyBusiness();
   const qc = useQueryClient();
@@ -214,11 +230,12 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [industry, setIndustry] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
-    setName(""); setEmail(""); setPhone(""); setMessage(""); setSubmitting(false);
+    setName(""); setEmail(""); setPhone(""); setIndustry(""); setMessage(""); setSubmitting(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -227,6 +244,7 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
     const trimmedEmail = email.trim();
     if (trimmedName.length < 2) return toast.error("Ingresa tu nombre");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return toast.error("Ingresa un email válido");
+    if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
     setSubmitting(true);
     // Simulación de envío — el equipo comercial se pondrá en contacto.
     await new Promise((r) => setTimeout(r, 600));
@@ -256,6 +274,21 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
           <div className="space-y-1.5">
             <Label htmlFor="up-phone">Teléfono (opcional)</Label>
             <Input id="up-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="up-industry">¿Qué tipo de negocio tienes?</Label>
+            <select
+              id="up-industry"
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              required
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Selecciona una opción</option>
+              {BUSINESS_TYPES.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="up-msg">¿Algo que debamos saber? (opcional)</Label>
@@ -321,6 +354,7 @@ function StudioRequestDialog({
   const [phone, setPhone] = useState("");
   const [locations, setLocations] = useState<string>("");
   const [team, setTeam] = useState<string>("");
+  const [industry, setIndustry] = useState<string>("");
   const [appointmentsRange, setAppointmentsRange] = useState<string>("");
   const [currentTool, setCurrentTool] = useState("");
   const [timing, setTiming] = useState<string>("");
@@ -329,7 +363,7 @@ function StudioRequestDialog({
 
   const reset = () => {
     setName(""); setRole(""); setEmail(""); setPhone("");
-    setLocations(""); setTeam(""); setAppointmentsRange("");
+    setLocations(""); setTeam(""); setIndustry(""); setAppointmentsRange("");
     setCurrentTool(""); setTiming(""); setNeeds("");
     setSubmitting(false);
   };
@@ -345,6 +379,7 @@ function StudioRequestDialog({
     e.preventDefault();
     if (name.trim().length < 2) return toast.error("Ingresa tu nombre");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return toast.error("Ingresa un email válido");
+    if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
     if (!timing) return toast.error("Indica cuándo te gustaría empezar");
     setSubmitting(true);
     // Simulación de envío — el equipo comercial se pondrá en contacto.
@@ -392,6 +427,21 @@ function StudioRequestDialog({
           <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-3">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sobre tu operación</p>
             <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="st-industry">¿Qué tipo de negocio tienes? *</Label>
+                <select
+                  id="st-industry"
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  required
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Selecciona una opción</option>
+                  {BUSINESS_TYPES.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="st-locs">Sucursales</Label>
                 <Input id="st-locs" type="number" min={1} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="ej. 4" />
