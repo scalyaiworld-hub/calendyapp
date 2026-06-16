@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, MapPin, Search, Users, Phone, Clock, Store } from
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { ImagePicker, LOCATION_TEMPLATES } from "@/components/ImagePicker";
+import { SmartImage } from "@/components/SmartImage";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CardGridSkeleton } from "@/components/Skeletons";
