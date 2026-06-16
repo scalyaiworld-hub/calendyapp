@@ -13,7 +13,7 @@ import { PLANS, MODULE_LABELS, getPlan, type PlanId } from "@/lib/plans";
 import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/dashboard/planes")({
   head: () => ({ meta: [{ title: "Planes — Calendya" }] }),
@@ -193,9 +193,16 @@ function PlanesPage() {
       </p>
 
       <UpgradeRequestDialog
-        planId={requestPlan}
+        planId={requestPlan === "studio" ? null : requestPlan}
         onClose={() => setRequestPlan(null)}
         businessName={(business as any)?.name ?? ""}
+      />
+      <StudioRequestDialog
+        open={requestPlan === "studio"}
+        onClose={() => setRequestPlan(null)}
+        businessName={(business as any)?.name ?? ""}
+        currentLocations={usage?.locs ?? 0}
+        currentPros={usage?.pros ?? 0}
       />
     </div>
   );
@@ -292,5 +299,168 @@ function UsageRow({ icon: Icon, label, used, limit }: { icon: any; label: string
       {reached && <p className="text-[11px] text-rose-600 mt-1.5">Límite alcanzado</p>}
       {warn && <p className="text-[11px] text-amber-600 mt-1.5">Cerca del límite</p>}
     </div>
+  );
+}
+
+function StudioRequestDialog({
+  open,
+  onClose,
+  businessName,
+  currentLocations,
+  currentPros,
+}: {
+  open: boolean;
+  onClose: () => void;
+  businessName: string;
+  currentLocations: number;
+  currentPros: number;
+}) {
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [locations, setLocations] = useState<string>("");
+  const [team, setTeam] = useState<string>("");
+  const [appointmentsRange, setAppointmentsRange] = useState<string>("");
+  const [currentTool, setCurrentTool] = useState("");
+  const [timing, setTiming] = useState<string>("");
+  const [needs, setNeeds] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const reset = () => {
+    setName(""); setRole(""); setEmail(""); setPhone("");
+    setLocations(""); setTeam(""); setAppointmentsRange("");
+    setCurrentTool(""); setTiming(""); setNeeds("");
+    setSubmitting(false);
+  };
+
+  // Prefill con los datos actuales del negocio cuando se abre.
+  useEffect(() => {
+    if (!open) return;
+    if (currentLocations > 0) setLocations((v) => v || String(currentLocations));
+    if (currentPros > 0) setTeam((v) => v || String(currentPros));
+  }, [open, currentLocations, currentPros]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) return toast.error("Ingresa tu nombre");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return toast.error("Ingresa un email válido");
+    if (!timing) return toast.error("Indica cuándo te gustaría empezar");
+    setSubmitting(true);
+    // Simulación de envío — el equipo comercial se pondrá en contacto.
+    await new Promise((r) => setTimeout(r, 600));
+    toast.success("¡Recibido! Un asesor Studio te contactará en menos de 24 h.");
+    reset();
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center">
+              <Crown className="size-4" />
+            </div>
+            <DialogTitle>Hablemos del plan Studio</DialogTitle>
+          </div>
+          <DialogDescription>
+            Te armamos una propuesta a medida: sucursales ilimitadas, equipo grande, onboarding asistido y soporte prioritario.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="st-name">Nombre completo *</Label>
+              <Input id="st-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="st-role">Cargo en el negocio</Label>
+              <Input id="st-role" value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} placeholder="Dueño, gerente, etc." />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="st-email">Email corporativo *</Label>
+              <Input id="st-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="st-phone">Teléfono / WhatsApp</Label>
+              <Input id="st-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sobre tu operación</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="st-locs">Sucursales</Label>
+                <Input id="st-locs" type="number" min={1} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="ej. 4" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="st-team">Tamaño del equipo</Label>
+                <Input id="st-team" type="number" min={1} value={team} onChange={(e) => setTeam(e.target.value)} placeholder="ej. 12 profesionales" />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="st-vol">Citas estimadas por mes</Label>
+                <select
+                  id="st-vol"
+                  value={appointmentsRange}
+                  onChange={(e) => setAppointmentsRange(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Selecciona un rango</option>
+                  <option value="<500">Menos de 500</option>
+                  <option value="500-2000">500 – 2.000</option>
+                  <option value="2000-5000">2.000 – 5.000</option>
+                  <option value=">5000">Más de 5.000</option>
+                </select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="st-tool">¿Qué herramienta usan hoy? (opcional)</Label>
+                <Input id="st-tool" value={currentTool} onChange={(e) => setCurrentTool(e.target.value)} maxLength={120} placeholder="Excel, Booksy, agenda en papel…" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="st-time">¿Cuándo te gustaría empezar? *</Label>
+            <select
+              id="st-time"
+              value={timing}
+              onChange={(e) => setTiming(e.target.value)}
+              required
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Selecciona</option>
+              <option value="asap">Lo antes posible</option>
+              <option value="1m">Próximo mes</option>
+              <option value="3m">Próximos 3 meses</option>
+              <option value="explore">Solo estoy explorando</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="st-needs">Necesidades específicas (opcional)</Label>
+            <Textarea
+              id="st-needs"
+              value={needs}
+              onChange={(e) => setNeeds(e.target.value)}
+              maxLength={800}
+              rows={3}
+              placeholder={`Negocio: ${businessName}. Ej. integraciones, reportes por sucursal, facturación…`}
+            />
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }} disabled={submitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting} className="bg-foreground text-background hover:bg-foreground/90">
+              {submitting ? "Enviando…" : "Solicitar contacto Studio"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
