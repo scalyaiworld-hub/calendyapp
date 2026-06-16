@@ -1,101 +1,98 @@
+## Resumen del diagnóstico
 
-## Resumen
+La auditoría encontró 10 hallazgos. Los más graves:
 
-Agregar un módulo de **Sucursales** con sus propios profesionales y servicios, y rediseñar el link público de reservas en 3 pasos: Sucursal → (Profesional o Servicio) → Fecha/Hora.
+1. **El candado anti-doble-reserva está mal definido** — bloquea por negocio, no por profesional. Hoy mismo dos profesionales del mismo salón no pueden atender a dos clientes en paralelo.
+2. **Los límites del plan Free son decorativos** — sólo viven en pantalla. Cualquiera puede crear 1.000 citas, 10 sucursales o 50 profesionales en Free llamando directo a la API.
+3. **La reserva pública confía en el navegador** — el servidor no revisa horario, ventana mínima ni choque de citas. Si alguien edita la petición en consola, pasa.
+4. **Los clientes duplicados son inevitables** — la unicidad no incluye el código de país y el teléfono no se normaliza. Mismo cliente puede aparecer 3 veces.
+5. **Los contadores `no_show_count` y `total_appointments` no se mantienen solos** — los números del dashboard van mintiendo poco a poco.
 
----
+## Plan de implementación
 
-## 1. Cambios en la base de datos (nuevas tablas)
+### Fase 1 — Base de datos (1 sola migración)
 
-**`locations` (sucursales)**
-- `business_id`, `name`, `address`, `phone`, `phone_country_code`, `is_active`
+```text
+1. Reemplazar el EXCLUDE constraint de appointments
+   ├─ Drop del actual (scope business_id)
+   ├─ Nuevo EXCLUDE por professional_id (cuando hay profesional)
+   └─ Segundo EXCLUDE por location_id (cuando no hay profesional asignado)
 
-**`location_hours` (horario de atención por sucursal)**
-- `location_id`, `day_of_week` (0–6), `start_time`, `end_time`
+2. Reglas de plan en businesses
+   ├─ CHECK (plan IN ('free','pro','studio'))
+   └─ Función public.enforce_plan_limits() + triggers BEFORE INSERT
+      en appointments, locations, professionals
 
-**`professionals` (profesionales)**
-- `business_id`, `name`, `phone`, `phone_country_code`, `avatar_url`, `is_active`
+3. Sincronizar contadores de clients
+   └─ Trigger AFTER INSERT/UPDATE/DELETE en appointments
+      que recalcula no_show_count, total_appointments, last_visit_at
 
-**`location_professionals`** (qué profesionales trabajan en cada sucursal)
-- `location_id`, `professional_id`, `UNIQUE(location_id, professional_id)`
+4. Validar transiciones de estado
+   └─ Trigger BEFORE UPDATE en appointments
+      bloquea reabrir completed/cancelled y editar fechas de citas pasadas
+      (con bypass por rol service_role)
 
-**`professional_services`** (qué servicios ofrece cada profesional)
-- `professional_id`, `service_id`, `UNIQUE(professional_id, service_id)`
+5. Deduplicación de clients
+   ├─ Drop UNIQUE (business_id, phone)
+   ├─ Función normalize_phone(text) — strip espacios/guiones/paréntesis
+   ├─ Trigger BEFORE INSERT/UPDATE para normalizar phone
+   └─ UNIQUE INDEX (business_id, phone_country_code, phone)
+      WHERE deleted_at IS NULL
+```
 
-**Modificar `appointments`**: agregar `location_id` y `professional_id` (nullables al inicio para no romper datos existentes).
+### Fase 2 — Server functions
 
-**RLS**:
-- `authenticated`: dueño del negocio (vía `is_business_owner`) gestiona todo.
-- `anon`: SELECT público sobre `locations`, `professionals`, `location_professionals`, `professional_services`, `location_hours` para que el link público pueda leer.
-- INSERT público en `appointments` ya existe; se valida que `location_id`/`professional_id` pertenezcan al `business_id`.
+```text
+src/lib/api/public-booking.functions.ts
+└─ createPublicBooking refuerza:
+   ├─ starts_at >= now() + 30 min
+   ├─ starts_at < now() + 90 días
+   ├─ Re-verifica horario contra location_hours / availability_rules
+   ├─ Re-verifica que el slot esté libre (consulta atómica)
+   ├─ Normaliza phone antes de buscar/insertar cliente
+   └─ Usa INSERT ... ON CONFLICT para el upsert de cliente
 
----
+src/lib/api/limits.functions.ts (nuevo)
+└─ canCreateResource({ kind: 'appointment'|'location'|'professional' })
+   Devuelve { allowed, used, limit, planLabel } para mostrar en UI
 
-## 2. Nueva sección en el dashboard: Sucursales
+src/lib/api/appointments.functions.ts (nuevo)
+└─ Mueve updateAppointmentStatus y saveAppointment a server fn
+   con validación de transición y de fecha
+```
 
-Ruta nueva: `src/routes/dashboard.sucursales.tsx`
+### Fase 3 — Frontend (sólo wiring + mensajes)
 
-- Lista de sucursales en cards (nombre, dirección, teléfono, # de profesionales).
-- Botón "Nueva sucursal" → diálogo con:
-  - Datos básicos (nombre, dirección, teléfono con `PhoneInput`).
-  - Horario semanal (7 días, hora inicio/fin, toggle "cerrado").
-  - Selector múltiple de profesionales asignados.
-- Editar / eliminar (soft delete con `is_active=false`).
+```text
+- dashboard.citas.tsx → llamar a las server fn nuevas en vez de supabase.update directo
+- dashboard.sucursales.tsx / .profesionales.tsx → bloquear botón "Nuevo" cuando se alcanza el límite, con CTA a /planes
+- Mostrar el error de límite/horario/choque con un toast claro
+  (no exponer mensajes de Postgres al usuario)
+```
 
-Subsección o tab "Profesionales" dentro de Sucursales:
-- CRUD de profesionales del negocio.
-- Por cada profesional, seleccionar los servicios que ofrece (multi-select desde la lista existente de servicios).
+## Lo que NO toco en este plan
 
-Agregar el item "Sucursales" al menú lateral del dashboard.
+- Recordatorios de WhatsApp (Pro/Studio) — son un módulo aparte con costo de proveedor, lo veremos por separado.
+- UI de merge manual de clientes duplicados — sólo evitamos crear nuevos; los históricos se limpian después.
+- Política de cancelación con antelación configurable — se puede añadir en una segunda iteración cuando definas las reglas por plan.
 
----
+## Impacto en Lovable Cloud (costo)
 
-## 3. Rediseño del link público `b/$slug`
+Todo el enforcement vive en triggers y server functions ya existentes — **no añade peticiones nuevas**, sólo añade `COUNT(*)` y `EXISTS` dentro de inserts que ya ocurrían. El conteo del mes se hace en el momento del INSERT, no en cada render del dashboard.
 
-Reescribir `src/routes/b.$slug.tsx` como wizard de 3 pasos con estado local:
+## Detalles técnicos
 
-**Paso 1 — Sucursal**
-- Lista visual de sucursales activas del negocio (nombre, dirección, horario resumido).
-- Al hacer clic se avanza al paso 2.
+- Constraints `EXCLUDE USING gist` requieren la extensión `btree_gist` (verifico antes y la habilito si falta).
+- Los triggers de límite usan `SECURITY DEFINER` con `search_path = public` y leen `businesses.plan` con una sola query indexada.
+- La normalización de teléfono se hace tanto en trigger DB (verdad última) como en la server fn (mejor mensaje de error al usuario).
+- Las transiciones se documentan como matriz en un comentario SQL para que sea fácil cambiarlas después.
+- Todo se entrega en **una sola migración** + **3 archivos `.functions.ts`** editados/creados + retoques de UI.
 
-**Paso 2 — Cómo reservar**
-- Dos tarjetas grandes equivalentes: "Por Profesional" / "Por Servicio".
-- **Rama Profesional**: lista profesionales de la sucursal → al elegir uno, muestra solo los servicios que ese profesional ofrece.
-- **Rama Servicio**: lista servicios disponibles en la sucursal (servicios ofrecidos por al menos un profesional asignado a esa sucursal) → al elegir uno, muestra los profesionales que lo realizan en esa sucursal.
-- Ambas ramas terminan con `{ location, professional, service }` definidos.
+## Orden de ejecución
 
-**Paso 3 — Fecha, hora y confirmación**
-- Calendario para elegir día.
-- Slots calculados a partir de:
-  - Horario de la sucursal (`location_hours`) ∩ Reglas de disponibilidad del negocio (`availability_rules`) — usaremos el horario de la sucursal como fuente principal.
-  - Citas existentes del **profesional** en esa sucursal (para no chocar).
-  - Duración del servicio.
-- Formulario final: nombre + WhatsApp (con `PhoneInput` de prefijo separado).
-- Crea `client` + `appointment` (status `pending`, source `booking_page`) con `location_id` y `professional_id`.
+1. Migración (incluye recálculo inicial de `no_show_count`/`total_appointments` de los clientes existentes).
+2. Server functions.
+3. UI.
+4. Smoke test: reservar la misma hora con 2 profesionales (debe permitir), intentar crear cita #51 en Free (debe bloquear), reservar con teléfono `"+51 999 123 456"` y luego `"51999123456"` (debe deduplicar).
 
-UX móvil: 1 columna, pasos grandes, botón "Atrás" en cada paso, indicador de progreso (1/3, 2/3, 3/3).
-
----
-
-## 4. Agenda
-
-En `dashboard.agenda.tsx`, mostrar etiqueta de sucursal y profesional en cada cita. Filtro opcional por sucursal/profesional (nice-to-have, puedo dejarlo para después si quieres).
-
----
-
-## Orden de implementación
-
-1. Migración SQL (tablas + RLS + grants + columnas en `appointments`).
-2. Página `dashboard.sucursales.tsx` con CRUD de sucursales y profesionales.
-3. Rediseño completo de `b.$slug.tsx` (wizard 3 pasos).
-4. Mostrar sucursal/profesional en agenda.
-
----
-
-## Preguntas antes de empezar
-
-1. **Profesionales con cuenta propia**: ¿los profesionales solo son "recursos" que el dueño gestiona, o más adelante cada uno tendrá su propio login? (Por ahora asumo lo primero — solo recursos. Si después quieres logins, se agrega `user_id` opcional.)
-2. **Horario**: ¿cada sucursal tiene su propio horario independiente, o también heredan del horario general del negocio? (Asumo independiente — la sucursal manda.)
-3. **Servicios**: ¿el precio/duración de un servicio es igual en todas las sucursales, o puede variar por sucursal/profesional? (Asumo igual — un servicio = un precio.)
-
-Si las 3 asunciones te calzan, dime "dale" y arranco. Si quieres cambiar alguna, avísame.
+¿Le doy luz verde así, o quieres ajustar algo (por ejemplo, dejar fuera el bloqueo de límites del plan Free hasta que lances pagos)?
