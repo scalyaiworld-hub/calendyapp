@@ -65,9 +65,9 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     }
 
     // Verifica horario (sucursal o reglas generales del negocio)
-    const dow = startsAt.getUTCDay
-      ? new Date(startsAt.toLocaleString("en-US", { timeZone: biz.timezone ?? "America/Lima" })).getDay()
-      : startsAt.getDay();
+    const tz = biz.timezone ?? "America/Lima";
+    const localStartForDow = new Date(startsAt.toLocaleString("en-US", { timeZone: tz }));
+    const dow = localStartForDow.getDay();
     let hours: { start_time: string; end_time: string }[] | null = null;
     if (data.locationId) {
       const { data: lh } = await supabaseAdmin
@@ -88,8 +88,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     if (!hours || hours.length === 0) {
       throw new Error("El negocio no atiende ese día");
     }
-    const localStart = new Date(startsAt.toLocaleString("en-US", { timeZone: biz.timezone ?? "America/Lima" }));
-    const localEnd = new Date(endsAt.toLocaleString("en-US", { timeZone: biz.timezone ?? "America/Lima" }));
+    const localStart = localStartForDow;
+    const localEnd = new Date(endsAt.toLocaleString("en-US", { timeZone: tz }));
     const minutesOfDay = (d: Date) => d.getHours() * 60 + d.getMinutes();
     const sMin = minutesOfDay(localStart);
     const eMin = minutesOfDay(localEnd);
