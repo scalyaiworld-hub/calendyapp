@@ -117,7 +117,8 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
     }
 
     const businessId = business.id;
-    const [locsRes, prosRes, svcsRes, locProsRes, proSvcsRes] = await Promise.all([
+    // 1) Cargar entidades base en paralelo
+    const [locsRes, prosRes, svcsRes] = await Promise.all([
       supabaseAdmin
         .from("locations")
         .select("id,business_id,name,address,is_active,created_at")
@@ -139,26 +140,27 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
         .is("deleted_at", null)
         .eq("is_active", true)
         .order("display_order"),
-      supabaseAdmin
-        .from("location_professionals")
-        .select("location_id, professional_id"),
-      supabaseAdmin
-        .from("professional_services")
-        .select("professional_id, service_id"),
     ]);
 
-    const proIds = new Set((prosRes.data ?? []).map((p: any) => p.id));
-    const svcIds = new Set((svcsRes.data ?? []).map((s: any) => s.id));
+    const proIds = (prosRes.data ?? []).map((p: any) => p.id);
+    const svcIds = (svcsRes.data ?? []).map((s: any) => s.id);
+
+    // 2) Asignaciones, acotadas a los IDs de este negocio
+    const [locProsRes, proSvcsRes] = await Promise.all([
+      proIds.length
+        ? supabaseAdmin.from("location_professionals").select("location_id, professional_id").in("professional_id", proIds)
+        : Promise.resolve({ data: [] as any[] }),
+      proIds.length && svcIds.length
+        ? supabaseAdmin.from("professional_services").select("professional_id, service_id").in("professional_id", proIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
 
     return {
       business,
       locations: locsRes.data ?? [],
       professionals: prosRes.data ?? [],
       services: svcsRes.data ?? [],
-      // Scope assignments to this business's known IDs to avoid leaking other rows.
-      locationPros: (locProsRes.data ?? []).filter((r: any) => proIds.has(r.professional_id)),
-      professionalServices: (proSvcsRes.data ?? []).filter(
-        (r: any) => proIds.has(r.professional_id) && svcIds.has(r.service_id),
-      ),
+      locationPros: (locProsRes as any).data ?? [],
+      professionalServices: (proSvcsRes as any).data ?? [],
     };
   });
