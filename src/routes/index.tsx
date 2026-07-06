@@ -17,6 +17,8 @@ import {
   Check,
   Plus,
   ShieldCheck,
+  Clock,
+  MessageCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
