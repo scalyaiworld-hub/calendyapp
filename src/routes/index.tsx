@@ -17,6 +17,8 @@ import {
   Check,
   Plus,
   ShieldCheck,
+  Clock,
+  MessageCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -39,6 +41,7 @@ function Index() {
       <Hero />
       <TrustStrip />
       <Problem />
+      <SolutionTeaser />
       <Features />
       <HowItWorks />
       <Pricing onProClick={() => setProOpen(true)} />
@@ -68,7 +71,7 @@ function Header() {
           <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">Ingresar</Link>
           <Link
             to="/auth"
-            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition shadow-soft"
+            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
           >
             Empezar gratis
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -91,39 +94,36 @@ function Hero() {
             "radial-gradient(ellipse 50% 40% at 50% 10%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 70%)",
         }}
       />
-      <div className="max-w-5xl mx-auto px-6 pt-24 md:pt-28 pb-24 md:pb-28 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card/80 backdrop-blur mb-8 shadow-soft">
-          <span className="relative flex size-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
-            <span className="relative inline-flex rounded-full size-1.5 bg-primary" />
+      <div className="max-w-5xl mx-auto px-6 pt-20 md:pt-28 pb-20 md:pb-28 text-center">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-100 mb-10">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75 animate-ping" />
+            <span className="relative inline-flex rounded-full size-2 bg-rose-500" />
           </span>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-medium">Salones · Spas · Barberías</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-rose-600 font-semibold">Agenda inteligente para salones</span>
         </div>
-        <h1 className="font-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] leading-[0.98] tracking-[-0.04em] mb-8 font-semibold">
-          Tu negocio
-          <br />
-          <span className="relative inline-block">
-            <span className="text-primary">agenda solo</span>
-            <span className="text-foreground">.</span>
-          </span>
+        <h1 className="font-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-[-0.035em] mb-8 font-bold">
+          Tu salón merece{" "}
+          <span className="text-primary italic font-normal">libertad</span>,
+          <br className="hidden sm:block" />
+          {" "}no un cuaderno.
         </h1>
-        <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-          Convierte mensajes y clicks en citas confirmadas — sin cuaderno, sin perder
-          clientes, sin responder a cada hora.
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+          Digitaliza tus reservas 24/7 y recupera 10 horas semanales de gestión manual. Deja que Calendya atienda el WhatsApp por ti.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/auth"
-            className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-lg bg-foreground text-background font-medium hover:bg-foreground/90 hover:-translate-y-0.5 transition shadow-soft-lg"
+            className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 hover:-translate-y-0.5 transition shadow-xl shadow-primary/20"
           >
-            Empieza gratis
+            Comenzar prueba gratis
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
-          <a href="#how" className="px-7 py-3.5 rounded-lg border border-border bg-card/80 backdrop-blur hover:bg-accent transition font-medium">
+          <a href="#how" className="px-8 py-4 rounded-2xl border border-border bg-card/80 backdrop-blur hover:bg-accent transition font-semibold text-base text-muted-foreground hover:text-foreground">
             Ver cómo funciona
           </a>
         </div>
-        <div className="mt-10 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> Sin tarjeta</span>
           <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> 10 minutos</span>
           <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> Cancela cuando quieras</span>
@@ -141,12 +141,12 @@ function TrustStrip() {
     { n: "24/7", l: "Disponibilidad" },
   ];
   return (
-    <section className="border-y border-border bg-card/40">
-      <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
-        {stats.map((s, i) => (
-          <div key={s.l} className={`text-center px-4 ${i < 2 ? "pb-6 md:pb-0" : "pt-6 md:pt-0"}`}>
-            <div className="font-display text-4xl md:text-5xl font-semibold text-foreground tracking-tight">{s.n}</div>
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mt-2 font-medium">{s.l}</div>
+    <section className="border-y border-border/60">
+      <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-y-8">
+        {stats.map((s) => (
+          <div key={s.l} className="text-center space-y-1.5">
+            <div className="font-display text-4xl md:text-5xl font-bold text-primary tracking-tight">{s.n}</div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">{s.l}</div>
           </div>
         ))}
       </div>
@@ -156,25 +156,130 @@ function TrustStrip() {
 
 function Problem() {
   const items = [
-    { n: "01", t: "El cuaderno", d: "Pierdes citas, no sabes cuánto vendiste, y olvidas a los clientes." },
-    { n: "02", t: "WhatsApp infinito", d: "Pasas el día respondiendo \"¿tienes hora?\" en vez de atendiendo." },
-    { n: "03", t: "Horas vacías", d: "Tu agenda tiene huecos que no rellenas porque no los ves a tiempo." },
+    {
+      t: "Caos en WhatsApp",
+      q: "\u201c\u00bfTienes hueco el jueves?\u201d",
+      d: "Pierdes minutos respondiendo mensajes en vez de atender a tu cliente en silla.",
+      accent: false,
+    },
+    {
+      t: "Citas olvidadas",
+      q: "\u201cSe me olvid\u00f3 por completo\u2026\u201d",
+      d: "El cliente que no llega es pérdida directa. Sin recordatorios, se te va hasta el 20% de ingresos.",
+      accent: true,
+    },
+    {
+      t: "El cuaderno infinito",
+      q: "\u201cB\u00fascame un hueco el 15\u2026\u201d",
+      d: "Tachones, errores y cero datos. No sabes qui\u00e9n es tu mejor cliente y eso te frena.",
+      accent: false,
+    },
   ];
   return (
-    <section className="py-24 px-6">
-      <div className="max-w-5xl mx-auto">
-        <SectionLabel>El problema</SectionLabel>
-        <h2 className="font-display text-4xl md:text-5xl mb-16 max-w-2xl font-semibold tracking-tight">
-          Hoy gestionas tu negocio como en los 90.
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
+    <section className="py-24 md:py-32 px-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="max-w-2xl mb-16 md:mb-20 space-y-4">
+          <SectionLabel>El problema</SectionLabel>
+          <h2 className="font-display text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
+            El costo oculto de lo{" "}
+            <span className="text-rose-500 italic font-normal">analógico</span>.
+          </h2>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Gestionar un negocio exitoso con herramientas de ayer te quita tiempo y dinero hoy.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
           {items.map((i) => (
-            <div key={i.n} className="bg-card border border-border rounded-2xl p-8 hover:border-foreground/20 hover:shadow-soft transition group">
-              <div className="font-mono text-xs text-muted-foreground mb-4 tracking-widest">{i.n} / 03</div>
-              <h3 className="font-display text-xl mb-3 font-semibold tracking-tight">{i.t}</h3>
-              <p className="text-muted-foreground leading-relaxed">{i.d}</p>
+            <div
+              key={i.t}
+              className={`p-8 rounded-[2rem] border transition-all duration-500 ${
+                i.accent
+                  ? "border-rose-100 bg-rose-50/40 hover:bg-card hover:shadow-2xl hover:shadow-rose-100 md:-translate-y-4"
+                  : "border-border bg-card/60 hover:bg-card hover:shadow-2xl hover:shadow-primary/10"
+              }`}
+            >
+              <div
+                className={`size-12 mb-6 rounded-xl grid place-items-center ${
+                  i.accent ? "bg-rose-100 text-rose-500" : "bg-primary/10 text-primary"
+                }`}
+              >
+                {i.accent ? <Clock className="size-6" strokeWidth={1.75} /> : <MessageCircle className="size-6" strokeWidth={1.75} />}
+              </div>
+              <h3 className={`font-display text-2xl mb-4 font-bold tracking-tight ${i.accent ? "text-rose-950" : ""}`}>
+                {i.t}
+              </h3>
+              <p className="text-muted-foreground italic leading-relaxed">{i.q}</p>
+              <p className="text-muted-foreground leading-relaxed mt-2">{i.d}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SolutionTeaser() {
+  return (
+    <section className="px-6 pb-24 md:pb-32">
+      <div className="max-w-6xl mx-auto">
+        <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3rem] bg-primary p-10 md:p-20">
+          <div aria-hidden className="absolute -top-20 -right-20 size-72 rounded-full bg-white/10 blur-3xl" />
+          <div aria-hidden className="absolute -bottom-20 -left-20 size-72 rounded-full bg-rose-400/25 blur-3xl" />
+          <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
+            <div className="flex-1 space-y-6">
+              <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-[1.05] tracking-tight">
+                Diseñado para que vuelvas a{" "}
+                <span className="italic font-normal underline decoration-rose-300 decoration-4 underline-offset-8">
+                  amar
+                </span>{" "}
+                tu trabajo.
+              </h2>
+              <p className="text-primary-foreground/80 text-lg leading-relaxed max-w-lg">
+                Calendya no es solo un software: es tu recepcionista estrella que nunca duerme, no comete errores y fideliza a tus clientes.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Link
+                  to="/auth"
+                  className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-background text-foreground font-semibold hover:-translate-y-0.5 transition shadow-lg"
+                >
+                  Probar gratis
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <a
+                  href="#features"
+                  className="inline-flex items-center px-6 py-3 rounded-xl border border-primary-foreground/20 bg-primary-foreground/5 text-primary-foreground font-semibold hover:bg-primary-foreground/10 transition"
+                >
+                  Ver funciones
+                </a>
+              </div>
+            </div>
+            <div className="flex-1 w-full">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-3xl rotate-1 shadow-2xl">
+                <div className="bg-background rounded-2xl aspect-[4/3] w-full p-5 flex flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="font-medium">Hoy · Martes 6</span>
+                    <span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-primary" />8 citas</span>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {[
+                      { h: "09:00", n: "María López", s: "Corte + tinte", c: "bg-primary/10 border-primary/30 text-primary" },
+                      { h: "10:30", n: "Sofía Torres", s: "Manicura", c: "bg-rose-100 border-rose-200 text-rose-700" },
+                      { h: "12:00", n: "Ana Ríos", s: "Peinado novia", c: "bg-primary/10 border-primary/30 text-primary" },
+                      { h: "14:00", n: "Lucía Vega", s: "Facial", c: "bg-muted border-border text-muted-foreground" },
+                    ].map((a) => (
+                      <div key={a.h} className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${a.c}`}>
+                        <span className="font-mono text-xs tabular-nums">{a.h}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold truncate text-foreground">{a.n}</div>
+                          <div className="text-[10px] truncate opacity-80">{a.s}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -330,9 +435,8 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex items-center gap-2 mb-5">
-      <span className="h-px w-6 bg-primary" />
-      <span className="text-[11px] uppercase tracking-[0.22em] text-primary font-semibold">{children}</span>
+    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/15">
+      <span className="text-[11px] uppercase tracking-[0.2em] text-primary font-semibold">{children}</span>
     </div>
   );
 }
@@ -452,10 +556,8 @@ function Footer() {
     <footer className="border-t border-border py-10 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <div className="size-6 rounded-md bg-foreground grid place-items-center">
-            <span className="font-display font-semibold text-background text-xs">A</span>
-          </div>
-          <span className="font-display font-semibold tracking-tight">Calendya</span>
+          <img src="/logo.png" alt="Calendya" className="size-7 rounded-md" />
+          <span className="font-display font-semibold tracking-tight text-lg">Calendya</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <Link to="/privacidad" className="hover:text-foreground">Privacidad</Link>

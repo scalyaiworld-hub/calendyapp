@@ -54,7 +54,7 @@
   --color-rose-soft: var(--rose-soft);
   --color-rose-deep: var(--rose-deep);
   --color-warm-dark: var(--warm-dark);
-  --font-display: var(--brand-font, "Space Grotesk"), system-ui, sans-serif;
+  --font-display: var(--brand-font, "Fraunces"), "Space Grotesk", Georgia, serif;
   --font-sans: var(--brand-font-body, "DM Sans"), system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
