@@ -54,10 +54,8 @@ function Header() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/75 border-b border-border/60">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="size-8 rounded-lg bg-foreground grid place-items-center shadow-soft">
-            <span className="font-display font-semibold text-background text-base">A</span>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.png" alt="Calendya" className="size-8 rounded-lg" />
           <span className="font-display text-lg font-semibold tracking-tight">Calendya</span>
         </div>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
