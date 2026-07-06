@@ -118,8 +118,38 @@ function PlanesPage() {
           const isCurrent = id === currentId;
           const isDowngrade = PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentId);
           const moduleKeys = Object.keys(p.modules) as (keyof typeof p.modules)[];
+          const handleSelect = () => {
+            if (isCurrent) return;
+            if (id === "free") {
+              if (confirm("¿Bajar al plan Free? Perderás los módulos del plan actual.")) {
+                changePlan.mutate("free");
+              }
+              return;
+            }
+            setRequestPlan(id);
+          };
           return (
-            <Card key={id} className={cn("flex flex-col", id === "pro" && "border-primary/40 shadow-soft", id === "studio" && "bg-foreground text-background border-foreground")}>
+            <Card
+              key={id}
+              role={isCurrent ? undefined : "button"}
+              tabIndex={isCurrent ? undefined : 0}
+              aria-label={isCurrent ? undefined : `Seleccionar plan ${p.label}`}
+              onClick={handleSelect}
+              onKeyDown={(e) => {
+                if (isCurrent) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelect();
+                }
+              }}
+              className={cn(
+                "flex flex-col transition-all",
+                !isCurrent && "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                id === "pro" && "border-primary/40 shadow-soft",
+                id === "studio" && "bg-foreground text-background border-foreground",
+                isCurrent && "ring-2 ring-primary/40",
+              )}
+            >
               <CardContent className="pt-6 flex flex-col flex-1">
                 <div className="flex items-baseline justify-between mb-1">
                   <p className="font-display text-xl font-semibold">{p.label}</p>
@@ -177,7 +207,8 @@ function PlanesPage() {
                       variant="outline"
                       className="w-full"
                       disabled={changePlan.isPending}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (confirm("¿Bajar al plan Free? Perderás los módulos del plan actual.")) {
                           changePlan.mutate("free");
                         }
@@ -188,7 +219,10 @@ function PlanesPage() {
                   ) : (
                     <Button
                       className={cn("w-full", id === "studio" ? "bg-background text-foreground hover:bg-background/90" : "")}
-                      onClick={() => setRequestPlan(id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRequestPlan(id);
+                      }}
                     >
                       {id === "studio"
                         ? "Hablar con ventas"
