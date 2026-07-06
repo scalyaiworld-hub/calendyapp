@@ -71,7 +71,7 @@ function Header() {
           <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">Ingresar</Link>
           <Link
             to="/auth"
-            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition shadow-soft"
+            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
           >
             Empezar gratis
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
