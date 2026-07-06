@@ -435,9 +435,8 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex items-center gap-2 mb-5">
-      <span className="h-px w-6 bg-primary" />
-      <span className="text-[11px] uppercase tracking-[0.22em] text-primary font-semibold">{children}</span>
+    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/15">
+      <span className="text-[11px] uppercase tracking-[0.2em] text-primary font-semibold">{children}</span>
     </div>
   );
 }
@@ -557,10 +556,8 @@ function Footer() {
     <footer className="border-t border-border py-10 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <div className="size-6 rounded-md bg-foreground grid place-items-center">
-            <span className="font-display font-semibold text-background text-xs">A</span>
-          </div>
-          <span className="font-display font-semibold tracking-tight">Calendya</span>
+          <img src="/logo.png" alt="Calendya" className="size-7 rounded-md" />
+          <span className="font-display font-semibold tracking-tight text-lg">Calendya</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <Link to="/privacidad" className="hover:text-foreground">Privacidad</Link>
