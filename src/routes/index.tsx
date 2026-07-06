@@ -459,7 +459,11 @@ function Footer() {
           </div>
           <span className="font-display font-semibold tracking-tight">Calendya</span>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 Calendya · Hecho en Perú.</p>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <Link to="/privacidad" className="hover:text-foreground">Privacidad</Link>
+          <Link to="/terminos" className="hover:text-foreground">Términos</Link>
+          <span>© 2026 Calendya · Hecho en Perú.</span>
+        </div>
       </div>
     </footer>
   );
