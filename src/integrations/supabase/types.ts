@@ -301,6 +301,93 @@ export type Database = {
         }
         Relationships: []
       }
+      business_invites: {
+        Row: {
+          business_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_by: string | null
+          professional_id: string | null
+          role: Database["public"]["Enums"]["business_role"]
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_by?: string | null
+          professional_id?: string | null
+          role: Database["public"]["Enums"]["business_role"]
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string | null
+          professional_id?: string | null
+          role?: Database["public"]["Enums"]["business_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_invites_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_invites_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_members: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          professional_id: string | null
+          role: Database["public"]["Enums"]["business_role"]
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          professional_id?: string | null
+          role: Database["public"]["Enums"]["business_role"]
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          professional_id?: string | null
+          role?: Database["public"]["Enums"]["business_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_members_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_members_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           booking_buffer_minutes: number
@@ -878,6 +965,10 @@ export type Database = {
       }
     }
     Functions: {
+      has_business_role: {
+        Args: { _business_id: string; _roles: Database["public"]["Enums"]["business_role"][] }
+        Returns: boolean
+      }
       has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
         Returns: boolean
@@ -908,6 +999,7 @@ export type Database = {
           new_upgrade_requests: number
         }[]
       }
+      my_professional_id: { Args: { _business_id: string }; Returns: string }
       replace_availability_rules: {
         Args: { _business_id: string; _rules: Json }
         Returns: undefined
@@ -956,6 +1048,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      business_role: "manager" | "reception" | "professional"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1092,6 +1185,7 @@ export const Constants = {
         "cancelled",
         "no_show",
       ],
+      business_role: ["manager", "reception", "professional"],
     },
   },
 } as const
