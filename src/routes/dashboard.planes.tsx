@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PLANS, MODULE_LABELS, MODULES_COMING_SOON, getPlan, type PlanId } from "@/lib/plans";
+import { PLANS, MODULE_LABELS, MODULES_COMING_SOON, describeTransitionBlock, getPlan, planTransitionBlock, type PlanId } from "@/lib/plans";
 import { monthBoundsInTz } from "@/lib/tz";
 import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,7 @@ function PlanesPage() {
     queryFn: async () => {
       const { start, end } = monthBoundsInTz(new Date(), business!.timezone ?? "America/Lima");
       const [appts, locs, pros] = await Promise.all([
-        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", business!.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).in("status", ["pending", "booked", "completed"]),
+        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", business!.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).in("status", ["booked", "completed", "no_show"]),
         supabase.from("locations").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
         supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
       ]);
@@ -70,29 +70,20 @@ function PlanesPage() {
       // El plan ya no se escribe desde el navegador: solo se puede bajar a Free.
       // Los planes de pago se activan desde el servidor tras la solicitud.
       if (planId !== "free") throw new Error("Los planes de pago se activan al enviar la solicitud.");
-      // Primera llamada: si hay recursos que exceden el plan Free, el servidor no cambia nada
-      // y pide confirmación explícita antes de desactivarlos.
-      let res = await downgradeToFreePlan({ data: { businessId: business.id } });
-      if (!res.ok) {
-        const parts: string[] = [];
-        if (res.excess.locations) parts.push(`${res.excess.locations.deactivate} sucursal(es) (Free permite ${res.excess.locations.limit})`);
-        if (res.excess.professionals) parts.push(`${res.excess.professionals.deactivate} profesional(es) (Free permite ${res.excess.professionals.limit})`);
-        const ok = window.confirm(
-          `Al pasar a Free se desactivarán tus ${parts.join(" y ")} más recientes. No se borran: podrás reactivarlos si vuelves a un plan superior. ¿Continuar?`,
-        );
-        if (!ok) return null;
-        res = await downgradeToFreePlan({ data: { businessId: business.id, confirm: true } });
-      }
+      await downgradeToFreePlan({ data: { businessId: business.id } });
       return planId;
     },
     onSuccess: (planId) => {
-      if (!planId) return;
       toast.success(planId === "free" ? "Cambiaste al plan Free." : "Solicitud enviada. Te contactaremos para activar el plan.");
       qc.invalidateQueries({ queryKey: ["my-business"] });
       qc.invalidateQueries({ queryKey: ["plan-usage"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo actualizar el plan"),
   });
+
+  // Un negocio no puede bajar a Free mientras tenga más sucursales o profesionales activos de los permitidos.
+  const freeBlock = usage ? planTransitionBlock({ locations: usage.locs, professionals: usage.pros }, "free") : null;
+  const freeBlockMsg = freeBlock ? describeTransitionBlock(freeBlock, PLANS.free.label) : null;
 
   return (
     <div>
@@ -137,6 +128,10 @@ function PlanesPage() {
           const handleSelect = () => {
             if (isCurrent) return;
             if (id === "free") {
+              if (freeBlockMsg) {
+                toast.error(freeBlockMsg);
+                return;
+              }
               if (confirm("¿Bajar al plan Free? Perderás los módulos del plan actual.")) {
                 changePlan.mutate("free");
               }
@@ -225,7 +220,8 @@ function PlanesPage() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={changePlan.isPending}
+                      disabled={changePlan.isPending || !!freeBlockMsg}
+                      title={freeBlockMsg ?? undefined}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (confirm("¿Bajar al plan Free? Perderás los módulos del plan actual.")) {
@@ -249,6 +245,9 @@ function PlanesPage() {
                           ? "Cambiar a " + p.label
                           : "Mejorar a " + p.label} <ArrowRight className="size-4" />
                     </Button>
+                  )}
+                  {!isCurrent && id === "free" && freeBlockMsg && (
+                    <p className="text-xs text-muted-foreground mt-2">{freeBlockMsg}</p>
                   )}
                 </div>
               </CardContent>

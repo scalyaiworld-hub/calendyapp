@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { apptPriceCents, canChangeStatus, nextStatuses, statusOptions } from "./appointments";
-import { computeExcess, getPlan, hasModule, MODULES_COMING_SOON, PLANS } from "./plans";
+import { computeOverage, describeTransitionBlock, hasModule, MODULES_COMING_SOON, planTransitionBlock } from "./plans";
 import { dayBoundsInTz, monthBoundsInTz, zonedToUtc } from "./tz";
 import { timeToMinutes, windowsFit } from "./manual-booking";
 
@@ -47,22 +47,19 @@ describe("módulos y límites de plan", () => {
     expect(MODULES_COMING_SOON.has("branding")).toBe(false);
   });
 
-  it("computeExcess conserva los más antiguos y desactiva los recientes", () => {
-    const items = [
-      { id: "c", created_at: "2026-03-01" },
-      { id: "a", created_at: "2026-01-01" },
-      { id: "b", created_at: "2026-02-01" },
-    ];
-    expect(computeExcess(items, 1)).toEqual({ limit: 1, active: 3, deactivateIds: ["b", "c"] });
-    expect(computeExcess(items, 3)).toBeNull();
-    expect(computeExcess(items, null)).toBeNull();
+  it("computeOverage solo reporta cuando se excede el límite", () => {
+    expect(computeOverage(3, 1)).toEqual({ limit: 1, active: 3, over: 2 });
+    expect(computeOverage(1, 1)).toBeNull();
+    expect(computeOverage(50, null)).toBeNull();
   });
 
-  it("bajar de Studio a Free deja excedente según los límites de Free", () => {
-    const limits = getPlan("free").limits;
-    expect(limits.locations).toBe(PLANS.free.limits.locations);
-    const locs = Array.from({ length: 3 }, (_, i) => ({ id: `l${i}`, created_at: `2026-0${i + 1}-01` }));
-    expect(computeExcess(locs, limits.locations)?.deactivateIds).toEqual(["l1", "l2"]);
+  it("no se puede bajar a Free con recursos por encima de sus límites", () => {
+    const block = planTransitionBlock({ locations: 3, professionals: 2 }, "free");
+    expect(block?.locations?.over).toBe(2);
+    expect(block?.professionals).toBeNull();
+    expect(describeTransitionBlock(block!, "Free")).toContain("2 sucursal(es)");
+    expect(planTransitionBlock({ locations: 1, professionals: 3 }, "free")).toBeNull();
+    expect(planTransitionBlock({ locations: 99, professionals: 99 }, "studio")).toBeNull();
   });
 });
 
@@ -98,5 +95,61 @@ describe("horario de atención", () => {
     expect(windowsFit(12 * 60 + 30, 13 * 60 + 30, windows)).toBe(false);
     expect(windowsFit(13 * 60, 15 * 60, windows)).toBe(false);
     expect(windowsFit(18 * 60, 19 * 60, windows)).toBe(true);
+  });
+});
+
+import { BOOKING_RULES, computeSlots, isSlotOffered } from "./availability-core";
+import { dayBoundsOfYmd, dayOfWeekOfYmd, ymdInTz } from "./tz";
+
+describe("disponibilidad en la zona del negocio", () => {
+  const now = new Date("2026-06-01T12:00:00Z"); // 07:00 en Lima
+  const base = { date: "2026-06-02", tz: "America/Lima", durationMinutes: 60, now };
+
+  it("genera slots a partir de la hora de pared del negocio (Lima = UTC-5)", () => {
+    const slots = computeSlots({ ...base, windows: [{ start_time: "09:00", end_time: "12:00" }], busy: [] });
+    expect(slots.map((s) => s.startsAt)).toEqual([
+      "2026-06-02T14:00:00.000Z",
+      "2026-06-02T15:00:00.000Z",
+      "2026-06-02T16:00:00.000Z",
+    ]);
+  });
+
+  it("descarta slots que chocan con citas existentes del mismo recurso", () => {
+    const slots = computeSlots({
+      ...base,
+      windows: [{ start_time: "09:00", end_time: "12:00" }],
+      busy: [{ starts_at: "2026-06-02T15:00:00Z", ends_at: "2026-06-02T16:00:00Z" }],
+    });
+    expect(slots.map((s) => s.startsAt)).toEqual(["2026-06-02T14:00:00.000Z", "2026-06-02T16:00:00.000Z"]);
+  });
+
+  it("respeta la anticipación mínima y el máximo de días", () => {
+    const today = computeSlots({
+      date: "2026-06-01",
+      tz: "America/Lima",
+      durationMinutes: 60,
+      now, // 07:00 Lima: con 30 min de margen la primera hora válida es 08:00
+      windows: [{ start_time: "06:00", end_time: "10:00" }],
+      busy: [],
+    });
+    expect(today[0].startsAt).toBe("2026-06-01T13:00:00.000Z");
+    const far = computeSlots({ ...base, date: "2026-12-01", windows: [{ start_time: "09:00", end_time: "10:00" }], busy: [] });
+    expect(far).toEqual([]);
+    expect(BOOKING_RULES.MAX_AHEAD_DAYS).toBe(90);
+  });
+
+  it("un slot reservado solo es válido si el servidor lo ofrece exactamente", () => {
+    const slots = computeSlots({ ...base, windows: [{ start_time: "09:00", end_time: "11:00" }], busy: [] });
+    expect(isSlotOffered(slots, new Date("2026-06-02T14:00:00Z"), new Date("2026-06-02T15:00:00Z"))).toBe(true);
+    expect(isSlotOffered(slots, new Date("2026-06-02T14:30:00Z"), new Date("2026-06-02T15:30:00Z"))).toBe(false);
+  });
+
+  it("la fecha y el día de la semana salen de la zona del negocio", () => {
+    // 03:00 UTC del martes 2 sigue siendo lunes 1 en Lima.
+    expect(ymdInTz(new Date("2026-06-02T03:00:00Z"), "America/Lima")).toBe("2026-06-01");
+    expect(dayOfWeekOfYmd("2026-06-01")).toBe(1);
+    const { start, end } = dayBoundsOfYmd("2026-06-01", "America/Lima");
+    expect(start.toISOString()).toBe("2026-06-01T05:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-06-02T05:00:00.000Z");
   });
 });

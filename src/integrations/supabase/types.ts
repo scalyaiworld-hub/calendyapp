@@ -190,6 +190,30 @@ export type Database = {
           },
         ]
       }
+      booking_attempts: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          ip_hash: string
+          phone: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          ip_hash: string
+          phone?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           brand_background: string | null
@@ -754,6 +778,10 @@ export type Database = {
           pending_count: number
           completed_revenue: number
         }[]
+      }
+      expire_stale_pending: {
+        Args: { _business_id?: string; _hours?: number }
+        Returns: number
       }
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }
       is_slug_available: {

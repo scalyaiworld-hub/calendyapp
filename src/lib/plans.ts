@@ -103,14 +103,35 @@ export const MODULES_COMING_SOON: ReadonlySet<keyof PlanDef["modules"]> = new Se
   "integrations",
 ]);
 
-export type PlanExcess = { limit: number; active: number; deactivateIds: string[] };
+export type PlanOverage = { limit: number; active: number; over: number };
 
-/**
- * Calcula qué recursos activos sobran al pasar a un límite menor.
- * Conserva los más antiguos y propone desactivar los más recientes.
- */
-export function computeExcess(items: { id: string; created_at: string }[], limit: number | null): PlanExcess | null {
-  if (limit === null || items.length <= limit) return null;
-  const sorted = [...items].sort((a, b) => a.created_at.localeCompare(b.created_at));
-  return { limit, active: items.length, deactivateIds: sorted.slice(limit).map((i) => i.id) };
+/** ¿Cuántos recursos activos exceden el límite del plan? null si cabe (o es ilimitado). */
+export function computeOverage(active: number, limit: number | null): PlanOverage | null {
+  if (limit === null || active <= limit) return null;
+  return { limit, active, over: active - limit };
+}
+
+export type PlanTransitionBlock = {
+  locations: PlanOverage | null;
+  professionals: PlanOverage | null;
+};
+
+/** Qué impide pasar a `target`: recursos activos por encima de sus límites. */
+export function planTransitionBlock(
+  usage: { locations: number; professionals: number },
+  target: string | null | undefined,
+): PlanTransitionBlock | null {
+  const limits = getPlan(target).limits;
+  const block = {
+    locations: computeOverage(usage.locations, limits.locations),
+    professionals: computeOverage(usage.professionals, limits.professionals),
+  };
+  return block.locations || block.professionals ? block : null;
+}
+
+export function describeTransitionBlock(b: PlanTransitionBlock, targetLabel: string): string {
+  const parts: string[] = [];
+  if (b.locations) parts.push(`${b.locations.over} sucursal(es) activa(s) de más (${targetLabel} permite ${b.locations.limit})`);
+  if (b.professionals) parts.push(`${b.professionals.over} profesional(es) activo(s) de más (${targetLabel} permite ${b.professionals.limit})`);
+  return `No puedes pasar al plan ${targetLabel} todavía: tienes ${parts.join(" y ")}. Desactiva o elimina el excedente y vuelve a intentarlo.`;
 }

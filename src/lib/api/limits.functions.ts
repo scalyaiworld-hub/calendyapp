@@ -47,7 +47,8 @@ export const checkResourceLimit = createServerFn({ method: "POST" })
         .from("appointments")
         .select("id", { count: "exact", head: true })
         .eq("business_id", data.businessId)
-        .neq("status", "cancelled")
+        // Solo las citas confirmadas consumen cupo; las pendientes se validan al confirmar.
+        .in("status", ["booked", "completed", "no_show"])
         .gte("starts_at", start.toISOString())
         .lt("starts_at", end.toISOString());
       used = count ?? 0;

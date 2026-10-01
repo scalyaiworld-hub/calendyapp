@@ -63,3 +63,35 @@ export function dayBoundsInTz(ref: Date, tz: string): { start: Date; end: Date }
   const end = zonedToUtc(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate(), tz);
   return { start, end };
 }
+
+/** Fecha calendario (YYYY-MM-DD) de un instante en la zona `tz`. */
+export function ymdInTz(date: Date, tz: string): string {
+  const p = partsInTz(date, tz);
+  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+}
+
+/** Día de la semana (0 = domingo) de una fecha calendario YYYY-MM-DD. No depende de la zona. */
+export function dayOfWeekOfYmd(ymd: string): number {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+export function parseYmd(ymd: string): { year: number; month: number; day: number } {
+  const [year, month, day] = ymd.split("-").map(Number);
+  return { year, month, day };
+}
+
+/** Inicio (inclusive) y fin (exclusivo) de una fecha calendario YYYY-MM-DD en la zona `tz`. */
+export function dayBoundsOfYmd(ymd: string, tz: string): { start: Date; end: Date } {
+  const { year, month, day } = parseYmd(ymd);
+  const next = new Date(Date.UTC(year, month - 1, day + 1));
+  return {
+    start: zonedToUtc(year, month, day, tz),
+    end: zonedToUtc(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate(), tz),
+  };
+}
+
+/** Hora (0-23) de un instante en la zona `tz`. */
+export function hourInTz(date: Date, tz: string): number {
+  return partsInTz(date, tz).hour;
+}

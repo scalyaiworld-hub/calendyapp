@@ -92,13 +92,8 @@ function AdminPanel({ email }: { email: string }) {
 
   const changePlan = useMutation({
     mutationFn: (v: { businessId: string; plan: "free" | "pro" | "studio" }) => setBusinessPlan({ data: v }),
-    onSuccess: (r) => {
-      const off = r.deactivated.locations + r.deactivated.professionals;
-      toast.success(
-        off > 0
-          ? `Plan actualizado. Se desactivaron ${r.deactivated.locations} sucursal(es) y ${r.deactivated.professionals} profesional(es) por exceder el límite.`
-          : "Plan actualizado",
-      );
+    onSuccess: () => {
+      toast.success("Plan actualizado");
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
     },
     onError: (e: Error) => toast.error(e.message),

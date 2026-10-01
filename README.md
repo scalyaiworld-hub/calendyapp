@@ -77,6 +77,9 @@ Copia `.env.example` a `.env`. El archivo `.env` está en `.gitignore`; no lo su
 | `SUPABASE_PUBLISHABLE_KEY` | Servidor | Clave publishable para el middleware de autenticación. |
 | `SUPABASE_PROJECT_ID` | Servidor | ID del proyecto Supabase. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Solo servidor, secreta** | Clave con la que `src/integrations/supabase/client.server.ts` omite RLS. Se necesita para `/admin`, el cambio de plan y las reservas públicas. |
+| `VITE_TURNSTILE_SITE_KEY` | Cliente | Clave pública de Cloudflare Turnstile para la página de reservas. Opcional: sin ella no se muestra captcha. |
+| `TURNSTILE_SECRET_KEY` | **Solo servidor, secreta** | Verifica el captcha en `createPublicBooking`. Si no está definida, no se exige (recomendado definirla en producción). |
+| `BOOKING_IP_SALT` | Solo servidor | Sal para guardar con hash las IP del límite de intentos de reserva. |
 
 Reglas importantes:
 
