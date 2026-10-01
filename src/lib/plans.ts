@@ -17,9 +17,12 @@ export type PlanDef = {
     aiChat: boolean;
     rolesPermissions: boolean;
     integrations: boolean;
+    exports: boolean;
     prioritySupport: boolean;
   };
 };
+
+export type ModuleKey = keyof PlanDef["modules"];
 
 export const PLANS: Record<PlanId, PlanDef> = {
   free: {
@@ -35,6 +38,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
       aiChat: false,
       rolesPermissions: false,
       integrations: false,
+      exports: false,
       prioritySupport: false,
     },
   },
@@ -51,6 +55,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
       aiChat: false,
       rolesPermissions: false,
       integrations: false,
+      exports: false,
       prioritySupport: true,
     },
   },
@@ -67,17 +72,30 @@ export const PLANS: Record<PlanId, PlanDef> = {
       aiChat: true,
       rolesPermissions: true,
       integrations: true,
+      exports: true,
       prioritySupport: true,
     },
   },
 };
+
+export const PLAN_ORDER: PlanId[] = ["free", "pro", "studio"];
 
 export function getPlan(plan: string | null | undefined): PlanDef {
   const id = (plan ?? "free") as PlanId;
   return PLANS[id] ?? PLANS.free;
 }
 
-export const MODULE_LABELS: Record<keyof PlanDef["modules"], string> = {
+export function hasModule(plan: string | null | undefined, module: ModuleKey): boolean {
+  return getPlan(plan).modules[module];
+}
+
+/** Plan más barato que incluye el módulo (para el CTA de upgrade). */
+export function minPlanForModule(module: ModuleKey): PlanDef {
+  const id = PLAN_ORDER.find((p) => PLANS[p].modules[module]);
+  return PLANS[id ?? "studio"];
+}
+
+export const MODULE_LABELS: Record<ModuleKey, string> = {
   publicLink: "Link de reservas público",
   reminders: "Recordatorios por WhatsApp y email",
   branding: "Marca y colores personalizados",
@@ -85,6 +103,7 @@ export const MODULE_LABELS: Record<keyof PlanDef["modules"], string> = {
   aiChat: "Chat con IA para clientes",
   rolesPermissions: "Roles y permisos por staff",
   integrations: "Integraciones (Google Calendar, API)",
+  exports: "Reportes y exportes avanzados",
   prioritySupport: "Soporte prioritario",
 };
 
