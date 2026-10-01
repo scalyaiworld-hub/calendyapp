@@ -54,21 +54,23 @@
   --color-rose-soft: var(--rose-soft);
   --color-rose-deep: var(--rose-deep);
   --color-warm-dark: var(--warm-dark);
-  --font-display: var(--brand-font, "Fraunces"), "Space Grotesk", Georgia, serif;
-  --font-sans: var(--brand-font-body, "DM Sans"), system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-display: var(--brand-font, "Instrument Serif"), Georgia, serif;
+  --font-sans: var(--brand-font-body, "Outfit"), system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+  --color-coral: var(--coral);
+  --color-coral-deep: var(--coral-deep);
 }
 
 :root {
   --radius: 0.75rem;
 
   /* Neutral palette — Cloud White (soft, professional) */
-  --background: oklch(0.99 0.002 240); /* #fafbfc */
-  --foreground: oklch(0.16 0.02 240); /* deeper slate for AAA body */
+  --background: #f3f5f9; /* bg */
+  --foreground: #16203a; /* ink */
   --warm-dark: oklch(0.14 0.02 240);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.02 240);
+  --card-foreground: #16203a;
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.16 0.02 240);
 
@@ -76,24 +78,28 @@
   --rose-soft: oklch(0.85 0.06 240);
   --rose-deep: oklch(0.5 0.18 256);
 
-  --primary: oklch(0.52 0.19 258); /* ~#2563eb, AA con texto blanco */
+  --primary: #2a4fd0; /* blue-700 */
   --primary-foreground: oklch(0.99 0.002 240);
 
   --secondary: oklch(0.95 0.008 240);
   --secondary-foreground: oklch(0.22 0.02 240);
 
   --muted: oklch(0.96 0.006 240);
-  --muted-foreground: oklch(0.42 0.02 240); /* WCAG AA on white */
+  --muted-foreground: #55607a; /* ink-2 */
 
-  --accent: oklch(0.94 0.012 240);
-  --accent-foreground: oklch(0.16 0.02 240);
+  --accent: #e6ecfb; /* blue-100 */
+  --accent-foreground: #16276b; /* blue-900 */
+
+  /* Coral: acento puntual (10%). Texto pequeño usa coral-deep. */
+  --coral: #f2845f;
+  --coral-deep: #b8431f;
 
   --destructive: oklch(0.52 0.21 27);
   --destructive-foreground: oklch(0.99 0.005 80);
 
   --border: oklch(0.88 0.008 240);
   --input: oklch(0.86 0.008 240);
-  --ring: oklch(0.52 0.19 258);
+  --ring: #5b83ee; /* blue-500 */
 
   --chart-1: oklch(0.62 0.18 256);
   --chart-2: oklch(0.7 0.1 240);
@@ -101,11 +107,11 @@
   --chart-4: oklch(0.5 0.1 256);
   --chart-5: oklch(0.4 0.1 256);
 
-  --sidebar: oklch(0.98 0.004 240);
+  --sidebar: #ffffff;
   --sidebar-foreground: oklch(0.25 0.02 240);
   --sidebar-primary: oklch(0.62 0.18 256);
   --sidebar-primary-foreground: oklch(0.99 0.002 240);
-  --sidebar-accent: oklch(0.94 0.012 240);
+  --sidebar-accent: #e6ecfb;
   --sidebar-accent-foreground: oklch(0.22 0.02 240);
   --sidebar-border: oklch(0.92 0.008 240);
   --sidebar-ring: oklch(0.62 0.18 256);
@@ -135,12 +141,12 @@
   h4,
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
-    font-feature-settings: "ss01";
+    font-weight: 400; /* Instrument Serif solo tiene 400 */
+    letter-spacing: -0.015em;
   }
 
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
 
