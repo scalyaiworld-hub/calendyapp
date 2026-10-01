@@ -27,12 +27,18 @@ import { Route as DashboardCitasRouteImport } from './routes/dashboard.citas'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
 import { Route as DashboardEquipoRouteImport } from './routes/dashboard.equipo'
 import { Route as DashboardHorariosRouteImport } from './routes/dashboard.horarios'
+import { Route as DashboardIntegracionesRouteImport } from './routes/dashboard.integraciones'
 import { Route as DashboardMetricasRouteImport } from './routes/dashboard.metricas'
 import { Route as DashboardPlanesRouteImport } from './routes/dashboard.planes'
 import { Route as DashboardProfesionalesRouteImport } from './routes/dashboard.profesionales'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
 import { Route as DashboardSucursalesRouteImport } from './routes/dashboard.sucursales'
 import { Route as ApiPublicSendRemindersRouteImport } from './routes/api.public.send-reminders'
+import { Route as ApiPublicSendWebhooksRouteImport } from './routes/api.public.send-webhooks'
+import { Route as ApiPublicCalendarTokenRouteImport } from './routes/api.public.calendar.$token'
+import { Route as ApiPublicV1AppointmentsRouteImport } from './routes/api.public.v1.appointments'
+import { Route as ApiPublicV1ClientsRouteImport } from './routes/api.public.v1.clients'
+import { Route as ApiPublicV1ServicesRouteImport } from './routes/api.public.v1.services'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -124,6 +130,11 @@ const DashboardHorariosRoute = DashboardHorariosRouteImport.update({
   path: '/horarios',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardIntegracionesRoute = DashboardIntegracionesRouteImport.update({
+  id: '/integraciones',
+  path: '/integraciones',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardMetricasRoute = DashboardMetricasRouteImport.update({
   id: '/metricas',
   path: '/metricas',
@@ -154,6 +165,31 @@ const ApiPublicSendRemindersRoute = ApiPublicSendRemindersRouteImport.update({
   path: '/api/public/send-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSendWebhooksRoute = ApiPublicSendWebhooksRouteImport.update({
+  id: '/api/public/send-webhooks',
+  path: '/api/public/send-webhooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCalendarTokenRoute = ApiPublicCalendarTokenRouteImport.update({
+  id: '/api/public/calendar/$token',
+  path: '/api/public/calendar/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1AppointmentsRoute = ApiPublicV1AppointmentsRouteImport.update({
+  id: '/api/public/v1/appointments',
+  path: '/api/public/v1/appointments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ClientsRoute = ApiPublicV1ClientsRouteImport.update({
+  id: '/api/public/v1/clients',
+  path: '/api/public/v1/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ServicesRoute = ApiPublicV1ServicesRouteImport.update({
+  id: '/api/public/v1/services',
+  path: '/api/public/v1/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/equipo': typeof DashboardEquipoRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/integraciones': typeof DashboardIntegracionesRoute
   '/dashboard/metricas': typeof DashboardMetricasRoute
   '/dashboard/planes': typeof DashboardPlanesRoute
   '/dashboard/profesionales': typeof DashboardProfesionalesRoute
@@ -180,6 +217,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
+  '/api/public/send-webhooks': typeof ApiPublicSendWebhooksRoute
+  '/api/public/calendar/$token': typeof ApiPublicCalendarTokenRoute
+  '/api/public/v1/appointments': typeof ApiPublicV1AppointmentsRoute
+  '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/services': typeof ApiPublicV1ServicesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -198,6 +240,7 @@ export interface FileRoutesByTo {
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/equipo': typeof DashboardEquipoRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/integraciones': typeof DashboardIntegracionesRoute
   '/dashboard/metricas': typeof DashboardMetricasRoute
   '/dashboard/planes': typeof DashboardPlanesRoute
   '/dashboard/profesionales': typeof DashboardProfesionalesRoute
@@ -205,6 +248,11 @@ export interface FileRoutesByTo {
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
+  '/api/public/send-webhooks': typeof ApiPublicSendWebhooksRoute
+  '/api/public/calendar/$token': typeof ApiPublicCalendarTokenRoute
+  '/api/public/v1/appointments': typeof ApiPublicV1AppointmentsRoute
+  '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/services': typeof ApiPublicV1ServicesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -225,6 +273,7 @@ export interface FileRoutesById {
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/equipo': typeof DashboardEquipoRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/integraciones': typeof DashboardIntegracionesRoute
   '/dashboard/metricas': typeof DashboardMetricasRoute
   '/dashboard/planes': typeof DashboardPlanesRoute
   '/dashboard/profesionales': typeof DashboardProfesionalesRoute
@@ -232,6 +281,11 @@ export interface FileRoutesById {
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
+  '/api/public/send-webhooks': typeof ApiPublicSendWebhooksRoute
+  '/api/public/calendar/$token': typeof ApiPublicCalendarTokenRoute
+  '/api/public/v1/appointments': typeof ApiPublicV1AppointmentsRoute
+  '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/services': typeof ApiPublicV1ServicesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -253,6 +307,7 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/equipo'
     | '/dashboard/horarios'
+    | '/dashboard/integraciones'
     | '/dashboard/metricas'
     | '/dashboard/planes'
     | '/dashboard/profesionales'
@@ -260,6 +315,11 @@ export interface FileRouteTypes {
     | '/dashboard/sucursales'
     | '/dashboard/'
     | '/api/public/send-reminders'
+    | '/api/public/send-webhooks'
+    | '/api/public/calendar/$token'
+    | '/api/public/v1/appointments'
+    | '/api/public/v1/clients'
+    | '/api/public/v1/services'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -278,6 +338,7 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/equipo'
     | '/dashboard/horarios'
+    | '/dashboard/integraciones'
     | '/dashboard/metricas'
     | '/dashboard/planes'
     | '/dashboard/profesionales'
@@ -285,6 +346,11 @@ export interface FileRouteTypes {
     | '/dashboard/sucursales'
     | '/dashboard'
     | '/api/public/send-reminders'
+    | '/api/public/send-webhooks'
+    | '/api/public/calendar/$token'
+    | '/api/public/v1/appointments'
+    | '/api/public/v1/clients'
+    | '/api/public/v1/services'
   id:
     | '__root__'
     | '/'
@@ -304,6 +370,7 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/equipo'
     | '/dashboard/horarios'
+    | '/dashboard/integraciones'
     | '/dashboard/metricas'
     | '/dashboard/planes'
     | '/dashboard/profesionales'
@@ -311,6 +378,11 @@ export interface FileRouteTypes {
     | '/dashboard/sucursales'
     | '/dashboard/'
     | '/api/public/send-reminders'
+    | '/api/public/send-webhooks'
+    | '/api/public/calendar/$token'
+    | '/api/public/v1/appointments'
+    | '/api/public/v1/clients'
+    | '/api/public/v1/services'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -326,6 +398,11 @@ export interface RootRouteChildren {
   BSlugRoute: typeof BSlugRoute
   CitaTokenRoute: typeof CitaTokenRoute
   ApiPublicSendRemindersRoute: typeof ApiPublicSendRemindersRoute
+  ApiPublicSendWebhooksRoute: typeof ApiPublicSendWebhooksRoute
+  ApiPublicCalendarTokenRoute: typeof ApiPublicCalendarTokenRoute
+  ApiPublicV1AppointmentsRoute: typeof ApiPublicV1AppointmentsRoute
+  ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
+  ApiPublicV1ServicesRoute: typeof ApiPublicV1ServicesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -456,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardHorariosRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/integraciones': {
+      id: '/dashboard/integraciones'
+      path: '/integraciones'
+      fullPath: '/dashboard/integraciones'
+      preLoaderRoute: typeof DashboardIntegracionesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/metricas': {
       id: '/dashboard/metricas'
       path: '/metricas'
@@ -498,6 +582,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/send-webhooks': {
+      id: '/api/public/send-webhooks'
+      path: '/api/public/send-webhooks'
+      fullPath: '/api/public/send-webhooks'
+      preLoaderRoute: typeof ApiPublicSendWebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/calendar/$token': {
+      id: '/api/public/calendar/$token'
+      path: '/api/public/calendar/$token'
+      fullPath: '/api/public/calendar/$token'
+      preLoaderRoute: typeof ApiPublicCalendarTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/appointments': {
+      id: '/api/public/v1/appointments'
+      path: '/api/public/v1/appointments'
+      fullPath: '/api/public/v1/appointments'
+      preLoaderRoute: typeof ApiPublicV1AppointmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/clients': {
+      id: '/api/public/v1/clients'
+      path: '/api/public/v1/clients'
+      fullPath: '/api/public/v1/clients'
+      preLoaderRoute: typeof ApiPublicV1ClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/services': {
+      id: '/api/public/v1/services'
+      path: '/api/public/v1/services'
+      fullPath: '/api/public/v1/services'
+      preLoaderRoute: typeof ApiPublicV1ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -508,6 +627,7 @@ interface DashboardRouteChildren {
   DashboardClientesRoute: typeof DashboardClientesRoute
   DashboardEquipoRoute: typeof DashboardEquipoRoute
   DashboardHorariosRoute: typeof DashboardHorariosRoute
+  DashboardIntegracionesRoute: typeof DashboardIntegracionesRoute
   DashboardMetricasRoute: typeof DashboardMetricasRoute
   DashboardPlanesRoute: typeof DashboardPlanesRoute
   DashboardProfesionalesRoute: typeof DashboardProfesionalesRoute
@@ -523,6 +643,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardClientesRoute: DashboardClientesRoute,
   DashboardEquipoRoute: DashboardEquipoRoute,
   DashboardHorariosRoute: DashboardHorariosRoute,
+  DashboardIntegracionesRoute: DashboardIntegracionesRoute,
   DashboardMetricasRoute: DashboardMetricasRoute,
   DashboardPlanesRoute: DashboardPlanesRoute,
   DashboardProfesionalesRoute: DashboardProfesionalesRoute,
@@ -548,6 +669,11 @@ const rootRouteChildren: RootRouteChildren = {
   BSlugRoute: BSlugRoute,
   CitaTokenRoute: CitaTokenRoute,
   ApiPublicSendRemindersRoute: ApiPublicSendRemindersRoute,
+  ApiPublicSendWebhooksRoute: ApiPublicSendWebhooksRoute,
+  ApiPublicCalendarTokenRoute: ApiPublicCalendarTokenRoute,
+  ApiPublicV1AppointmentsRoute: ApiPublicV1AppointmentsRoute,
+  ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
+  ApiPublicV1ServicesRoute: ApiPublicV1ServicesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

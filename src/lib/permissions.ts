@@ -36,6 +36,7 @@ const ACCESS: Record<string, Role[]> = {
   "/dashboard/sucursales": MANAGERS,
   "/dashboard/horarios": MANAGERS,
   "/dashboard/equipo": OWNER_ONLY,
+  "/dashboard/integraciones": OWNER_ONLY,
   "/dashboard/planes": OWNER_ONLY,
   "/dashboard/ajustes": OWNER_ONLY,
 };
