@@ -16,6 +16,8 @@ const schema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().min(3).max(40),
   countryCode: z.string().trim().min(1).max(8),
+  // Opcional: si lo da, recibe un correo de "recibimos tu reserva".
+  email: z.string().trim().email().max(254).optional().or(z.literal("")),
   // Token del captcha (Cloudflare Turnstile); solo se exige si el servidor lo tiene configurado.
   captchaToken: z.string().max(2048).optional(),
 });
@@ -163,6 +165,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
           name: data.name,
           phone: normalizedPhone,
           phone_country_code: normalizedCC,
+          email: data.email || null,
         })
         .select("id")
         .single();
@@ -193,6 +196,35 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         throw new BookingError("Los datos de la reserva no son válidos");
       }
       throw new Error(apptErr.message);
+    }
+
+    // Correo de "recibimos tu reserva" (best effort: un fallo no deshace la cita).
+    if (data.email) {
+      try {
+        const [{ data: biz }, { data: svc }, loc] = await Promise.all([
+          supabaseAdmin.from("businesses").select("name").eq("id", data.businessId).maybeSingle(),
+          supabaseAdmin.from("services").select("name").eq("id", data.serviceId).maybeSingle(),
+          ctx.locationId
+            ? supabaseAdmin.from("locations").select("name").eq("id", ctx.locationId).maybeSingle()
+            : Promise.resolve({ data: null as { name: string } | null }),
+        ]);
+        const { sendEmail, buildBookingReceivedEmail, getSiteOrigin } = await import("@/lib/email.server");
+        const origin = await getSiteOrigin();
+        await sendEmail({
+          to: data.email,
+          ...buildBookingReceivedEmail({
+            clientName: data.name,
+            businessName: biz?.name ?? "el negocio",
+            serviceName: svc?.name ?? "Servicio",
+            locationName: loc.data?.name ?? null,
+            startsAt,
+            timezone: tz,
+            manageUrl: origin && created.manage_token ? `${origin}/cita/${created.manage_token}` : null,
+          }),
+        });
+      } catch (e) {
+        console.error("[booking] correo de confirmación falló", e instanceof Error ? e.message : e);
+      }
     }
 
     // El token permite al cliente ver y cancelar su cita desde /cita/:token.
