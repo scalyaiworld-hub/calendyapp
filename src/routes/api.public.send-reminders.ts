@@ -23,12 +23,12 @@ export const Route = createFileRoute("/api/public/send-reminders")({
         if (!safeEqual(token, secret)) return new Response("Unauthorized", { status: 401 });
 
         try {
-          const [{ supabaseAdmin }, { sendReminderEmail }, { sendDueReminders }] = await Promise.all([
+          const [{ supabaseAdmin }, { sendEmailOrThrow }, { sendDueReminders }] = await Promise.all([
             import("@/integrations/supabase/client.server"),
             import("@/lib/email.server"),
             import("@/lib/reminders.server"),
           ]);
-          const result = await sendDueReminders(supabaseAdmin, sendReminderEmail);
+          const result = await sendDueReminders(supabaseAdmin, sendEmailOrThrow);
           return Response.json({ ok: true, ...result });
         } catch (e) {
           console.error("[reminders] run failed", e);

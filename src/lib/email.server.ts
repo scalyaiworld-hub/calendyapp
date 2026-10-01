@@ -100,7 +100,7 @@ export type OutgoingEmail = {
 
 export type EmailSender = (email: OutgoingEmail) => Promise<{ id: string | null }>;
 
-export const sendReminderEmail: EmailSender = async (email) => {
+export const sendEmailOrThrow: EmailSender = async (email) => {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.REMINDERS_FROM;
   if (!apiKey || !from) throw new Error("Falta configurar RESEND_API_KEY o REMINDERS_FROM");
