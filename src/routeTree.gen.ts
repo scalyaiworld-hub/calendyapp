@@ -29,6 +29,7 @@ import { Route as DashboardPlanesRouteImport } from './routes/dashboard.planes'
 import { Route as DashboardProfesionalesRouteImport } from './routes/dashboard.profesionales'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
 import { Route as DashboardSucursalesRouteImport } from './routes/dashboard.sucursales'
+import { Route as ApiPublicSendRemindersRouteImport } from './routes/api.public.send-reminders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,6 +131,11 @@ const DashboardSucursalesRoute = DashboardSucursalesRouteImport.update({
   path: '/sucursales',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiPublicSendRemindersRoute = ApiPublicSendRemindersRouteImport.update({
+  id: '/api/public/send-reminders',
+  path: '/api/public/send-reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard/'
+    | '/api/public/send-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard'
+    | '/api/public/send-reminders'
   id:
     | '__root__'
     | '/'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard/'
+    | '/api/public/send-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -275,7 +287,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TerminosRoute: typeof TerminosRoute
   BSlugRoute: typeof BSlugRoute
-  CitaTokenRoute: typeof CitaTokenRoute
+  ApiPublicSendRemindersRoute: typeof ApiPublicSendRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -420,6 +432,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSucursalesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/public/send-reminders': {
+      id: '/api/public/send-reminders'
+      path: '/api/public/send-reminders'
+      fullPath: '/api/public/send-reminders'
+      preLoaderRoute: typeof ApiPublicSendRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -463,7 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TerminosRoute: TerminosRoute,
   BSlugRoute: BSlugRoute,
-  CitaTokenRoute: CitaTokenRoute,
+  ApiPublicSendRemindersRoute: ApiPublicSendRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
