@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Reveal, RotatingWord, CountUp, LiveAgenda, useScrolled } from "@/components/landing-dynamic";
 import {
   ArrowRight,
   Calendar,
@@ -64,8 +65,13 @@ function Index() {
 }
 
 function Header() {
+  const scrolled = useScrolled();
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/75 border-b border-border/60">
+    <header
+      className={`sticky top-0 z-50 backdrop-blur-xl border-b transition-all duration-300 ${
+        scrolled ? "bg-background/90 border-border shadow-sm" : "bg-background/75 border-border/60"
+      }`}
+    >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="Calendya" className="size-8 rounded-lg" />
@@ -115,7 +121,9 @@ function Hero() {
         </div>
         <h1 className="font-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-[-0.035em] mb-8 font-bold">
           Tu salón merece{" "}
-          <span className="text-primary italic font-normal">libertad</span>,
+          <span className="text-primary italic font-normal">
+            <RotatingWord words={["libertad", "tiempo", "calma"]} />
+          </span>,
           <br className="hidden sm:block" />
           {" "}no un cuaderno.
         </h1>
@@ -146,20 +154,20 @@ function Hero() {
 }
 
 function TrustStrip() {
-  const stats = [
-    { n: "+500", l: "Citas reservadas/día" },
-    { n: "30s", l: "Reserva promedio" },
-    { n: "0", l: "Doble bookings" },
+  const stats: { n: ReactNode; l: string }[] = [
+    { n: <CountUp to={500} prefix="+" />, l: "Citas reservadas/día" },
+    { n: <CountUp to={30} suffix="s" />, l: "Reserva promedio" },
+    { n: <CountUp to={0} />, l: "Doble bookings" },
     { n: "24/7", l: "Disponibilidad" },
   ];
   return (
     <section className="border-y border-border/60">
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-y-8">
-        {stats.map((s) => (
-          <div key={s.l} className="text-center space-y-1.5">
+        {stats.map((s, idx) => (
+          <Reveal key={s.l} delay={idx * 90} className="text-center space-y-1.5">
             <div className="font-display text-4xl md:text-5xl font-bold text-primary tracking-tight">{s.n}</div>
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">{s.l}</div>
-          </div>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -201,10 +209,10 @@ function Problem() {
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {items.map((i) => (
+          {items.map((i, idx) => (
+            <Reveal key={i.t} delay={idx * 120}>
             <div
-              key={i.t}
-              className={`p-8 rounded-[2rem] border transition-all duration-500 ${
+              className={`h-full p-8 rounded-[2rem] border transition-all duration-500 ${
                 i.accent
                   ? "border-rose-100 bg-rose-50/40 hover:bg-card hover:shadow-2xl hover:shadow-rose-100 md:-translate-y-4"
                   : "border-border bg-card/60 hover:bg-card hover:shadow-2xl hover:shadow-primary/10"
@@ -223,6 +231,7 @@ function Problem() {
               <p className="text-muted-foreground italic leading-relaxed">{i.q}</p>
               <p className="text-muted-foreground leading-relaxed mt-2">{i.d}</p>
             </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -268,28 +277,7 @@ function SolutionTeaser() {
             </div>
             <div className="flex-1 w-full">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-3xl rotate-1 shadow-2xl">
-                <div className="bg-background rounded-2xl aspect-[4/3] w-full p-5 flex flex-col gap-3">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium">Hoy · Martes 6</span>
-                    <span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-primary" />8 citas</span>
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    {[
-                      { h: "09:00", n: "María López", s: "Corte + tinte", c: "bg-primary/10 border-primary/30 text-primary" },
-                      { h: "10:30", n: "Sofía Torres", s: "Manicura", c: "bg-rose-100 border-rose-200 text-rose-700" },
-                      { h: "12:00", n: "Ana Ríos", s: "Peinado novia", c: "bg-primary/10 border-primary/30 text-primary" },
-                      { h: "14:00", n: "Lucía Vega", s: "Facial", c: "bg-muted border-border text-muted-foreground" },
-                    ].map((a) => (
-                      <div key={a.h} className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${a.c}`}>
-                        <span className="font-mono text-xs tabular-nums">{a.h}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-semibold truncate text-foreground">{a.n}</div>
-                          <div className="text-[10px] truncate opacity-80">{a.s}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <LiveAgenda />
               </div>
             </div>
           </div>
@@ -316,14 +304,16 @@ function Features() {
           Todo lo que necesitas, <span className="text-primary">nada que no.</span>
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden border border-border shadow-soft">
-          {features.map(({ i: Icon, t, d }) => (
-            <div key={t} className="bg-card p-8 hover:bg-accent/30 transition group relative">
-              <div className="size-11 rounded-xl bg-foreground/5 grid place-items-center mb-5 group-hover:bg-primary/10 group-hover:text-primary transition text-foreground/70">
-                <Icon className="size-5" strokeWidth={1.5} />
+          {features.map(({ i: Icon, t, d }, idx) => (
+            <Reveal key={t} className="flex bg-card" delay={(idx % 3) * 90}>
+              <div className="flex-1 p-8 hover:bg-accent/30 transition group relative">
+                <div className="size-11 rounded-xl bg-foreground/5 grid place-items-center mb-5 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110 transition text-foreground/70">
+                  <Icon className="size-5" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-display text-lg mb-2 font-semibold tracking-tight">{t}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{d}</p>
               </div>
-              <h3 className="font-display text-lg mb-2 font-semibold tracking-tight">{t}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{d}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -344,14 +334,16 @@ function HowItWorks() {
         <h2 className="font-display text-4xl md:text-5xl mb-16 font-semibold tracking-tight">Tres pasos. Listo.</h2>
         <div className="grid md:grid-cols-3 gap-6 relative">
           {steps.map((s, idx) => (
-            <div key={s.n} className="bg-card border border-border rounded-2xl p-8 relative overflow-hidden hover:shadow-soft transition">
-              <div className="flex items-center justify-between mb-6">
-                <div className="size-9 rounded-full bg-foreground text-background grid place-items-center font-display text-sm font-semibold">{s.n}</div>
-                {idx < steps.length - 1 && <ArrowRight className="size-4 text-muted-foreground/40 hidden md:block" />}
+            <Reveal key={s.n} className="flex" delay={idx * 140}>
+              <div className="flex-1 bg-card border border-border rounded-2xl p-8 relative overflow-hidden hover:shadow-soft hover:-translate-y-1 transition">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="size-9 rounded-full bg-foreground text-background grid place-items-center font-display text-sm font-semibold">{s.n}</div>
+                  {idx < steps.length - 1 && <ArrowRight className="size-4 text-muted-foreground/40 hidden md:block" />}
+                </div>
+                <h3 className="font-display text-xl mb-2 font-semibold tracking-tight">{s.t}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{s.d}</p>
               </div>
-              <h3 className="font-display text-xl mb-2 font-semibold tracking-tight">{s.t}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{s.d}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
