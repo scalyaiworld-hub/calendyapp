@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -220,7 +221,7 @@ function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 px-4 py-8">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <span className="font-display text-xl gradient-rose-text">Calendya</span>
+          <Logo size={30} />
           <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">Cerrar sesión</button>
         </div>
 
