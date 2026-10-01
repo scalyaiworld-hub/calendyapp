@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -14,6 +14,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Ingresa o crea tu cuenta de Calendya." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" } =>
+    search.mode === "signup" ? { mode: "signup" } : {},
   component: AuthPage,
 });
 
@@ -46,6 +48,10 @@ function AuthPage() {
   useEffect(() => {
     if (session) navigate({ to: "/dashboard", replace: true });
   }, [session, navigate]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") setMode("signup");
+  }, []);
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -159,6 +165,8 @@ function AuthPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11 pl-9"
                   placeholder="tu@email.com"
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "auth-error" : undefined}
                 />
               </div>
             </div>
@@ -171,7 +179,7 @@ function AuthPage() {
                     <button
                       type="button"
                       onClick={() => switchMode("forgot")}
-                      className="text-xs text-primary hover:underline"
+                      className="text-sm text-primary hover:underline py-2 -my-2 px-1"
                     >
                       ¿Olvidaste?
                     </button>
@@ -187,13 +195,14 @@ function AuthPage() {
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 pl-9 pr-10"
-                    placeholder="••••••••"
+                    className="h-11 pl-9 pr-12"
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? "auth-error" : undefined}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -206,19 +215,28 @@ function AuthPage() {
             )}
 
             {error && (
-              <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-                {error}
+              <div
+                id="auth-error"
+                role="alert"
+                className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 flex items-start gap-2"
+              >
+                <AlertCircle className="size-4 mt-0.5 shrink-0" aria-hidden />
+                <span>{error}</span>
               </div>
             )}
             {info && (
-              <div className="text-sm text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 flex items-start gap-2">
-                <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
+              <div
+                role="status"
+                aria-live="polite"
+                className="text-sm text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 flex items-start gap-2"
+              >
+                <CheckCircle2 className="size-4 mt-0.5 shrink-0" aria-hidden />
                 <span>{info}</span>
               </div>
             )}
 
-            <Button type="submit" disabled={loading || googleLoading} className="w-full h-11 text-base">
-              {loading ? <Loader2 className="size-5 animate-spin" /> : submitLabel}
+            <Button type="submit" disabled={loading || googleLoading} aria-busy={loading} className="w-full h-11 text-base">
+              {loading ? <Loader2 className="size-5 animate-spin" aria-label="Cargando" /> : submitLabel}
             </Button>
           </form>
 
