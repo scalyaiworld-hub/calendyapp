@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_usage: {
+        Row: {
+          booked: boolean
+          business_id: string
+          created_at: string
+          id: string
+          input_tokens: number
+          ip_hash: string
+          output_tokens: number
+        }
+        Insert: {
+          booked?: boolean
+          business_id: string
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          ip_hash: string
+          output_tokens?: number
+        }
+        Update: {
+          booked?: boolean
+          business_id?: string
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          ip_hash?: string
+          output_tokens?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_usage_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           business_id: string
@@ -434,6 +472,8 @@ export type Database = {
       }
       businesses: {
         Row: {
+          ai_chat_enabled: boolean
+          ai_chat_instructions: string | null
           booking_buffer_minutes: number
           booking_cancel_min_hours: number
           booking_max_ahead_days: number
@@ -463,6 +503,8 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          ai_chat_enabled?: boolean
+          ai_chat_instructions?: string | null
           booking_buffer_minutes?: number
           booking_cancel_min_hours?: number
           booking_max_ahead_days?: number
@@ -492,6 +534,8 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          ai_chat_enabled?: boolean
+          ai_chat_instructions?: string | null
           booking_buffer_minutes?: number
           booking_cancel_min_hours?: number
           booking_max_ahead_days?: number

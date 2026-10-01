@@ -36,6 +36,8 @@ function AjustesPage() {
   const [brandFont, setBrandFont] = useState<string>("Inter");
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [reminderHours, setReminderHours] = useState(24);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiInstructions, setAiInstructions] = useState("");
 
   // Only prefill once so background refetches don't overwrite the user's edits.
   const prefilledRef = useRef(false);
@@ -51,6 +53,8 @@ function AjustesPage() {
       setBrandFont((business as any).brand_font ?? "Inter");
       setRemindersEnabled((business as any).reminders_enabled ?? true);
       setReminderHours((business as any).reminder_hours_before ?? 24);
+      setAiEnabled((business as any).ai_chat_enabled ?? false);
+      setAiInstructions((business as any).ai_chat_instructions ?? "");
     }
   }, [business]);
 
@@ -173,6 +177,22 @@ function AjustesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-business"] });
       toast.success("Recordatorios guardados");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveAi = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("businesses")
+        .update({ ai_chat_enabled: aiEnabled, ai_chat_instructions: aiInstructions.trim() || null })
+        .eq("id", business!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-business"] });
+      qc.invalidateQueries({ queryKey: ["ai-chat-availability"] });
+      toast.success("Asistente guardado");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -476,6 +496,45 @@ function AjustesPage() {
               </select>
             </div>
             <Button onClick={() => saveReminders.mutate()} disabled={saveReminders.isPending}>
+              Guardar
+            </Button>
+          </CardContent>
+        </Card>
+      </PlanGate>
+
+      <PlanGate module="aiChat">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <h2 className="font-display text-xl mb-1">Asistente con IA para tus clientes</h2>
+              <p className="text-sm text-muted-foreground">
+                Aparece en tu página pública: responde dudas sobre servicios y precios, revisa
+                horarios libres y puede dejar la reserva pendiente para que tú la confirmes. Sigue
+                las mismas reglas que tu página de reservas. El cliente siempre ve que habla con una
+                IA.
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="ai-enabled">Activar asistente</Label>
+              <Switch id="ai-enabled" checked={aiEnabled} onCheckedChange={setAiEnabled} />
+            </div>
+            <div>
+              <Label htmlFor="ai-instructions">Instrucciones para el asistente (opcional)</Label>
+              <textarea
+                id="ai-instructions"
+                value={aiInstructions}
+                onChange={(e) => setAiInstructions(e.target.value)}
+                maxLength={600}
+                rows={4}
+                placeholder="Ej.: Tratamos de usted. Cancelaciones con 24 h de anticipación. Estacionamiento gratis en la puerta."
+                className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {aiInstructions.length}/600 · No pongas contraseñas ni datos privados: el asistente
+                puede repetirlos a tus clientes.
+              </p>
+            </div>
+            <Button onClick={() => saveAi.mutate()} disabled={saveAi.isPending}>
               Guardar
             </Button>
           </CardContent>

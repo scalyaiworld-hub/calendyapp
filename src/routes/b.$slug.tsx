@@ -42,6 +42,7 @@ import {
 import { Turnstile, TURNSTILE_SITE_KEY } from "@/components/Turnstile";
 import { hourInTz } from "@/lib/tz";
 import { BrandTheme } from "@/lib/brand-theme";
+import { AiChatWidget } from "@/components/AiChatWidget";
 
 const bootstrapOptions = (slug: string) =>
   queryOptions({
@@ -1035,6 +1036,7 @@ function BookingPage() {
           )}
         </main>
       </div>
+      <AiChatWidget slug={slug} />
     </BrandTheme>
   );
 }
