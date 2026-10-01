@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,16 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [proOpen, setProOpen] = useState(false);
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  // Tras el login OAuth, Supabase puede volver a "/" con el token en el hash.
+  useEffect(() => {
+    if (session && window.location.hash.includes("access_token")) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [session, navigate]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -71,7 +81,8 @@ function Header() {
           <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">Ingresar</Link>
           <Link
             to="/auth"
-            className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
+            search={{ mode: "signup" }}
+            className="group inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition shadow-soft"
           >
             Empezar gratis
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -114,6 +125,7 @@ function Hero() {
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/auth"
+            search={{ mode: "signup" }}
             className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 hover:-translate-y-0.5 transition shadow-xl shadow-primary/20"
           >
             Comenzar prueba gratis
@@ -240,6 +252,7 @@ function SolutionTeaser() {
               <div className="flex flex-wrap gap-3 pt-2">
                 <Link
                   to="/auth"
+                  search={{ mode: "signup" }}
                   className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-background text-foreground font-semibold hover:-translate-y-0.5 transition shadow-lg"
                 >
                   Probar gratis
@@ -385,7 +398,7 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
             tagline="Para empezar y probar sin compromiso."
             features={free}
             cta={
-              <Link to="/auth" className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-medium transition">
+              <Link to="/auth" search={{ mode: "signup" }} className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-medium transition">
                 Crear cuenta gratis
               </Link>
             }
@@ -540,6 +553,7 @@ function CTA() {
           </p>
           <Link
             to="/auth"
+            search={{ mode: "signup" }}
             className="relative group inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-background text-foreground font-medium hover:-translate-y-0.5 transition shadow-soft-lg"
           >
             Crear mi cuenta gratis
