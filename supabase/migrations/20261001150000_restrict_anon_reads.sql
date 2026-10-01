@@ -17,6 +17,29 @@ DROP POLICY IF EXISTS "Public can read appointments for availability" ON public.
 REVOKE SELECT ON public.businesses, public.locations, public.professionals, public.appointments FROM anon;
 
 -- ============================================================
+-- 1b. Mismo cierre para las tablas auxiliares. Sus políticas "Public can read ..."
+--     eran USING (true) TO anon, authenticated: cualquiera, incluso otro dueño
+--     con sesión, podía leer horarios, asignaciones y servicios de TODOS los
+--     negocios. El servidor las lee con service_role; los dueños siguen leyendo
+--     lo suyo con sus políticas de dueño.
+-- ============================================================
+DROP POLICY IF EXISTS "Public can read active services" ON public.services;
+DROP POLICY IF EXISTS "Public can read location hours" ON public.location_hours;
+DROP POLICY IF EXISTS "Public can read location professionals" ON public.location_professionals;
+DROP POLICY IF EXISTS "Public can read professional services" ON public.professional_services;
+DROP POLICY IF EXISTS "Public can read availability" ON public.availability_rules;
+
+-- services, location_hours, location_professionals y professional_services ya tienen
+-- política de dueño que cubre SELECT. availability_rules solo tenía INSERT/UPDATE/DELETE
+-- para el dueño; sin esta política el dashboard dejaría de leer sus reglas.
+CREATE POLICY "Owners read availability"
+  ON public.availability_rules FOR SELECT TO authenticated
+  USING (public.is_business_owner(business_id));
+
+REVOKE SELECT ON public.services, public.location_hours, public.location_professionals,
+  public.professional_services, public.availability_rules FROM anon;
+
+-- ============================================================
 -- 2. pro_preregistrations: authenticated solo puede insertar (el formulario de la landing).
 --    Antes tenía SELECT, UPDATE y DELETE concedidos; solo los frenaba la falta de políticas.
 -- ============================================================
