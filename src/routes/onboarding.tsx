@@ -95,7 +95,7 @@ function OnboardingPage() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        existing = found ?? null;
+        existing = found ? { ...found, my_role: "owner" as const, my_professional_id: null } : null;
       }
       if (existing) {
         const { data, error } = await supabase
@@ -129,7 +129,7 @@ function OnboardingPage() {
     },
     onSuccess: async (newBusiness) => {
       if (newBusiness && user) {
-        qc.setQueryData(["my-business", user.id], newBusiness);
+        qc.setQueryData(["my-business", user.id], newBusiness ? { ...newBusiness, my_role: "owner", my_professional_id: null } : newBusiness);
       }
       await qc.invalidateQueries({ queryKey: ["my-business"] });
       setStep(2);
