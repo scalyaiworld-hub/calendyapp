@@ -252,26 +252,17 @@ function AjustesPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div>
-            <h2 className="font-display text-xl mb-1">Marca y apariencia</h2>
-            <p className="text-sm text-muted-foreground">
-              Personaliza los colores y la tipografía de tu panel y de tu página pública de
-              reservas.
-            </p>
-          </div>
+      <PlanGate module="branding">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <h2 className="font-display text-xl mb-1">Marca y apariencia</h2>
+              <p className="text-sm text-muted-foreground">
+                Personaliza los colores y la tipografía de tu panel y de tu página pública de
+                reservas.
+              </p>
+            </div>
 
-          {!canBrand && (
-            <p className="text-sm rounded-md border border-border bg-muted/50 px-3 py-2">
-              La marca personalizada está disponible desde el plan Pro.{" "}
-              <Link to="/dashboard/planes" className="underline font-medium">
-                Ver planes
-              </Link>
-            </p>
-          )}
-
-          <fieldset disabled={!canBrand} className="space-y-4 disabled:opacity-60">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Color principal</Label>
@@ -343,100 +334,16 @@ function AjustesPage() {
             </BrandTheme>
 
             <div className="flex gap-2">
-              <Button
-                onClick={() => saveBrand.mutate()}
-                disabled={!canBrand || saveBrand.isPending}
-              >
+              <Button onClick={() => saveBrand.mutate()} disabled={saveBrand.isPending}>
                 Guardar tema
               </Button>
-              <Button
-                variant="outline"
-                onClick={resetBrand}
-                disabled={!canBrand || saveBrand.isPending}
-              >
+              <Button variant="outline" onClick={resetBrand} disabled={saveBrand.isPending}>
                 Restablecer
               </Button>
             </div>
-          </fieldset>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div>
-            <h2 className="font-display text-xl mb-1">Reglas de reserva</h2>
-            <p className="text-sm text-muted-foreground">
-              Cómo reservan tus clientes desde tu página pública.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Anticipación mínima (min)</Label>
-              <Input
-                className="mt-1.5"
-                inputMode="numeric"
-                value={lead}
-                onChange={(e) => setLead(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Reservar hasta (días)</Label>
-              <Input
-                className="mt-1.5"
-                inputMode="numeric"
-                value={ahead}
-                onChange={(e) => setAhead(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Intervalo entre horarios</Label>
-              <select
-                value={step}
-                onChange={(e) => setStep(e.target.value)}
-                className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="duration">Duración del servicio</option>
-                {[10, 15, 20, 30, 60].map((m) => (
-                  <option key={m} value={m}>
-                    {m} min
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label>Margen entre citas (min)</Label>
-              <Input
-                className="mt-1.5"
-                inputMode="numeric"
-                value={buffer}
-                onChange={(e) => setBuffer(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>El cliente puede cancelar hasta (h antes)</Label>
-              <Input
-                className="mt-1.5"
-                inputMode="numeric"
-                value={cancelHours}
-                onChange={(e) => setCancelHours(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Bloquear tras N no-shows</Label>
-              <Input
-                className="mt-1.5"
-                inputMode="numeric"
-                value={maxNoShows}
-                onChange={(e) => setMaxNoShows(e.target.value)}
-                placeholder="Sin límite"
-              />
-            </div>
-          </div>
-          <Button onClick={() => saveRules.mutate()} disabled={saveRules.isPending}>
-            Guardar reglas
-          </Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </PlanGate>
 
       <PlanGate module="reminders">
         <Card>

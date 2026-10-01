@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { hasModule } from "@/lib/plans";
 
 export const AVAILABLE_FONTS = [
   "Inter",
@@ -16,6 +17,21 @@ export type BrandSettings = {
   brand_background?: string | null;
   brand_font?: string | null;
 };
+
+/**
+ * Marca efectiva de un negocio: si su plan no incluye "branding" (p. ej. bajó de Pro a Free)
+ * se ignora la marca guardada, sin borrarla, y vuelve a aplicarse si renueva.
+ */
+export function resolveBrand(
+  business: (BrandSettings & { plan?: string | null }) | null | undefined,
+): BrandSettings | null {
+  if (!business || !hasModule(business.plan, "branding")) return null;
+  return {
+    brand_primary: business.brand_primary,
+    brand_background: business.brand_background,
+    brand_font: business.brand_font,
+  };
+}
 
 function isValidColor(c?: string | null): c is string {
   if (!c) return false;

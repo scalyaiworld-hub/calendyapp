@@ -1,10 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getPlan, hasModule } from "@/lib/plans";
-import { isSlotOffered, settingsFromBusiness } from "@/lib/availability-core";
-import { monthBoundsInTz, ymdInTz } from "@/lib/tz";
-
-const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+import { hasModule } from "@/lib/plans";
 
 const schema = z.object({
   businessId: z.string().uuid(),
@@ -275,7 +271,7 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
     const { data: business } = await supabaseAdmin
       .from("businesses")
       .select(
-        "id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font,plan",
+        "id,name,slug,timezone,logo_url,industry,created_at,plan,brand_primary,brand_background,brand_font",
       )
       .eq("slug", data.slug)
       .is("deleted_at", null)
@@ -302,6 +298,15 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
     }
 
     const businessId = business.id;
+    // La marca solo se publica si el plan incluye el módulo; el plan nunca sale al público.
+    const { plan, brand_primary, brand_background, brand_font, ...publicFields } = business;
+    const canBrand = hasModule(plan, "branding");
+    const publicBusiness = {
+      ...publicFields,
+      brand_primary: canBrand ? brand_primary : null,
+      brand_background: canBrand ? brand_background : null,
+      brand_font: canBrand ? brand_font : null,
+    };
     // 1) Cargar entidades base en paralelo
     const [locsRes, prosRes, svcsRes] = await Promise.all([
       supabaseAdmin
