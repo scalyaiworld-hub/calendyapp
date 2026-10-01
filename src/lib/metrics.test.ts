@@ -93,6 +93,62 @@ describe("computeMetrics", () => {
   });
 });
 
+describe("precio congelado", () => {
+  const opts = {
+    services,
+    professionals,
+    timezone: "America/Lima",
+    from: new Date("2026-09-28T05:00:00Z"),
+    to: new Date("2026-09-29T05:00:00Z"),
+  };
+  it("usa el precio de la cita aunque el servicio haya cambiado de precio después", () => {
+    const m = computeMetrics(
+      [
+        a({
+          starts_at: "2026-09-28T15:00:00Z",
+          status: "completed",
+          service_id: "s1",
+          client_id: "c1",
+          price_cents: 3000,
+        }),
+      ],
+      opts,
+    );
+    expect(m.revenueCents).toBe(3000); // el servicio hoy cuesta 5000
+    expect(m.byService[0].revenueCents).toBe(3000);
+  });
+  it("cae al precio actual del servicio en citas antiguas sin precio congelado", () => {
+    const m = computeMetrics(
+      [
+        a({
+          starts_at: "2026-09-28T15:00:00Z",
+          status: "completed",
+          service_id: "s1",
+          client_id: "c1",
+          price_cents: null,
+        }),
+      ],
+      opts,
+    );
+    expect(m.revenueCents).toBe(5000);
+  });
+  it("un precio congelado de 0 (cortesía) cuenta como 0, no como el precio actual", () => {
+    const m = computeMetrics(
+      [
+        a({
+          starts_at: "2026-09-28T15:00:00Z",
+          status: "completed",
+          service_id: "s1",
+          client_id: "c1",
+          price_cents: 0,
+        }),
+      ],
+      opts,
+    );
+    expect(m.revenueCents).toBe(0);
+  });
+});
+
 describe("localParts", () => {
   it("usa la zona del negocio y tolera una inválida", () => {
     expect(localParts(new Date("2026-10-02T03:00:00Z"), "America/Lima").ymd).toBe("2026-10-01");

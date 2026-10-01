@@ -7,6 +7,8 @@ export type MetricAppt = {
   service_id: string;
   professional_id: string | null;
   client_id: string;
+  /** Precio congelado al crear la cita; si es null (citas antiguas) se usa el precio actual del servicio. */
+  price_cents?: number | null;
 };
 
 export type Named = { name: string; price_cents?: number };
@@ -108,9 +110,11 @@ export function computeMetrics(
     source.set(a.source, (source.get(a.source) ?? 0) + 1);
     clientCount.set(a.client_id, (clientCount.get(a.client_id) ?? 0) + 1);
 
-    // Ingreso = solo citas completadas, al precio actual del servicio.
+    // Ingreso = solo citas completadas, al precio congelado en la cita (así un cambio de precio no reescribe el histórico).
     const price =
-      a.status === "completed" ? (opts.services.get(a.service_id)?.price_cents ?? 0) : 0;
+      a.status === "completed"
+        ? (a.price_cents ?? opts.services.get(a.service_id)?.price_cents ?? 0)
+        : 0;
     revenueCents += price;
 
     const s = svc.get(a.service_id) ?? { count: 0, revenueCents: 0 };
