@@ -25,6 +25,7 @@ export type Database = {
           id: string
           location_id: string | null
           notes: string | null
+          price_cents: number | null
           professional_id: string | null
           service_id: string
           source: Database["public"]["Enums"]["appointment_source"]
@@ -42,6 +43,7 @@ export type Database = {
           id?: string
           location_id?: string | null
           notes?: string | null
+          price_cents?: number | null
           professional_id?: string | null
           service_id: string
           source?: Database["public"]["Enums"]["appointment_source"]
@@ -59,6 +61,7 @@ export type Database = {
           id?: string
           location_id?: string | null
           notes?: string | null
+          price_cents?: number | null
           professional_id?: string | null
           service_id?: string
           source?: Database["public"]["Enums"]["appointment_source"]
@@ -744,12 +747,24 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
         Returns: boolean
       }
+      appointment_stats: {
+        Args: { _business_id: string }
+        Returns: {
+          today_count: number
+          pending_count: number
+          completed_revenue: number
+        }[]
+      }
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }
       is_slug_available: {
         Args: { _slug: string; _exclude_id?: string }
         Returns: boolean
       }
       normalize_phone: { Args: { p: string }; Returns: string }
+      plan_has_module: {
+        Args: { _plan: string; _module: string }
+        Returns: boolean
+      }
       plan_limit: {
         Args: { _plan: string; _resource: string }
         Returns: number

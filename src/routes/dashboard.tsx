@@ -7,6 +7,7 @@ import { useEntityCounts } from "@/lib/entity-counts";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
+import { hasModule } from "@/lib/plans";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Calendya" }] }),
@@ -168,7 +169,7 @@ function DashboardLayout() {
   );
 
   return (
-    <BrandTheme brand={business as any}>
+    <BrandTheme brand={hasModule((business as any)?.plan, "branding") ? (business as any) : null}>
       <div className="min-h-screen bg-background">
         <aside className="fixed inset-y-0 left-0 w-64 border-r border-border bg-card/60 backdrop-blur hidden md:flex flex-col z-30">
           <SidebarInner />

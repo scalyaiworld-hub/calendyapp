@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { hasModule } from "@/lib/plans";
 
 const schema = z.object({
   businessId: z.string().uuid(),
@@ -195,7 +196,7 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
 
     const { data: business } = await supabaseAdmin
       .from("businesses")
-      .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font")
+      .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font,plan")
       .eq("slug", data.slug)
       .is("deleted_at", null)
       .maybeSingle();
@@ -209,6 +210,15 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
         locationPros: [],
         professionalServices: [],
       };
+    }
+
+    // La marca personalizada es un módulo de plan: sin él se sirve el tema por defecto.
+    // El plan no se expone en la página pública.
+    const { plan, ...publicBusiness } = business;
+    if (!hasModule(plan, "branding")) {
+      publicBusiness.brand_primary = null;
+      publicBusiness.brand_background = null;
+      publicBusiness.brand_font = null;
     }
 
     const businessId = business.id;
@@ -251,7 +261,7 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
     ]);
 
     return {
-      business,
+      business: publicBusiness,
       locations: locsRes.data ?? [],
       professionals: prosRes.data ?? [],
       services: svcsRes.data ?? [],

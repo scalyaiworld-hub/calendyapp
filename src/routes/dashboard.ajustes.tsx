@@ -13,6 +13,9 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { AVAILABLE_FONTS, BrandTheme } from "@/lib/brand-theme";
 import { slugify } from "@/lib/format";
 import { useEntityCounts } from "@/lib/entity-counts";
+import { hasModule } from "@/lib/plans";
+import { translateDbError } from "@/lib/api/error-messages";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/ajustes")({
   component: AjustesPage,
@@ -96,7 +99,7 @@ function AjustesPage() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Tema guardado"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const resetBrand = () => {
@@ -120,6 +123,7 @@ function AjustesPage() {
   if (!hasLocations) missing.push("una sucursal");
   if (!hasPros) missing.push("un profesional");
   if (!hasServices) missing.push("un servicio");
+  const canBrand = hasModule((business as any).plan, "branding");
   const missingMsg = `Agrega al menos ${missing.join(", ")} para activar el link de reservas.`;
   const url = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
 
@@ -172,6 +176,14 @@ function AjustesPage() {
             </p>
           </div>
 
+          {!canBrand && (
+            <p className="text-sm rounded-md border border-border bg-muted/50 px-3 py-2">
+              La marca personalizada está disponible desde el plan Pro.{" "}
+              <Link to="/dashboard/planes" className="underline font-medium">Ver planes</Link>
+            </p>
+          )}
+
+          <fieldset disabled={!canBrand} className="space-y-4 disabled:opacity-60">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Color principal</Label>
@@ -237,13 +249,14 @@ function AjustesPage() {
           </BrandTheme>
 
           <div className="flex gap-2">
-            <Button onClick={() => saveBrand.mutate()} disabled={saveBrand.isPending}>
+            <Button onClick={() => saveBrand.mutate()} disabled={!canBrand || saveBrand.isPending}>
               Guardar tema
             </Button>
-            <Button variant="outline" onClick={resetBrand} disabled={saveBrand.isPending}>
+            <Button variant="outline" onClick={resetBrand} disabled={!canBrand || saveBrand.isPending}>
               Restablecer
             </Button>
           </div>
+          </fieldset>
         </CardContent>
       </Card>
 

@@ -170,7 +170,27 @@ export const setBusinessPlan = createServerFn({ method: "POST" })
   .inputValidator((input) => planSchema.parse(input))
   .handler(async ({ data, context }) => {
     const sb = await requireAdmin(context.userId);
-    const { error } = await sb.from("businesses").update({ plan: data.plan }).eq("id", data.businessId);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    const { applyPlanChange } = await import("@/lib/plan-change.server");
+    // Al bajar de plan se desactivan los recursos que exceden el nuevo límite y se audita el cambio.
+    const { deactivated } = await applyPlanChange(sb, {
+      businessId: data.businessId,
+      plan: data.plan,
+      actorId: context.userId,
+      deactivateExcess: true,
+    });
+
+    // La solicitud de upgrade abierta de ese plan queda como ganada.
+    if (data.plan !== "free") {
+      await sb
+        .from("upgrade_requests")
+        .update({ status: "won" })
+        .eq("business_id", data.businessId)
+        .eq("plan", data.plan)
+        .in("status", ["new", "contacted"]);
+    }
+
+    return {
+      ok: true as const,
+      deactivated: { locations: deactivated.locations.length, professionals: deactivated.professionals.length },
+    };
   });

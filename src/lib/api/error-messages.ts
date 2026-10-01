@@ -14,6 +14,12 @@ export function translateDbError(err: unknown): string {
   if (msg.includes("PLAN_LIMIT_PROFESSIONALS")) {
     return "Tu plan no permite más profesionales. Actualiza tu plan para añadir otro.";
   }
+  if (msg.includes("PLAN_MODULE_BRANDING")) {
+    return "La marca personalizada está disponible desde el plan Pro.";
+  }
+  if (msg.includes("APPT_FUTURE_CLOSE")) {
+    return "No puedes completar ni marcar no-show una cita que todavía no empieza.";
+  }
   if (msg.includes("APPT_STATUS_TERMINAL")) {
     return "Esta cita ya está cerrada (completada, cancelada o no-show) y no se puede reabrir.";
   }

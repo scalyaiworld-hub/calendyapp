@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PLANS, MODULE_LABELS, getPlan, type PlanId } from "@/lib/plans";
+import { PLANS, MODULE_LABELS, MODULES_COMING_SOON, getPlan, type PlanId } from "@/lib/plans";
+import { monthBoundsInTz } from "@/lib/tz";
 import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -53,9 +54,7 @@ function PlanesPage() {
     queryKey: ["plan-usage", business?.id],
     enabled: !!business?.id,
     queryFn: async () => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const { start, end } = monthBoundsInTz(new Date(), business!.timezone ?? "America/Lima");
       const [appts, locs, pros] = await Promise.all([
         supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", business!.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).in("status", ["pending", "booked", "completed"]),
         supabase.from("locations").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
@@ -71,10 +70,23 @@ function PlanesPage() {
       // El plan ya no se escribe desde el navegador: solo se puede bajar a Free.
       // Los planes de pago se activan desde el servidor tras la solicitud.
       if (planId !== "free") throw new Error("Los planes de pago se activan al enviar la solicitud.");
-      await downgradeToFreePlan({ data: { businessId: business.id } });
+      // Primera llamada: si hay recursos que exceden el plan Free, el servidor no cambia nada
+      // y pide confirmación explícita antes de desactivarlos.
+      let res = await downgradeToFreePlan({ data: { businessId: business.id } });
+      if (!res.ok) {
+        const parts: string[] = [];
+        if (res.excess.locations) parts.push(`${res.excess.locations.deactivate} sucursal(es) (Free permite ${res.excess.locations.limit})`);
+        if (res.excess.professionals) parts.push(`${res.excess.professionals.deactivate} profesional(es) (Free permite ${res.excess.professionals.limit})`);
+        const ok = window.confirm(
+          `Al pasar a Free se desactivarán tus ${parts.join(" y ")} más recientes. No se borran: podrás reactivarlos si vuelves a un plan superior. ¿Continuar?`,
+        );
+        if (!ok) return null;
+        res = await downgradeToFreePlan({ data: { businessId: business.id, confirm: true } });
+      }
       return planId;
     },
     onSuccess: (planId) => {
+      if (!planId) return;
       toast.success(planId === "free" ? "Cambiaste al plan Free." : "Solicitud enviada. Te contactaremos para activar el plan.");
       qc.invalidateQueries({ queryKey: ["my-business"] });
       qc.invalidateQueries({ queryKey: ["plan-usage"] });
@@ -196,6 +208,9 @@ function PlanesPage() {
                           <Lock className="size-3.5 mt-1 shrink-0 opacity-60" strokeWidth={1.75} />
                         )}
                         <span className={cn(!on && "line-through decoration-current/30")}>{MODULE_LABELS[k]}</span>
+                        {on && MODULES_COMING_SOON.has(k) && (
+                          <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">Próximamente</span>
+                        )}
                       </li>
                     );
                   })}

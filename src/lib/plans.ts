@@ -87,3 +87,30 @@ export const MODULE_LABELS: Record<keyof PlanDef["modules"], string> = {
   integrations: "Integraciones (Google Calendar, API)",
   prioritySupport: "Soporte prioritario",
 };
+
+export function hasModule(plan: string | null | undefined, module: keyof PlanDef["modules"]): boolean {
+  return getPlan(plan).modules[module];
+}
+
+/**
+ * Módulos que forman parte del plan pero todavía no están construidos.
+ * La UI los muestra como "Próximamente" en vez de prometerlos como activos.
+ */
+export const MODULES_COMING_SOON: ReadonlySet<keyof PlanDef["modules"]> = new Set([
+  "reminders",
+  "aiChat",
+  "rolesPermissions",
+  "integrations",
+]);
+
+export type PlanExcess = { limit: number; active: number; deactivateIds: string[] };
+
+/**
+ * Calcula qué recursos activos sobran al pasar a un límite menor.
+ * Conserva los más antiguos y propone desactivar los más recientes.
+ */
+export function computeExcess(items: { id: string; created_at: string }[], limit: number | null): PlanExcess | null {
+  if (limit === null || items.length <= limit) return null;
+  const sorted = [...items].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return { limit, active: items.length, deactivateIds: sorted.slice(limit).map((i) => i.id) };
+}
