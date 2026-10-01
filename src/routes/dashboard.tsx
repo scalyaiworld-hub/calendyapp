@@ -148,7 +148,7 @@ function DashboardLayout() {
             <p className="text-xs text-muted-foreground truncate font-medium">{business.name}</p>
             <span
               className={cn(
-                "text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider shrink-0",
+                "font-mono text-[10px] px-2.5 py-1 rounded-full font-medium uppercase tracking-wider shrink-0",
                 planStyles,
               )}
             >
@@ -160,7 +160,7 @@ function DashboardLayout() {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {visibleGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+            <p className="px-3 mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -171,10 +171,10 @@ function DashboardLayout() {
                   preload="intent"
                   activeOptions={{ exact: !!exact }}
                   onClick={onNavigate}
-                  className="group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  className="group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                   activeProps={{
                     className:
-                      "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm bg-accent text-foreground font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:bg-foreground before:rounded-full",
+                      "group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm bg-accent text-primary font-semibold",
                   }}
                 >
                   <Icon className="size-4 shrink-0" strokeWidth={1.75} />
@@ -228,8 +228,8 @@ function DashboardLayout() {
       </nav>
       <div className="p-3 border-t border-border">
         <div className="flex items-center gap-2 rounded-lg bg-background/60 px-3 py-2 border border-border">
-          <div className="size-7 rounded-full bg-foreground grid place-items-center shrink-0">
-            <span className="text-background text-xs font-semibold">
+          <div className="size-8 rounded-full bg-primary grid place-items-center shrink-0">
+            <span className="text-primary-foreground text-xs font-semibold">
               {user.email?.[0]?.toUpperCase() ?? "U"}
             </span>
           </div>
@@ -239,7 +239,7 @@ function DashboardLayout() {
           <button
             onClick={signOut}
             title="Cerrar sesión"
-            className="text-muted-foreground hover:text-foreground p-1 rounded"
+            className="text-muted-foreground hover:text-foreground size-11 -mr-2 grid place-items-center rounded-lg"
           >
             <LogOut className="size-3.5" />
           </button>
@@ -251,7 +251,13 @@ function DashboardLayout() {
   return (
     <BrandTheme brand={hasModule((business as any)?.plan, "branding") ? (business as any) : null}>
       <div className="min-h-screen bg-background">
-        <aside className="fixed inset-y-0 left-0 w-64 border-r border-border bg-card/60 backdrop-blur hidden md:flex flex-col z-30">
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+        >
+          Saltar al contenido
+        </a>
+        <aside className="fixed inset-y-0 left-0 w-64 border-r border-border bg-sidebar hidden md:flex flex-col z-30">
           <SidebarInner />
         </aside>
 
@@ -262,7 +268,7 @@ function DashboardLayout() {
           </Link>
           <button
             onClick={() => setMobileOpen(true)}
-            className="p-2 -mr-2 rounded-md hover:bg-accent text-foreground"
+            className="size-11 -mr-2 grid place-items-center rounded-lg hover:bg-accent text-foreground"
             aria-label="Abrir menú"
           >
             <Menu className="size-5" />
@@ -279,7 +285,7 @@ function DashboardLayout() {
             <aside className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-background border-r border-border flex flex-col shadow-soft-lg">
               <button
                 onClick={() => setMobileOpen(false)}
-                className="absolute top-3 right-3 p-2 rounded-md hover:bg-accent text-muted-foreground"
+                className="absolute top-3 right-3 size-11 grid place-items-center rounded-lg hover:bg-accent text-muted-foreground"
                 aria-label="Cerrar menú"
               >
                 <X className="size-5" />
@@ -289,8 +295,10 @@ function DashboardLayout() {
           </div>
         )}
 
-        <main className="md:ml-64 px-4 md:px-10 py-6 md:py-10 max-w-6xl">
-          <Outlet />
+        <main id="contenido" tabIndex={-1} className="md:pl-64 focus:outline-none">
+          <div className="mx-auto w-full max-w-[1200px] px-4 md:px-6 py-6 md:py-10">
+            <Outlet />
+          </div>
         </main>
       </div>
     </BrandTheme>
