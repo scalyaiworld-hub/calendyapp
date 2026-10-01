@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
 import { downgradeToFreePlan } from "@/lib/api/plan.functions";
+import { submitUpgradeRequest } from "@/lib/api/upgrade.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -249,11 +250,13 @@ function PlanesPage() {
         planId={requestPlan === "studio" ? null : requestPlan}
         onClose={() => setRequestPlan(null)}
         businessName={(business as any)?.name ?? ""}
+        businessId={business?.id}
       />
       <StudioRequestDialog
         open={requestPlan === "studio"}
         onClose={() => setRequestPlan(null)}
         businessName={(business as any)?.name ?? ""}
+        businessId={business?.id}
         currentLocations={usage?.locs ?? 0}
         currentPros={usage?.pros ?? 0}
       />
@@ -261,7 +264,7 @@ function PlanesPage() {
   );
 }
 
-function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanId | null; onClose: () => void; businessName: string }) {
+function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { planId: PlanId | null; onClose: () => void; businessName: string; businessId?: string }) {
   const open = planId !== null;
   const plan = planId ? getPlan(planId) : null;
   const [name, setName] = useState("");
@@ -282,12 +285,27 @@ function UpgradeRequestDialog({ planId, onClose, businessName }: { planId: PlanI
     if (trimmedName.length < 2) return toast.error("Ingresa tu nombre");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return toast.error("Ingresa un email válido");
     if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
+    if (!businessId || !planId || planId === "free") return toast.error("No se encontró tu negocio");
     setSubmitting(true);
-    // Simulación de envío — el equipo comercial se pondrá en contacto.
-    await new Promise((r) => setTimeout(r, 600));
-    toast.success("¡Solicitud recibida! Te contactaremos en menos de 24 horas.");
-    reset();
-    onClose();
+    try {
+      await submitUpgradeRequest({
+        data: {
+          businessId,
+          plan: planId as "pro" | "studio",
+          name: trimmedName,
+          email: trimmedEmail,
+          phone: phone.trim() || undefined,
+          industry,
+          message: message.trim() || undefined,
+        },
+      });
+      toast.success("¡Solicitud recibida! Te contactaremos en menos de 24 horas.");
+      reset();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message ?? "No se pudo enviar la solicitud");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -376,12 +394,14 @@ function StudioRequestDialog({
   open,
   onClose,
   businessName,
+  businessId,
   currentLocations,
   currentPros,
 }: {
   open: boolean;
   onClose: () => void;
   businessName: string;
+  businessId?: string;
   currentLocations: number;
   currentPros: number;
 }) {
@@ -418,12 +438,35 @@ function StudioRequestDialog({
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return toast.error("Ingresa un email válido");
     if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
     if (!timing) return toast.error("Indica cuándo te gustaría empezar");
+    if (!businessId) return toast.error("No se encontró tu negocio");
     setSubmitting(true);
-    // Simulación de envío — el equipo comercial se pondrá en contacto.
-    await new Promise((r) => setTimeout(r, 600));
-    toast.success("¡Recibido! Un asesor Studio te contactará en menos de 24 h.");
-    reset();
-    onClose();
+    try {
+      const details: Record<string, string> = {};
+      if (role.trim()) details.role = role.trim();
+      if (locations) details.locations = locations;
+      if (team) details.team = team;
+      if (appointmentsRange) details.appointmentsRange = appointmentsRange;
+      if (currentTool.trim()) details.currentTool = currentTool.trim();
+      details.timing = timing;
+      await submitUpgradeRequest({
+        data: {
+          businessId,
+          plan: "studio",
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim() || undefined,
+          industry,
+          message: needs.trim() || undefined,
+          details,
+        },
+      });
+      toast.success("¡Recibido! Un asesor Studio te contactará en menos de 24 h.");
+      reset();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message ?? "No se pudo enviar la solicitud");
+      setSubmitting(false);
+    }
   };
 
   return (

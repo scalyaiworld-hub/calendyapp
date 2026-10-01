@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Building2, Inbox, Search, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowUpCircle, Building2, Inbox, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getAdminOverview, getAdminStatus, setBusinessPlan, type AdminBusiness } from "@/lib/api/admin.functions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,11 +113,12 @@ function AdminPanel({ email }: { email: string }) {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        <section aria-label="Resumen" className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <section aria-label="Resumen" className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Stat label="Negocios" value={totals?.businesses} loading={overview.isLoading} />
           <Stat label="Plan Free" value={totals?.free} loading={overview.isLoading} />
           <Stat label="Plan Pro" value={totals?.pro} loading={overview.isLoading} />
           <Stat label="Plan Studio" value={totals?.studio} loading={overview.isLoading} />
+          <Stat label="Upgrades nuevos" value={totals?.upgradeRequests} loading={overview.isLoading} />
           <Stat label="Solicitudes" value={totals?.preregistrations} loading={overview.isLoading} />
         </section>
 
@@ -131,6 +132,9 @@ function AdminPanel({ email }: { email: string }) {
           <TabsList>
             <TabsTrigger value="businesses" className="gap-2">
               <Building2 className="size-4" aria-hidden /> Negocios
+            </TabsTrigger>
+            <TabsTrigger value="upgrades" className="gap-2">
+              <ArrowUpCircle className="size-4" aria-hidden /> Upgrades
             </TabsTrigger>
             <TabsTrigger value="requests" className="gap-2">
               <Inbox className="size-4" aria-hidden /> Solicitudes
@@ -181,6 +185,53 @@ function AdminPanel({ email }: { email: string }) {
                         pending={changePlan.isPending && changePlan.variables?.businessId === b.id}
                         onPlan={(plan) => changePlan.mutate({ businessId: b.id, plan })}
                       />
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="upgrades">
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Negocio</TableHead>
+                      <TableHead>Contacto</TableHead>
+                      <TableHead>Rubro</TableHead>
+                      <TableHead>Mensaje</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!overview.isLoading && (overview.data?.upgradeRequests.length ?? 0) === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                          No hay solicitudes de upgrade.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {overview.data?.upgradeRequests.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="whitespace-nowrap">{dateFmt(r.createdAt)}</TableCell>
+                        <TableCell>
+                          <Badge variant={r.plan === "studio" ? "default" : "secondary"}>{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{r.businessName ?? "—"}</div>
+                          {r.businessSlug && <div className="text-xs text-muted-foreground">/b/{r.businessSlug}</div>}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{r.name}</div>
+                          <a href={`mailto:${r.email}`} className="text-primary hover:underline text-sm">{r.email}</a>
+                          {r.phone && <div className="text-xs text-muted-foreground">{r.phone}</div>}
+                        </TableCell>
+                        <TableCell>{r.industry}</TableCell>
+                        <TableCell className="max-w-xs text-sm text-muted-foreground">{r.message ?? "—"}</TableCell>
+                      </TableRow>
                     ))}
                   </TableBody>
                 </Table>

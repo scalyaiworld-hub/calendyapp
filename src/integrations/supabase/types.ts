@@ -403,6 +403,51 @@ export type Database = {
         }
         Relationships: []
       }
+      upgrade_requests: {
+        Row: {
+          business_id: string
+          created_at: string
+          details: Json
+          email: string
+          id: string
+          industry: string
+          message: string | null
+          name: string
+          phone: string | null
+          plan: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          details?: Json
+          email: string
+          id?: string
+          industry: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          plan: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          details?: Json
+          email?: string
+          id?: string
+          industry?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          plan?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pro_preregistrations: {
         Row: {
           created_at: string
