@@ -97,6 +97,7 @@ function LocationsTab() {
       qc.invalidateQueries({ queryKey: ["public-locations"] });
       toast.success("Sucursal eliminada");
     },
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const toggleActive = useMutation({
@@ -271,12 +272,10 @@ function LocationDialog({ open, onOpenChange, businessId, editing }: { open: boo
         id = data.id;
       }
       // hours: replace all
-      await supabase.from("location_hours").delete().eq("location_id", id!);
-      const rows = hours.flatMap((h, i) => h.open ? [{ location_id: id!, day_of_week: i, start_time: h.start, end_time: h.end }] : []);
-      if (rows.length) {
-        const { error } = await supabase.from("location_hours").insert(rows);
-        if (error) throw error;
-      }
+      // Atómico: si falla, no se pierden los horarios anteriores.
+      const rows = hours.flatMap((h, i) => h.open ? [{ day_of_week: i, start_time: h.start, end_time: h.end }] : []);
+      const { error: hoursErr } = await supabase.rpc("replace_location_hours", { _location_id: id!, _rules: rows });
+      if (hoursErr) throw hoursErr;
       // pros: replace all
       await supabase.from("location_professionals").delete().eq("location_id", id!);
       if (selectedPros.size) {

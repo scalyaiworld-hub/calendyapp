@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowUpCircle, Building2, Inbox, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { getAdminOverview, getAdminStatus, setBusinessPlan, type AdminBusiness } from "@/lib/api/admin.functions";
+import { getAdminOverview, getAdminStatus, setBusinessPlan, setUpgradeRequestStatus, type AdminBusiness } from "@/lib/api/admin.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,10 +84,22 @@ function AdminPage() {
 function AdminPanel({ email }: { email: string }) {
   const qc = useQueryClient();
   const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [page, setPage] = useState(0);
+
+  // La búsqueda y la paginación las resuelve el servidor (SQL); se espera a que el usuario deje de escribir.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebounced(query.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [query]);
 
   const overview = useQuery({
-    queryKey: ["admin-overview"],
-    queryFn: () => getAdminOverview(),
+    queryKey: ["admin-overview", debounced, page],
+    queryFn: () => getAdminOverview({ data: { search: debounced || undefined, page } }),
+    placeholderData: (prev) => prev,
   });
 
   const changePlan = useMutation({
@@ -99,17 +111,17 @@ function AdminPanel({ email }: { email: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const businesses = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const all = overview.data?.businesses ?? [];
-    if (!q) return all;
-    return all.filter(
-      (b) =>
-        b.name.toLowerCase().includes(q) ||
-        b.slug.toLowerCase().includes(q) ||
-        (b.ownerEmail ?? "").toLowerCase().includes(q),
-    );
-  }, [overview.data, query]);
+  const changeRequestStatus = useMutation({
+    mutationFn: (v: { requestId: string; status: "new" | "contacted" | "won" | "lost" }) => setUpgradeRequestStatus({ data: v }),
+    onSuccess: () => {
+      toast.success("Solicitud actualizada");
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const businesses = overview.data?.businesses ?? [];
+  const totalPages = Math.max(1, Math.ceil((overview.data?.businessesTotal ?? 0) / (overview.data?.pageSize ?? 50)));
 
   const totals = overview.data?.totals;
 
@@ -208,6 +220,19 @@ function AdminPanel({ email }: { email: string }) {
                 </Table>
               </CardContent>
             </Card>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                {overview.data?.businessesTotal ?? 0} negocio(s) · página {page + 1} de {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                  Anterior
+                </Button>
+                <Button variant="outline" size="sm" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  Siguiente
+                </Button>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="upgrades">
@@ -222,12 +247,13 @@ function AdminPanel({ email }: { email: string }) {
                       <TableHead>Contacto</TableHead>
                       <TableHead>Rubro</TableHead>
                       <TableHead>Mensaje</TableHead>
+                      <TableHead className="w-36">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {!overview.isLoading && (overview.data?.upgradeRequests.length ?? 0) === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                           No hay solicitudes de upgrade.
                         </TableCell>
                       </TableRow>
@@ -249,6 +275,22 @@ function AdminPanel({ email }: { email: string }) {
                         </TableCell>
                         <TableCell>{r.industry}</TableCell>
                         <TableCell className="max-w-xs text-sm text-muted-foreground">{r.message ?? "—"}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={r.status}
+                            onValueChange={(v) => changeRequestStatus.mutate({ requestId: r.id, status: v as "new" | "contacted" | "won" | "lost" })}
+                            disabled={changeRequestStatus.isPending}
+                          >
+                            <SelectTrigger aria-label={`Estado de la solicitud de ${r.name}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(REQUEST_STATUS_LABEL).map(([id, label]) => (
+                                <SelectItem key={id} value={id}>{label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -299,6 +341,8 @@ function AdminPanel({ email }: { email: string }) {
     </div>
   );
 }
+
+const REQUEST_STATUS_LABEL: Record<string, string> = { new: "Nueva", contacted: "Contactada", won: "Ganada", lost: "Perdida" };
 
 function Stat({ label, value, loading }: { label: string; value: number | undefined; loading: boolean }) {
   return (

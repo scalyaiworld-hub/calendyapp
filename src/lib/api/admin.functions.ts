@@ -59,6 +59,10 @@ export type AdminUpgradeRequest = {
 
 export type AdminOverview = {
   businesses: AdminBusiness[];
+  /** Total de negocios que cumplen la búsqueda (para paginar). */
+  businessesTotal: number;
+  page: number;
+  pageSize: number;
   preregistrations: AdminPreregistration[];
   upgradeRequests: AdminUpgradeRequest[];
   totals: { businesses: number; free: number; pro: number; studio: number; preregistrations: number; upgradeRequests: number };
@@ -71,58 +75,56 @@ export const getAdminStatus = createServerFn({ method: "POST" })
     return { isAdmin: admin };
   });
 
+const overviewSchema = z
+  .object({
+    search: z.string().trim().max(100).optional(),
+    page: z.number().int().min(0).max(10_000).optional(),
+    pageSize: z.number().int().min(10).max(100).optional(),
+  })
+  .optional();
+
 export const getAdminOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AdminOverview> => {
+  .inputValidator((input) => overviewSchema.parse(input))
+  .handler(async ({ data, context }): Promise<AdminOverview> => {
     const sb = await requireAdmin(context.userId);
+    const page = data?.page ?? 0;
+    const pageSize = data?.pageSize ?? 50;
 
-    const start = new Date();
-    start.setUTCDate(1);
-    start.setUTCHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setUTCMonth(end.getUTCMonth() + 1);
-
-    const [biz, appts, pre, users, upg] = await Promise.all([
-      sb
-        .from("businesses")
-        .select("id,name,slug,plan,owner_id,created_at,onboarding_completed,deleted_at")
-        .order("created_at", { ascending: false })
-        .limit(500),
-      sb
-        .from("appointments")
-        .select("business_id")
-        .gte("starts_at", start.toISOString())
-        .lt("starts_at", end.toISOString())
-        .in("status", ["pending", "booked", "completed"])
-        .limit(20000),
+    // Búsqueda, paginación, totales y conteo de citas del mes se resuelven en SQL:
+    // sin los límites silenciosos de antes (500 negocios / 20 000 citas / 1000 usuarios).
+    const [list, totalsRes, pre, upg] = await Promise.all([
+      sb.rpc("admin_list_businesses", { _search: data?.search || undefined, _limit: pageSize, _offset: page * pageSize }),
+      sb.rpc("admin_totals"),
       sb.from("pro_preregistrations").select("*").order("created_at", { ascending: false }).limit(200),
-      sb.auth.admin.listUsers({ page: 1, perPage: 1000 }),
       sb.from("upgrade_requests").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
+    if (list.error) throw new Error(list.error.message);
+    if (totalsRes.error) throw new Error(totalsRes.error.message);
+    if (pre.error) throw new Error(pre.error.message);
     // Si la migración de upgrade_requests aún no está aplicada, el panel sigue funcionando sin ellas.
     const upgradeRows = upg.error ? [] : (upg.data ?? []);
-    if (biz.error) throw new Error(biz.error.message);
-    if (appts.error) throw new Error(appts.error.message);
-    if (pre.error) throw new Error(pre.error.message);
 
-    const counts = new Map<string, number>();
-    for (const a of appts.data ?? []) counts.set(a.business_id, (counts.get(a.business_id) ?? 0) + 1);
-    const emails = new Map<string, string | null>();
-    for (const u of users.data?.users ?? []) emails.set(u.id, u.email ?? null);
-
-    const businesses: AdminBusiness[] = (biz.data ?? []).map((b) => ({
+    const rows = list.data ?? [];
+    const businesses: AdminBusiness[] = rows.map((b) => ({
       id: b.id,
       name: b.name,
       slug: b.slug,
       plan: b.plan,
-      ownerEmail: emails.get(b.owner_id) ?? null,
+      ownerEmail: b.owner_email,
       createdAt: b.created_at,
       onboardingCompleted: b.onboarding_completed,
-      deleted: !!b.deleted_at,
-      apptsThisMonth: counts.get(b.id) ?? 0,
+      deleted: b.deleted,
+      apptsThisMonth: Number(b.appts_this_month),
     }));
 
-    const bizById = new Map(businesses.map((b) => [b.id, b]));
+    // Nombres de los negocios de las solicitudes de upgrade (pueden no estar en la página actual).
+    const bizIds = Array.from(new Set(upgradeRows.map((r) => r.business_id)));
+    const { data: bizNames } = bizIds.length
+      ? await sb.from("businesses").select("id,name,slug").in("id", bizIds)
+      : { data: [] as { id: string; name: string; slug: string }[] };
+    const bizById = new Map((bizNames ?? []).map((b) => [b.id, b]));
+
     const upgradeRequests: AdminUpgradeRequest[] = upgradeRows.map((r) => ({
       id: r.id,
       createdAt: r.created_at,
@@ -137,9 +139,12 @@ export const getAdminOverview = createServerFn({ method: "POST" })
       businessSlug: bizById.get(r.business_id)?.slug ?? null,
     }));
 
-    const active = businesses.filter((b) => !b.deleted);
+    const t = totalsRes.data?.[0];
     return {
       businesses,
+      businessesTotal: Number(rows[0]?.total_count ?? 0),
+      page,
+      pageSize,
       upgradeRequests,
       preregistrations: (pre.data ?? []).map((p) => ({
         id: p.id,
@@ -150,14 +155,44 @@ export const getAdminOverview = createServerFn({ method: "POST" })
         telefono: p.telefono,
       })),
       totals: {
-        businesses: active.length,
-        free: active.filter((b) => b.plan === "free").length,
-        pro: active.filter((b) => b.plan === "pro").length,
-        studio: active.filter((b) => b.plan === "studio").length,
-        preregistrations: pre.data?.length ?? 0,
-        upgradeRequests: upgradeRequests.filter((r) => r.status === "new").length,
+        businesses: Number(t?.businesses ?? 0),
+        free: Number(t?.free ?? 0),
+        pro: Number(t?.pro ?? 0),
+        studio: Number(t?.studio ?? 0),
+        preregistrations: Number(t?.preregistrations ?? 0),
+        upgradeRequests: Number(t?.new_upgrade_requests ?? 0),
       },
     };
+  });
+
+const requestStatusSchema = z.object({
+  requestId: z.string().uuid(),
+  status: z.enum(["new", "contacted", "won", "lost"]),
+});
+
+/** Avanza una solicitud de upgrade por su embudo (nueva → contactada → ganada / perdida) y lo audita. */
+export const setUpgradeRequestStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => requestStatusSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const sb = await requireAdmin(context.userId);
+    const { data: row, error } = await sb
+      .from("upgrade_requests")
+      .update({ status: data.status })
+      .eq("id", data.requestId)
+      .select("business_id,plan")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Solicitud no encontrada");
+    await sb.from("audit_log").insert({
+      business_id: row.business_id,
+      user_id: context.userId,
+      action: "upgrade_request.status_changed",
+      entity_type: "upgrade_request",
+      entity_id: data.requestId,
+      metadata: { status: data.status, plan: row.plan },
+    });
+    return { ok: true as const };
   });
 
 const planSchema = z.object({

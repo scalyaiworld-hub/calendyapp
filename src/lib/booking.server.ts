@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeSlots, dayOfWeekOfYmd, type BusyRange, type HourWindow } from "@/lib/availability-core";
+import { computeSlots, dayOfWeekOfYmd, settingsFromBusiness, type BookingSettings, type BusyRange, type HourWindow } from "@/lib/availability-core";
 import { dayBoundsOfYmd } from "@/lib/tz";
 
 /** Error con mensaje seguro para mostrar al visitante. */
@@ -7,6 +7,9 @@ export class BookingError extends Error {}
 
 export type BookingContext = {
   business: { id: string; timezone: string; plan: string };
+  settings: BookingSettings;
+  /** El negocio cerró ese día (feriado, vacaciones). */
+  closed: boolean;
   service: { id: string; duration_minutes: number };
   locationId: string | null;
   professionalId: string | null;
@@ -33,7 +36,7 @@ export async function loadBookingContext(
 
   const { data: biz } = await sb
     .from("businesses")
-    .select("id,timezone,plan")
+    .select("id,timezone,plan,booking_min_lead_minutes,booking_max_ahead_days,booking_slot_step_minutes,booking_buffer_minutes,booking_cancel_min_hours,booking_max_no_shows")
     .eq("id", businessId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -94,14 +97,24 @@ export async function loadBookingContext(
     }
   }
 
+  // Cierres puntuales (feriados, vacaciones): ese día no se ofrece ningún horario.
+  const { data: closures } = await sb
+    .from("availability_exceptions")
+    .select("id")
+    .eq("business_id", businessId)
+    .lte("starts_on", input.date)
+    .gte("ends_on", input.date)
+    .limit(1);
+  const closed = (closures?.length ?? 0) > 0;
+
   // Horario de atención (sucursal o general) para el día de la semana de la fecha del negocio.
   const dow = dayOfWeekOfYmd(input.date);
   let windows: HourWindow[] = [];
-  if (locationId) {
+  if (!closed && locationId) {
     const { data } = await sb.from("location_hours").select("start_time,end_time").eq("location_id", locationId).eq("day_of_week", dow);
     windows = data ?? [];
   }
-  if (windows.length === 0) {
+  if (!closed && windows.length === 0) {
     const { data } = await sb.from("availability_rules").select("start_time,end_time").eq("business_id", businessId).eq("day_of_week", dow);
     windows = data ?? [];
   }
@@ -123,6 +136,8 @@ export async function loadBookingContext(
 
   return {
     business: { id: biz.id, timezone: tz, plan: biz.plan },
+    settings: settingsFromBusiness(biz),
+    closed,
     service: svc,
     locationId,
     professionalId,
@@ -138,5 +153,6 @@ export function slotsFromContext(ctx: BookingContext, date: string) {
     windows: ctx.windows,
     busy: ctx.busy,
     durationMinutes: ctx.service.duration_minutes,
+    settings: ctx.settings,
   });
 }

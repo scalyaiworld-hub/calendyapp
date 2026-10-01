@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getPlan, hasModule } from "@/lib/plans";
-import { BOOKING_RULES, isSlotOffered } from "@/lib/availability-core";
+import { isSlotOffered, settingsFromBusiness } from "@/lib/availability-core";
 import { monthBoundsInTz, ymdInTz } from "@/lib/tz";
 
 const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -43,6 +43,7 @@ export const getPublicSlots = createServerFn({ method: "POST" })
     const { loadBookingContext, slotsFromContext, BookingError } = await import("@/lib/booking.server");
     try {
       const ctx = await loadBookingContext(supabaseAdmin, data);
+      if (ctx.closed) return { slots: [], timezone: ctx.business.timezone, error: "El negocio no atiende ese día" as string | null };
       return { slots: slotsFromContext(ctx, data.date), timezone: ctx.business.timezone, error: null as string | null };
     } catch (e) {
       if (e instanceof BookingError) return { slots: [], timezone: null as string | null, error: e.message };
@@ -64,14 +65,6 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     }
     if (endsAt <= startsAt) throw new BookingError("Rango de tiempo inválido");
 
-    const now = Date.now();
-    if (startsAt.getTime() < now + BOOKING_RULES.MIN_LEAD_MINUTES * 60_000) {
-      throw new BookingError(`La reserva debe ser con al menos ${BOOKING_RULES.MIN_LEAD_MINUTES} minutos de anticipación`);
-    }
-    if (startsAt.getTime() > now + BOOKING_RULES.MAX_AHEAD_DAYS * 86_400_000) {
-      throw new BookingError(`Solo puedes reservar hasta ${BOOKING_RULES.MAX_AHEAD_DAYS} días por adelantado`);
-    }
-
     const normalizedPhone = normalizePhone(data.phone);
     const normalizedCC = normalizePhone(data.countryCode);
     if (!/^\+?[0-9]{7,15}$/.test(normalizedPhone)) throw new BookingError("Teléfono inválido");
@@ -82,12 +75,22 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     const { data: bizRow } = await supabaseAdmin
       .from("businesses")
-      .select("timezone")
+      .select("timezone,booking_min_lead_minutes,booking_max_ahead_days,booking_max_no_shows")
       .eq("id", data.businessId)
       .is("deleted_at", null)
       .maybeSingle();
     if (!bizRow) throw new BookingError("Negocio no encontrado");
     const tz = bizRow.timezone ?? "America/Lima";
+
+    // Anticipación mínima y máxima configuradas por el negocio.
+    const rules = settingsFromBusiness(bizRow);
+    const now = Date.now();
+    if (startsAt.getTime() < now + rules.minLeadMinutes * 60_000) {
+      throw new BookingError(`La reserva debe ser con al menos ${rules.minLeadMinutes} minutos de anticipación`);
+    }
+    if (startsAt.getTime() > now + rules.maxAheadDays * 86_400_000) {
+      throw new BookingError(`Solo puedes reservar hasta ${rules.maxAheadDays} días por adelantado`);
+    }
 
     await enforceBookingRate(supabaseAdmin, {
       businessId: data.businessId,
@@ -99,6 +102,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     // con el mismo cálculo que usa la página pública para listar horarios.
     const date = ymdInTz(startsAt, tz);
     const ctx = await loadBookingContext(supabaseAdmin, { ...data, date });
+    if (ctx.closed) throw new BookingError("El negocio no atiende ese día");
 
     const requestedMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
     if (requestedMinutes !== ctx.service.duration_minutes) {
@@ -125,7 +129,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     // Dedupe de cliente por teléfono (con bypass de RLS)
     const { data: existing } = await supabaseAdmin
       .from("clients")
-      .select("id, name")
+      .select("id, name, no_show_count")
       .eq("business_id", data.businessId)
       .eq("phone", normalizedPhone)
       .eq("phone_country_code", normalizedCC)
@@ -133,6 +137,11 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    // Política de no-shows: pasado el umbral, la reserva online requiere hablar con el negocio.
+    if (rules.maxNoShows !== null && (existing?.no_show_count ?? 0) >= rules.maxNoShows) {
+      throw new BookingError("No puedes reservar en línea por inasistencias previas. Contacta directamente al negocio");
+    }
 
     let clientId = existing?.id;
     if (clientId) {
@@ -159,13 +168,12 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         .single();
       if (error) throw new Error(error.message);
       clientId = inserted.id;
-    } else if (existing?.name !== data.name) {
-      // Actualiza el nombre si cambió en la reserva
-      await supabaseAdmin.from("clients").update({ name: data.name }).eq("id", clientId);
     }
+    // Si el cliente ya existe NO se sobrescribe su nombre: cualquiera que conozca un teléfono
+    // podría alterar la ficha. El negocio puede corregirla desde Clientes.
 
     // Crear la cita (los constraints de la base son la última barrera ante carreras)
-    const { error: apptErr } = await supabaseAdmin.from("appointments").insert({
+    const { data: created, error: apptErr } = await supabaseAdmin.from("appointments").insert({
       business_id: data.businessId,
       client_id: clientId,
       service_id: data.serviceId,
@@ -175,7 +183,7 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       ends_at: endsAt.toISOString(),
       source: "booking_page",
       status: "pending",
-    });
+    }).select("manage_token").single();
     if (apptErr) {
       const msg = apptErr.message ?? "";
       if (msg.includes("appts_no_overlap")) {
@@ -187,7 +195,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       throw new Error(apptErr.message);
     }
 
-    return { ok: true, clientId };
+    // El token permite al cliente ver y cancelar su cita desde /cita/:token.
+    return { ok: true, clientId, manageToken: created.manage_token };
   });
 
 /**

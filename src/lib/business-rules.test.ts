@@ -153,3 +153,54 @@ describe("disponibilidad en la zona del negocio", () => {
     expect(end.toISOString()).toBe("2026-06-02T05:00:00.000Z");
   });
 });
+
+import { settingsFromBusiness, DEFAULT_BOOKING_SETTINGS } from "./availability-core";
+
+describe("reglas de reserva configurables por negocio", () => {
+  const now = new Date("2026-06-01T12:00:00Z");
+  const base = { date: "2026-06-02", tz: "America/Lima", durationMinutes: 60, now };
+  const win = [{ start_time: "09:00", end_time: "12:00" }];
+
+  it("sin configuración usa los valores por defecto", () => {
+    expect(settingsFromBusiness(null)).toEqual(DEFAULT_BOOKING_SETTINGS);
+    expect(settingsFromBusiness({ booking_buffer_minutes: 15, booking_max_no_shows: 3 })).toMatchObject({
+      bufferMinutes: 15,
+      maxNoShows: 3,
+      minLeadMinutes: 30,
+    });
+  });
+
+  it("el intervalo entre horarios puede ser menor que la duración del servicio", () => {
+    const slots = computeSlots({ ...base, windows: win, busy: [], settings: { slotStepMinutes: 30 } });
+    expect(slots.map((s) => s.startsAt)).toEqual([
+      "2026-06-02T14:00:00.000Z",
+      "2026-06-02T14:30:00.000Z",
+      "2026-06-02T15:00:00.000Z",
+      "2026-06-02T15:30:00.000Z",
+      "2026-06-02T16:00:00.000Z",
+    ]);
+  });
+
+  it("el margen entre citas bloquea horarios a ambos lados de una cita existente", () => {
+    const busy = [{ starts_at: "2026-06-02T15:00:00Z", ends_at: "2026-06-02T16:00:00Z" }];
+    // Sin margen: 14:00 y 16:00 quedan libres. Con 15 min: ambos chocan con el margen.
+    expect(computeSlots({ ...base, windows: win, busy }).map((s) => s.startsAt)).toEqual(["2026-06-02T14:00:00.000Z", "2026-06-02T16:00:00.000Z"]);
+    expect(computeSlots({ ...base, windows: win, busy, settings: { bufferMinutes: 15 } })).toEqual([]);
+  });
+
+  it("varios tramos el mismo día modelan un descanso", () => {
+    const slots = computeSlots({
+      ...base,
+      windows: [{ start_time: "09:00", end_time: "10:00" }, { start_time: "15:00", end_time: "16:00" }],
+      busy: [],
+    });
+    expect(slots.map((s) => s.startsAt)).toEqual(["2026-06-02T14:00:00.000Z", "2026-06-02T20:00:00.000Z"]);
+  });
+
+  it("anticipación y horizonte vienen del negocio", () => {
+    const tight = computeSlots({ ...base, windows: win, busy: [], settings: { minLeadMinutes: 48 * 60 } });
+    expect(tight).toEqual([]);
+    const short = computeSlots({ ...base, windows: win, busy: [], settings: { maxAheadDays: 0 } });
+    expect(short).toEqual([]);
+  });
+});

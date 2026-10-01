@@ -18,6 +18,7 @@ import { Route as PrivacidadRouteImport } from './routes/privacidad'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TerminosRouteImport } from './routes/terminos'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
+import { Route as CitaTokenRouteImport } from './routes/cita.$token'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardAgendaRouteImport } from './routes/dashboard.agenda'
 import { Route as DashboardAjustesRouteImport } from './routes/dashboard.ajustes'
@@ -72,6 +73,11 @@ const TerminosRoute = TerminosRouteImport.update({
 const BSlugRoute = BSlugRouteImport.update({
   id: '/b/$slug',
   path: '/b/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CitaTokenRoute = CitaTokenRouteImport.update({
+  id: '/cita/$token',
+  path: '/cita/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/terminos': typeof TerminosRoute
   '/b/$slug': typeof BSlugRoute
+  '/cita/$token': typeof CitaTokenRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/citas': typeof DashboardCitasRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terminos': typeof TerminosRoute
   '/b/$slug': typeof BSlugRoute
+  '/cita/$token': typeof CitaTokenRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/citas': typeof DashboardCitasRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/terminos': typeof TerminosRoute
   '/b/$slug': typeof BSlugRoute
+  '/cita/$token': typeof CitaTokenRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/ajustes': typeof DashboardAjustesRoute
   '/dashboard/citas': typeof DashboardCitasRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terminos'
     | '/b/$slug'
+    | '/cita/$token'
     | '/dashboard/agenda'
     | '/dashboard/ajustes'
     | '/dashboard/citas'
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terminos'
     | '/b/$slug'
+    | '/cita/$token'
     | '/dashboard/agenda'
     | '/dashboard/ajustes'
     | '/dashboard/citas'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terminos'
     | '/b/$slug'
+    | '/cita/$token'
     | '/dashboard/agenda'
     | '/dashboard/ajustes'
     | '/dashboard/citas'
@@ -263,6 +275,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TerminosRoute: typeof TerminosRoute
   BSlugRoute: typeof BSlugRoute
+  CitaTokenRoute: typeof CitaTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -328,6 +341,13 @@ declare module '@tanstack/react-router' {
       path: '/b/$slug'
       fullPath: '/b/$slug'
       preLoaderRoute: typeof BSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cita/$token': {
+      id: '/cita/$token'
+      path: '/cita/$token'
+      fullPath: '/cita/$token'
+      preLoaderRoute: typeof CitaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -443,6 +463,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TerminosRoute: TerminosRoute,
   BSlugRoute: BSlugRoute,
+  CitaTokenRoute: CitaTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

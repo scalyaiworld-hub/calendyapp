@@ -15,6 +15,7 @@ import { Pencil, Trash2, Plus, Sparkles, Search, Clock, Users, Scissors } from "
 import { INDUSTRIES, SERVICE_TEMPLATES, type Industry } from "@/lib/service-templates";
 import { formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
+import { translateDbError } from "@/lib/api/error-messages";
 import { cn } from "@/lib/utils";
 import { CardListSkeleton, StatGridSkeleton } from "@/components/Skeletons";
 
@@ -95,6 +96,7 @@ function ServicesPage() {
       qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
       toast.success("Eliminado");
     },
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const toggleActive = useMutation({
@@ -107,6 +109,7 @@ function ServicesPage() {
       qc.invalidateQueries({ queryKey: ["services-count"] });
       qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
     },
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const addCatalog = useMutation({

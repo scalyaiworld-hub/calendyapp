@@ -23,6 +23,15 @@ export function translateDbError(err: unknown): string {
   if (msg.includes("APPT_REF_MISMATCH")) {
     return "La cita referencia un cliente, servicio, profesional o sucursal que no pertenece a este negocio.";
   }
+  if (msg.includes("AVAILABILITY_OVERLAP")) {
+    return "Los tramos de un mismo día no pueden solaparse.";
+  }
+  if (msg.includes("ENTITY_HAS_FUTURE_APPTS")) {
+    const n = msg.match(/ENTITY_HAS_FUTURE_APPTS:(\w+):(\d+)/);
+    const what = n?.[1] === "services" ? "este servicio" : n?.[1] === "professionals" ? "este profesional" : "esta sucursal";
+    const count = n?.[2] ? ` (${n[2]})` : "";
+    return `No puedes eliminar ni desactivar ${what} porque tiene citas futuras${count}. Cancélalas o reasígnalas primero.`;
+  }
   if (msg.includes("APPT_STATUS_TERMINAL")) {
     return "Esta cita ya está cerrada (completada, cancelada o no-show) y no se puede reabrir.";
   }

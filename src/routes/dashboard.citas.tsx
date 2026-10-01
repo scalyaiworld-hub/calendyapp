@@ -597,6 +597,19 @@ function CitasPage() {
                   <Input className="mt-2" value={editCancelReason} onChange={(e) => setEditCancelReason(e.target.value)} maxLength={300} placeholder="Motivo de la cancelación (opcional)" />
                 )}
               </div>
+              {selectedAppt.manage_token && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/cita/${selectedAppt.manage_token}`);
+                    toast.success("Enlace de gestión copiado: el cliente puede ver o cancelar su cita");
+                  }}
+                >
+                  Copiar enlace para el cliente
+                </Button>
+              )}
               <div>
                 <Label>Notas</Label>
                 <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} maxLength={1000} placeholder="Notas internas (opcional)" />

@@ -103,6 +103,7 @@ function BookingPage() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [manageToken, setManageToken] = useState<string | null>(null);
   const qc = useQueryClient();
   const captchaRequired = !!TURNSTILE_SITE_KEY;
 
@@ -197,7 +198,7 @@ function BookingPage() {
   const book = useMutation({
     mutationFn: async () => {
       if (!business || !service || !slot) throw new Error("Faltan datos");
-      await createPublicBooking({
+      const res = await createPublicBooking({
         data: {
           businessId: business.id,
           serviceId: service.id,
@@ -211,8 +212,12 @@ function BookingPage() {
           captchaToken: captchaToken ?? undefined,
         },
       });
+      return res;
     },
-    onSuccess: () => setStep("done"),
+    onSuccess: (res) => {
+      setManageToken(res.manageToken);
+      setStep("done");
+    },
     onError: (e: Error) => {
       toast.error("No se pudo reservar: " + e.message);
       // El token del captcha es de un solo uso y los horarios pueden haber cambiado.
@@ -235,7 +240,7 @@ function BookingPage() {
   const resetAll = () => {
     setStep(hasLocations ? "location" : "mode"); setLocationId(""); setMode(null);
     setProfessionalId(""); setServiceId(""); setSlot(null);
-    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
+    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setManageToken(null);
   };
 
   const stepIndex = step === "location" ? 0 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 1 : step === "datetime" ? 2 : step === "client" ? 3 : 4;
@@ -662,6 +667,14 @@ function BookingPage() {
             </div>
             <h2 className="font-display text-2xl">¡Reserva recibida!</h2>
             <p className="text-muted-foreground">El salón confirmará tu cita por WhatsApp en breve.</p>
+            {manageToken && (
+              <p className="text-sm">
+                Guarda este enlace para ver o cancelar tu reserva:{" "}
+                <a className="underline font-medium break-all" href={`/cita/${manageToken}`}>
+                  {typeof window !== "undefined" ? `${window.location.origin}/cita/${manageToken}` : `/cita/${manageToken}`}
+                </a>
+              </p>
+            )}
             <Button variant="outline" onClick={resetAll}>Reservar otra cita</Button>
           </div>
         )}

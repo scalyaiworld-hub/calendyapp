@@ -102,6 +102,49 @@ function AjustesPage() {
     onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
+  // Reglas de reserva (por negocio)
+  const [lead, setLead] = useState("30");
+  const [ahead, setAhead] = useState("90");
+  const [step, setStep] = useState("duration");
+  const [buffer, setBuffer] = useState("0");
+  const [cancelHours, setCancelHours] = useState("2");
+  const [maxNoShows, setMaxNoShows] = useState("");
+  useEffect(() => {
+    if (!business) return;
+    const b = business as any;
+    setLead(String(b.booking_min_lead_minutes ?? 30));
+    setAhead(String(b.booking_max_ahead_days ?? 90));
+    setStep(b.booking_slot_step_minutes ? String(b.booking_slot_step_minutes) : "duration");
+    setBuffer(String(b.booking_buffer_minutes ?? 0));
+    setCancelHours(String(b.booking_cancel_min_hours ?? 2));
+    setMaxNoShows(b.booking_max_no_shows ? String(b.booking_max_no_shows) : "");
+  }, [business?.id]);
+
+  const saveRules = useMutation({
+    mutationFn: async () => {
+      const num = (v: string, min: number, max: number, label: string) => {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${label}: indica un número entre ${min} y ${max}.`);
+        return n;
+      };
+      const noShows = maxNoShows.trim() === "" ? null : num(maxNoShows, 1, 50, "Límite de no-shows");
+      const { error } = await supabase
+        .from("businesses")
+        .update({
+          booking_min_lead_minutes: num(lead, 0, 1440, "Anticipación mínima"),
+          booking_max_ahead_days: num(ahead, 1, 365, "Reserva máxima"),
+          booking_slot_step_minutes: step === "duration" ? null : Number(step),
+          booking_buffer_minutes: num(buffer, 0, 120, "Margen entre citas"),
+          booking_cancel_min_hours: num(cancelHours, 0, 168, "Cancelación del cliente"),
+          booking_max_no_shows: noShows,
+        } as any)
+        .eq("id", business!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Reglas de reserva guardadas"); },
+    onError: (e: Error) => toast.error(translateDbError(e)),
+  });
+
   const resetBrand = () => {
     setBrandPrimary("#3b82f6");
     setBrandBackground("#fafbfc");
@@ -257,6 +300,45 @@ function AjustesPage() {
             </Button>
           </div>
           </fieldset>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div>
+            <h2 className="font-display text-xl mb-1">Reglas de reserva</h2>
+            <p className="text-sm text-muted-foreground">Cómo reservan tus clientes desde tu página pública.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Anticipación mínima (min)</Label>
+              <Input className="mt-1.5" inputMode="numeric" value={lead} onChange={(e) => setLead(e.target.value)} />
+            </div>
+            <div>
+              <Label>Reservar hasta (días)</Label>
+              <Input className="mt-1.5" inputMode="numeric" value={ahead} onChange={(e) => setAhead(e.target.value)} />
+            </div>
+            <div>
+              <Label>Intervalo entre horarios</Label>
+              <select value={step} onChange={(e) => setStep(e.target.value)} className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="duration">Duración del servicio</option>
+                {[10, 15, 20, 30, 60].map((m) => <option key={m} value={m}>{m} min</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>Margen entre citas (min)</Label>
+              <Input className="mt-1.5" inputMode="numeric" value={buffer} onChange={(e) => setBuffer(e.target.value)} />
+            </div>
+            <div>
+              <Label>El cliente puede cancelar hasta (h antes)</Label>
+              <Input className="mt-1.5" inputMode="numeric" value={cancelHours} onChange={(e) => setCancelHours(e.target.value)} />
+            </div>
+            <div>
+              <Label>Bloquear tras N no-shows</Label>
+              <Input className="mt-1.5" inputMode="numeric" value={maxNoShows} onChange={(e) => setMaxNoShows(e.target.value)} placeholder="Sin límite" />
+            </div>
+          </div>
+          <Button onClick={() => saveRules.mutate()} disabled={saveRules.isPending}>Guardar reglas</Button>
         </CardContent>
       </Card>
 
