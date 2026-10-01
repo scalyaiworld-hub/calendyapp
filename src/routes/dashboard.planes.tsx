@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PLANS, MODULE_LABELS, getPlan, type PlanId } from "@/lib/plans";
+import { PLANS, MODULE_LABELS, MODULES_COMING_SOON, describeTransitionBlock, getPlan, planTransitionBlock, type PlanId } from "@/lib/plans";
+import { monthBoundsInTz } from "@/lib/tz";
 import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -53,11 +54,9 @@ function PlanesPage() {
     queryKey: ["plan-usage", business?.id],
     enabled: !!business?.id,
     queryFn: async () => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const { start, end } = monthBoundsInTz(new Date(), business!.timezone ?? "America/Lima");
       const [appts, locs, pros] = await Promise.all([
-        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", business!.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).in("status", ["pending", "booked", "completed"]),
+        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", business!.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).in("status", ["booked", "completed", "no_show"]),
         supabase.from("locations").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
         supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
       ]);
@@ -81,6 +80,10 @@ function PlanesPage() {
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo actualizar el plan"),
   });
+
+  // Un negocio no puede bajar a Free mientras tenga más sucursales o profesionales activos de los permitidos.
+  const freeBlock = usage ? planTransitionBlock({ locations: usage.locs, professionals: usage.pros }, "free") : null;
+  const freeBlockMsg = freeBlock ? describeTransitionBlock(freeBlock, PLANS.free.label) : null;
 
   return (
     <div>
@@ -125,6 +128,10 @@ function PlanesPage() {
           const handleSelect = () => {
             if (isCurrent) return;
             if (id === "free") {
+              if (freeBlockMsg) {
+                toast.error(freeBlockMsg);
+                return;
+              }
               if (confirm("¿Bajar al plan Free? Perderás los módulos del plan actual.")) {
                 changePlan.mutate("free");
               }
@@ -196,6 +203,9 @@ function PlanesPage() {
                           <Lock className="size-3.5 mt-1 shrink-0 opacity-60" strokeWidth={1.75} />
                         )}
                         <span className={cn(!on && "line-through decoration-current/30")}>{MODULE_LABELS[k]}</span>
+                        {on && MODULES_COMING_SOON.has(k) && (
+                          <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">Próximamente</span>
+                        )}
                       </li>
                     );
                   })}
@@ -210,7 +220,8 @@ function PlanesPage() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={changePlan.isPending}
+                      disabled={changePlan.isPending || !!freeBlockMsg}
+                      title={freeBlockMsg ?? undefined}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (confirm("¿Bajar al plan Free? Perderás los módulos del plan actual.")) {
@@ -234,6 +245,9 @@ function PlanesPage() {
                           ? "Cambiar a " + p.label
                           : "Mejorar a " + p.label} <ArrowRight className="size-4" />
                     </Button>
+                  )}
+                  {!isCurrent && id === "free" && freeBlockMsg && (
+                    <p className="text-xs text-muted-foreground mt-2">{freeBlockMsg}</p>
                   )}
                 </div>
               </CardContent>

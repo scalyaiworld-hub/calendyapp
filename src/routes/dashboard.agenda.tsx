@@ -20,6 +20,9 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { invalidateAppointments } from "@/lib/query-keys";
 import { useEntityCounts } from "@/lib/entity-counts";
+import { apptPriceCents } from "@/lib/appointments";
+import { validateManualAppointment } from "@/lib/manual-booking";
+import { StatusSelect, useStatusChange, type StatusChange } from "@/components/AppointmentStatus";
 
 type ApptStatus = "pending" | "booked" | "completed" | "cancelled" | "no_show";
 type ViewMode = "day" | "week";
@@ -181,9 +184,12 @@ function AgendaPage() {
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: any }) => {
+    mutationFn: async ({ id, status, reason }: StatusChange) => {
       const patch: any = { status };
-      if (status === "cancelled") patch.cancelled_at = new Date().toISOString();
+      if (status === "cancelled") {
+        patch.cancelled_at = new Date().toISOString();
+        if (reason) patch.cancelled_reason = reason;
+      }
       const { error } = await supabase.from("appointments").update(patch).eq("id", id);
       if (error) throw error;
     },
@@ -193,6 +199,8 @@ function AgendaPage() {
     },
     onError: (e: Error) => toast.error(translateDbError(e)),
   });
+
+  const statusChange = useStatusChange((v) => updateStatus.mutate(v));
 
   const reschedule = useMutation({
     mutationFn: async ({ id, newDate, newTime, durationMin }: RescheduleInput) => {
@@ -368,7 +376,7 @@ function AgendaPage() {
         <WeekCalendar
           weekStart={weekStart}
           appts={filteredAppts}
-          onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onChangeStatus={statusChange.request}
           onSlotClick={(slotDate, time) => openNewAppt(slotDate, time)}
           onReschedule={(v) => reschedule.mutate(v)}
         />
@@ -376,11 +384,12 @@ function AgendaPage() {
         <DayCalendar
           date={date}
           appts={filteredAppts}
-          onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onChangeStatus={statusChange.request}
           onSlotClick={(time) => openNewAppt(date, time)}
           onReschedule={(v) => reschedule.mutate(v)}
         />
       )}
+      {statusChange.dialog}
       {businessId && (
         <NewApptDialog
           businessId={businessId}
@@ -427,7 +436,7 @@ function WeekCalendar({
   const active = appts.filter((a) => a.status !== "cancelled" && a.status !== "no_show");
   const totalRevenueCents = active
     .filter((a) => a.status === "completed")
-    .reduce((sum, a) => sum + (a.services?.price_cents ?? 0), 0);
+    .reduce((sum, a) => sum + apptPriceCents(a), 0);
   const totalMinutes = active.reduce((sum, a) => sum + (a.services?.duration_minutes ?? 0), 0);
 
   useEffect(() => {
@@ -614,19 +623,10 @@ function WeekCalendar({
                               <p className="font-medium">{a.services?.name}</p>
                               <p className="text-xs text-muted-foreground tabular-nums">
                                 {formatTime(a.starts_at)} · {a.services?.duration_minutes}m
-                                {a.services?.price_cents ? ` · ${formatPriceCents(a.services.price_cents)}` : ""}
+                                {apptPriceCents(a) ? ` · ${formatPriceCents(apptPriceCents(a))}` : ""}
                               </p>
                             </div>
-                            <Select value={a.status} onValueChange={(v) => onChangeStatus(a.id, v as ApptStatus)}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pendiente</SelectItem>
-                                <SelectItem value="booked">Confirmada</SelectItem>
-                                <SelectItem value="completed">Completada</SelectItem>
-                                <SelectItem value="cancelled">Cancelada</SelectItem>
-                                <SelectItem value="no_show">No-show</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <StatusSelect status={a.status} startsAt={a.starts_at} onChange={(v) => onChangeStatus(a.id, v)} />
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -681,7 +681,7 @@ function DayCalendar({
   const active = appts.filter((a) => a.status !== "cancelled" && a.status !== "no_show");
   const totalRevenueCents = active
     .filter((a) => a.status === "completed")
-    .reduce((sum, a) => sum + (a.services?.price_cents ?? 0), 0);
+    .reduce((sum, a) => sum + apptPriceCents(a), 0);
   const totalMinutes = active.reduce((sum, a) => sum + (a.services?.duration_minutes ?? 0), 0);
 
   const STATUS_DOT: Record<string, string> = {
@@ -851,19 +851,10 @@ function DayCalendar({
                         <p className="font-medium">{a.services?.name}</p>
                         <p className="text-xs text-muted-foreground tabular-nums">
                           {formatTime(a.starts_at)} · {a.services?.duration_minutes}m
-                          {a.services?.price_cents ? ` · ${formatPriceCents(a.services.price_cents)}` : ""}
+                          {apptPriceCents(a) ? ` · ${formatPriceCents(apptPriceCents(a))}` : ""}
                         </p>
                       </div>
-                      <Select value={a.status} onValueChange={(v) => onChangeStatus(a.id, v as ApptStatus)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendiente</SelectItem>
-                          <SelectItem value="booked">Confirmada</SelectItem>
-                          <SelectItem value="completed">Completada</SelectItem>
-                          <SelectItem value="cancelled">Cancelada</SelectItem>
-                          <SelectItem value="no_show">No-show</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <StatusSelect status={a.status} startsAt={a.starts_at} onChange={(v) => onChangeStatus(a.id, v)} />
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -960,6 +951,20 @@ function NewApptDialog({
   const create = useMutation({
     mutationFn: async () => {
       let cid = clientId;
+      const svcForCheck = services?.find((s) => s.id === serviceId);
+      if (!svcForCheck) throw new Error("Falta servicio o cliente");
+      const [vh, vm] = time.split(":").map(Number);
+      const vStart = fromLocalDateInput(dateStr);
+      vStart.setHours(vh, vm, 0, 0);
+      // Se valida antes de crear el cliente para no dejar clientes huérfanos si la cita no es válida.
+      await validateManualAppointment({
+        businessId,
+        serviceId,
+        startsAt: vStart,
+        endsAt: new Date(vStart.getTime() + svcForCheck.duration_minutes * 60000),
+        professionalId: professionalId || null,
+        locationId: locationId || null,
+      });
       if (creatingClient) {
         if (!newClientName || !newClientPhone) throw new Error("Faltan datos del cliente");
         const { data, error } = await supabase

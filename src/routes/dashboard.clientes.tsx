@@ -17,6 +17,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { invalidateClients } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { formatTime, formatPriceCents } from "@/lib/format";
+import { apptPriceCents } from "@/lib/appointments";
 import { CardListSkeleton } from "@/components/Skeletons";
 
 export const Route = createFileRoute("/dashboard/clientes")({
@@ -329,7 +330,7 @@ function ClientDetailDialog({ businessId, client, onClose }: { businessId: strin
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, starts_at, status, services(name, price_cents)")
+        .select("id, starts_at, status, price_cents, services(name, price_cents)")
         .eq("business_id", businessId)
         .eq("client_id", client!.id)
         .order("starts_at", { ascending: false })
@@ -342,7 +343,7 @@ function ClientDetailDialog({ businessId, client, onClose }: { businessId: strin
   const totalSpent = useMemo(() => {
     return (appts ?? [])
       .filter((a: any) => a.status === "completed")
-      .reduce((sum: number, a: any) => sum + (a.services?.price_cents ?? 0), 0);
+      .reduce((sum: number, a: any) => sum + apptPriceCents(a), 0);
   }, [appts]);
 
   if (!client) return null;

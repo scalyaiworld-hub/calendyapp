@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getPlan, type PlanId } from "@/lib/plans";
+import { monthBoundsInTz } from "@/lib/tz";
 
 const schema = z.object({
   businessId: z.string().uuid(),
@@ -29,7 +30,7 @@ export const checkResourceLimit = createServerFn({ method: "POST" })
 
     const { data: biz, error: bizErr } = await supabase
       .from("businesses")
-      .select("plan")
+      .select("plan,timezone")
       .eq("id", data.businessId)
       .maybeSingle();
     if (bizErr) throw new Error(bizErr.message);
@@ -40,16 +41,14 @@ export const checkResourceLimit = createServerFn({ method: "POST" })
 
     if (data.kind === "appointment") {
       limit = planDef.limits.appointmentsPerMonth;
-      const start = new Date();
-      start.setDate(1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + 1);
+      // Mismo criterio que el trigger de la base: mes calendario en la zona del negocio.
+      const { start, end } = monthBoundsInTz(new Date(), biz?.timezone ?? "America/Lima");
       const { count } = await supabase
         .from("appointments")
         .select("id", { count: "exact", head: true })
         .eq("business_id", data.businessId)
-        .neq("status", "cancelled")
+        // Solo las citas confirmadas consumen cupo; las pendientes se validan al confirmar.
+        .in("status", ["booked", "completed", "no_show"])
         .gte("starts_at", start.toISOString())
         .lt("starts_at", end.toISOString());
       used = count ?? 0;
@@ -59,7 +58,8 @@ export const checkResourceLimit = createServerFn({ method: "POST" })
         .from("locations")
         .select("id", { count: "exact", head: true })
         .eq("business_id", data.businessId)
-        .is("deleted_at", null);
+        .is("deleted_at", null)
+        .eq("is_active", true);
       used = count ?? 0;
     } else {
       limit = planDef.limits.professionals;
@@ -67,7 +67,8 @@ export const checkResourceLimit = createServerFn({ method: "POST" })
         .from("professionals")
         .select("id", { count: "exact", head: true })
         .eq("business_id", data.businessId)
-        .is("deleted_at", null);
+        .is("deleted_at", null)
+        .eq("is_active", true);
       used = count ?? 0;
     }
 

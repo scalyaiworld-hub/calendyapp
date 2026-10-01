@@ -1,5 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getPlan, hasModule } from "@/lib/plans";
+import { isSlotOffered, settingsFromBusiness } from "@/lib/availability-core";
+import { monthBoundsInTz, ymdInTz } from "@/lib/tz";
+
+const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 const schema = z.object({
   businessId: z.string().uuid(),
@@ -11,122 +16,120 @@ const schema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().trim().min(3).max(40),
   countryCode: z.string().trim().min(1).max(8),
+  // Token del captcha (Cloudflare Turnstile); solo se exige si el servidor lo tiene configurado.
+  captchaToken: z.string().max(2048).optional(),
 });
 
 function normalizePhone(p: string): string {
   return p.replace(/[^0-9+]/g, "");
 }
 
+const slotsSchema = z.object({
+  businessId: z.string().uuid(),
+  serviceId: z.string().uuid(),
+  date: ymd,
+  locationId: z.string().uuid().nullable().optional(),
+  professionalId: z.string().uuid().nullable().optional(),
+});
+
+/**
+ * Horarios disponibles de un día (fecha calendario del negocio). Usa el mismo
+ * cálculo que valida la reserva, así que lo que se ofrece es lo que se acepta.
+ */
+export const getPublicSlots = createServerFn({ method: "POST" })
+  .inputValidator((input) => slotsSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadBookingContext, slotsFromContext, BookingError } = await import("@/lib/booking.server");
+    try {
+      const ctx = await loadBookingContext(supabaseAdmin, data);
+      if (ctx.closed) return { slots: [], timezone: ctx.business.timezone, error: "El negocio no atiende ese día" as string | null };
+      return { slots: slotsFromContext(ctx, data.date), timezone: ctx.business.timezone, error: null as string | null };
+    } catch (e) {
+      if (e instanceof BookingError) return { slots: [], timezone: null as string | null, error: e.message };
+      throw e;
+    }
+  });
+
 export const createPublicBooking = createServerFn({ method: "POST" })
   .inputValidator((input) => schema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadBookingContext, slotsFromContext, BookingError } = await import("@/lib/booking.server");
+    const { BOOKING_LIMITS, enforceBookingRate, getClientIp, hashIp, verifyCaptcha } = await import("@/lib/booking-guard.server");
 
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(data.endsAt);
     if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
-      throw new Error("Fecha inválida");
+      throw new BookingError("Fecha inválida");
     }
-    if (endsAt <= startsAt) throw new Error("Rango de tiempo inválido");
-
-    const now = Date.now();
-    const MIN_LEAD_MS = 30 * 60 * 1000;
-    const MAX_AHEAD_MS = 90 * 24 * 60 * 60 * 1000;
-    if (startsAt.getTime() < now + MIN_LEAD_MS) {
-      throw new Error("La reserva debe ser con al menos 30 minutos de anticipación");
-    }
-    if (startsAt.getTime() > now + MAX_AHEAD_MS) {
-      throw new Error("Solo puedes reservar hasta 90 días por adelantado");
-    }
-
-    // Validar negocio y servicio activos
-    const { data: biz } = await supabaseAdmin
-      .from("businesses")
-      .select("id, timezone")
-      .eq("id", data.businessId)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (!biz) throw new Error("Negocio no encontrado");
-
-    const { data: svc } = await supabaseAdmin
-      .from("services")
-      .select("id, duration_minutes")
-      .eq("id", data.serviceId)
-      .eq("business_id", data.businessId)
-      .eq("is_active", true)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (!svc) throw new Error("Servicio no disponible");
-
-    // Verifica que la duración pedida coincida con la del servicio
-    const requestedMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
-    if (requestedMinutes !== svc.duration_minutes) {
-      throw new Error("Duración del servicio no coincide");
-    }
-
-    // Verifica horario (sucursal o reglas generales del negocio)
-    const tz = biz.timezone ?? "America/Lima";
-    const localStartForDow = new Date(startsAt.toLocaleString("en-US", { timeZone: tz }));
-    const dow = localStartForDow.getDay();
-    let hours: { start_time: string; end_time: string }[] | null = null;
-    if (data.locationId) {
-      const { data: lh } = await supabaseAdmin
-        .from("location_hours")
-        .select("start_time,end_time")
-        .eq("location_id", data.locationId)
-        .eq("day_of_week", dow);
-      hours = lh;
-    }
-    if (!hours || hours.length === 0) {
-      const { data: ar } = await supabaseAdmin
-        .from("availability_rules")
-        .select("start_time,end_time")
-        .eq("business_id", data.businessId)
-        .eq("day_of_week", dow);
-      hours = ar;
-    }
-    if (!hours || hours.length === 0) {
-      throw new Error("El negocio no atiende ese día");
-    }
-    const localStart = localStartForDow;
-    const localEnd = new Date(endsAt.toLocaleString("en-US", { timeZone: tz }));
-    const minutesOfDay = (d: Date) => d.getHours() * 60 + d.getMinutes();
-    const sMin = minutesOfDay(localStart);
-    const eMin = minutesOfDay(localEnd);
-    const fits = hours.some((h) => {
-      const [sh, sm] = h.start_time.split(":").map(Number);
-      const [eh, em] = h.end_time.split(":").map(Number);
-      return sMin >= sh * 60 + sm && eMin <= eh * 60 + em;
-    });
-    if (!fits) throw new Error("Horario fuera del rango de atención");
-
-    // Verifica que el slot no esté ya ocupado (el constraint EXCLUDE es la verdad
-    // última; esto da un error más claro al usuario antes del INSERT).
-    let clashQ = supabaseAdmin
-      .from("appointments")
-      .select("id")
-      .eq("business_id", data.businessId)
-      .in("status", ["pending", "booked"])
-      .lt("starts_at", endsAt.toISOString())
-      .gt("ends_at", startsAt.toISOString())
-      .limit(1);
-    if (data.professionalId) clashQ = clashQ.eq("professional_id", data.professionalId);
-    else if (data.locationId) clashQ = clashQ.eq("location_id", data.locationId).is("professional_id", null);
-    const { data: clash } = await clashQ;
-    if (clash && clash.length > 0) {
-      throw new Error("Ese horario ya fue tomado, elige otro");
-    }
+    if (endsAt <= startsAt) throw new BookingError("Rango de tiempo inválido");
 
     const normalizedPhone = normalizePhone(data.phone);
     const normalizedCC = normalizePhone(data.countryCode);
-    if (!/^\+?[0-9]{7,15}$/.test(normalizedPhone)) {
-      throw new Error("Teléfono inválido");
+    if (!/^\+?[0-9]{7,15}$/.test(normalizedPhone)) throw new BookingError("Teléfono inválido");
+
+    // Anti-abuso: captcha + límite de intentos por IP y teléfono.
+    const ip = await getClientIp();
+    await verifyCaptcha(data.captchaToken, ip);
+
+    const { data: bizRow } = await supabaseAdmin
+      .from("businesses")
+      .select("timezone,booking_min_lead_minutes,booking_max_ahead_days,booking_max_no_shows")
+      .eq("id", data.businessId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!bizRow) throw new BookingError("Negocio no encontrado");
+    const tz = bizRow.timezone ?? "America/Lima";
+
+    // Anticipación mínima y máxima configuradas por el negocio.
+    const rules = settingsFromBusiness(bizRow);
+    const now = Date.now();
+    if (startsAt.getTime() < now + rules.minLeadMinutes * 60_000) {
+      throw new BookingError(`La reserva debe ser con al menos ${rules.minLeadMinutes} minutos de anticipación`);
+    }
+    if (startsAt.getTime() > now + rules.maxAheadDays * 86_400_000) {
+      throw new BookingError(`Solo puedes reservar hasta ${rules.maxAheadDays} días por adelantado`);
+    }
+
+    await enforceBookingRate(supabaseAdmin, {
+      businessId: data.businessId,
+      ipHash: await hashIp(ip),
+      phone: `${normalizedCC}${normalizedPhone}`,
+    });
+
+    // Validación completa (negocio, servicio, sucursal, profesional, relaciones, horario)
+    // con el mismo cálculo que usa la página pública para listar horarios.
+    const date = ymdInTz(startsAt, tz);
+    const ctx = await loadBookingContext(supabaseAdmin, { ...data, date });
+    if (ctx.closed) throw new BookingError("El negocio no atiende ese día");
+
+    const requestedMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
+    if (requestedMinutes !== ctx.service.duration_minutes) {
+      throw new BookingError("Duración del servicio no coincide");
+    }
+    if (!isSlotOffered(slotsFromContext(ctx, date), startsAt, endsAt)) {
+      throw new BookingError("Ese horario ya no está disponible, elige otro");
+    }
+
+    // Cortesía: si el cupo mensual de citas confirmadas ya está lleno, la cita no podría confirmarse.
+    const monthlyLimit = getPlan(ctx.business.plan).limits.appointmentsPerMonth;
+    if (monthlyLimit !== null) {
+      const { start, end } = monthBoundsInTz(startsAt, tz);
+      const { count } = await supabaseAdmin
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", data.businessId)
+        .in("status", ["booked", "completed", "no_show"])
+        .gte("starts_at", start.toISOString())
+        .lt("starts_at", end.toISOString());
+      if ((count ?? 0) >= monthlyLimit) throw new BookingError("Este negocio alcanzó su límite de citas del mes");
     }
 
     // Dedupe de cliente por teléfono (con bypass de RLS)
     const { data: existing } = await supabaseAdmin
       .from("clients")
-      .select("id, name")
+      .select("id, name, no_show_count")
       .eq("business_id", data.businessId)
       .eq("phone", normalizedPhone)
       .eq("phone_country_code", normalizedCC)
@@ -135,7 +138,23 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
+    // Política de no-shows: pasado el umbral, la reserva online requiere hablar con el negocio.
+    if (rules.maxNoShows !== null && (existing?.no_show_count ?? 0) >= rules.maxNoShows) {
+      throw new BookingError("No puedes reservar en línea por inasistencias previas. Contacta directamente al negocio");
+    }
+
     let clientId = existing?.id;
+    if (clientId) {
+      const { count: pendingCount } = await supabaseAdmin
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", data.businessId)
+        .eq("client_id", clientId)
+        .eq("status", "pending");
+      if ((pendingCount ?? 0) >= BOOKING_LIMITS.MAX_PENDING_PER_CLIENT) {
+        throw new BookingError("Ya tienes reservas pendientes de confirmar con este negocio. Espera su confirmación");
+      }
+    }
     if (!clientId) {
       const { data: inserted, error } = await supabaseAdmin
         .from("clients")
@@ -149,35 +168,35 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         .single();
       if (error) throw new Error(error.message);
       clientId = inserted.id;
-    } else if (existing?.name !== data.name) {
-      // Actualiza el nombre si cambió en la reserva
-      await supabaseAdmin.from("clients").update({ name: data.name }).eq("id", clientId);
     }
+    // Si el cliente ya existe NO se sobrescribe su nombre: cualquiera que conozca un teléfono
+    // podría alterar la ficha. El negocio puede corregirla desde Clientes.
 
-    // Crear la cita
-    const { error: apptErr } = await supabaseAdmin.from("appointments").insert({
+    // Crear la cita (los constraints de la base son la última barrera ante carreras)
+    const { data: created, error: apptErr } = await supabaseAdmin.from("appointments").insert({
       business_id: data.businessId,
       client_id: clientId,
       service_id: data.serviceId,
-      location_id: data.locationId ?? null,
-      professional_id: data.professionalId ?? null,
-      starts_at: data.startsAt,
-      ends_at: data.endsAt,
+      location_id: ctx.locationId,
+      professional_id: ctx.professionalId,
+      starts_at: startsAt.toISOString(),
+      ends_at: endsAt.toISOString(),
       source: "booking_page",
       status: "pending",
-    });
+    }).select("manage_token").single();
     if (apptErr) {
       const msg = apptErr.message ?? "";
-      if (msg.includes("PLAN_LIMIT_APPOINTMENTS")) {
-        throw new Error("Este negocio alcanzó su límite de citas del mes");
-      }
       if (msg.includes("appts_no_overlap")) {
-        throw new Error("Ese horario ya fue tomado, elige otro");
+        throw new BookingError("Ese horario ya fue tomado, elige otro");
+      }
+      if (msg.includes("APPT_REF_MISMATCH")) {
+        throw new BookingError("Los datos de la reserva no son válidos");
       }
       throw new Error(apptErr.message);
     }
 
-    return { ok: true, clientId };
+    // El token permite al cliente ver y cancelar su cita desde /cita/:token.
+    return { ok: true, clientId, manageToken: created.manage_token };
   });
 
 /**
@@ -195,7 +214,7 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
 
     const { data: business } = await supabaseAdmin
       .from("businesses")
-      .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font")
+      .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font,plan")
       .eq("slug", data.slug)
       .is("deleted_at", null)
       .maybeSingle();
@@ -209,6 +228,15 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
         locationPros: [],
         professionalServices: [],
       };
+    }
+
+    // La marca personalizada es un módulo de plan: sin él se sirve el tema por defecto.
+    // El plan no se expone en la página pública.
+    const { plan, ...publicBusiness } = business;
+    if (!hasModule(plan, "branding")) {
+      publicBusiness.brand_primary = null;
+      publicBusiness.brand_background = null;
+      publicBusiness.brand_font = null;
     }
 
     const businessId = business.id;
@@ -251,7 +279,7 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
     ]);
 
     return {
-      business,
+      business: publicBusiness,
       locations: locsRes.data ?? [],
       professionals: prosRes.data ?? [],
       services: svcsRes.data ?? [],

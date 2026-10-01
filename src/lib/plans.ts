@@ -87,3 +87,51 @@ export const MODULE_LABELS: Record<keyof PlanDef["modules"], string> = {
   integrations: "Integraciones (Google Calendar, API)",
   prioritySupport: "Soporte prioritario",
 };
+
+export function hasModule(plan: string | null | undefined, module: keyof PlanDef["modules"]): boolean {
+  return getPlan(plan).modules[module];
+}
+
+/**
+ * Módulos que forman parte del plan pero todavía no están construidos.
+ * La UI los muestra como "Próximamente" en vez de prometerlos como activos.
+ */
+export const MODULES_COMING_SOON: ReadonlySet<keyof PlanDef["modules"]> = new Set([
+  "reminders",
+  "aiChat",
+  "rolesPermissions",
+  "integrations",
+]);
+
+export type PlanOverage = { limit: number; active: number; over: number };
+
+/** ¿Cuántos recursos activos exceden el límite del plan? null si cabe (o es ilimitado). */
+export function computeOverage(active: number, limit: number | null): PlanOverage | null {
+  if (limit === null || active <= limit) return null;
+  return { limit, active, over: active - limit };
+}
+
+export type PlanTransitionBlock = {
+  locations: PlanOverage | null;
+  professionals: PlanOverage | null;
+};
+
+/** Qué impide pasar a `target`: recursos activos por encima de sus límites. */
+export function planTransitionBlock(
+  usage: { locations: number; professionals: number },
+  target: string | null | undefined,
+): PlanTransitionBlock | null {
+  const limits = getPlan(target).limits;
+  const block = {
+    locations: computeOverage(usage.locations, limits.locations),
+    professionals: computeOverage(usage.professionals, limits.professionals),
+  };
+  return block.locations || block.professionals ? block : null;
+}
+
+export function describeTransitionBlock(b: PlanTransitionBlock, targetLabel: string): string {
+  const parts: string[] = [];
+  if (b.locations) parts.push(`${b.locations.over} sucursal(es) activa(s) de más (${targetLabel} permite ${b.locations.limit})`);
+  if (b.professionals) parts.push(`${b.professionals.over} profesional(es) activo(s) de más (${targetLabel} permite ${b.professionals.limit})`);
+  return `No puedes pasar al plan ${targetLabel} todavía: tienes ${parts.join(" y ")}. Desactiva o elimina el excedente y vuelve a intentarlo.`;
+}

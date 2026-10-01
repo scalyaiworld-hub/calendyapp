@@ -24,7 +24,9 @@ export type Database = {
           ends_at: string
           id: string
           location_id: string | null
+          manage_token: string
           notes: string | null
+          price_cents: number | null
           professional_id: string | null
           service_id: string
           source: Database["public"]["Enums"]["appointment_source"]
@@ -41,7 +43,9 @@ export type Database = {
           ends_at: string
           id?: string
           location_id?: string | null
+          manage_token?: string
           notes?: string | null
+          price_cents?: number | null
           professional_id?: string | null
           service_id: string
           source?: Database["public"]["Enums"]["appointment_source"]
@@ -58,7 +62,9 @@ export type Database = {
           ends_at?: string
           id?: string
           location_id?: string | null
+          manage_token?: string
           notes?: string | null
+          price_cents?: number | null
           professional_id?: string | null
           service_id?: string
           source?: Database["public"]["Enums"]["appointment_source"]
@@ -187,8 +193,65 @@ export type Database = {
           },
         ]
       }
+      availability_exceptions: {
+        Row: {
+          business_id: string
+          created_at: string
+          ends_on: string
+          id: string
+          note: string | null
+          starts_on: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          ends_on: string
+          id?: string
+          note?: string | null
+          starts_on: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          ends_on?: string
+          id?: string
+          note?: string | null
+          starts_on?: string
+        }
+        Relationships: []
+      }
+      booking_attempts: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          ip_hash: string
+          phone: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          ip_hash: string
+          phone?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
+          booking_buffer_minutes: number
+          booking_cancel_min_hours: number
+          booking_max_ahead_days: number
+          booking_max_no_shows: number | null
+          booking_min_lead_minutes: number
+          booking_slot_step_minutes: number | null
           brand_background: string | null
           brand_font: string | null
           brand_primary: string | null
@@ -210,6 +273,12 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          booking_buffer_minutes?: number
+          booking_cancel_min_hours?: number
+          booking_max_ahead_days?: number
+          booking_max_no_shows?: number | null
+          booking_min_lead_minutes?: number
+          booking_slot_step_minutes?: number | null
           brand_background?: string | null
           brand_font?: string | null
           brand_primary?: string | null
@@ -231,6 +300,12 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          booking_buffer_minutes?: number
+          booking_cancel_min_hours?: number
+          booking_max_ahead_days?: number
+          booking_max_no_shows?: number | null
+          booking_min_lead_minutes?: number
+          booking_slot_step_minutes?: number | null
           brand_background?: string | null
           brand_font?: string | null
           brand_primary?: string | null
@@ -744,12 +819,62 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
         Returns: boolean
       }
+      admin_list_businesses: {
+        Args: { _search?: string; _limit?: number; _offset?: number }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+          plan: string
+          owner_email: string | null
+          created_at: string
+          onboarding_completed: boolean
+          deleted: boolean
+          appts_this_month: number
+          total_count: number
+        }[]
+      }
+      admin_totals: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          businesses: number
+          free: number
+          pro: number
+          studio: number
+          preregistrations: number
+          new_upgrade_requests: number
+        }[]
+      }
+      replace_availability_rules: {
+        Args: { _business_id: string; _rules: Json }
+        Returns: undefined
+      }
+      replace_location_hours: {
+        Args: { _location_id: string; _rules: Json }
+        Returns: undefined
+      }
+      appointment_stats: {
+        Args: { _business_id: string }
+        Returns: {
+          today_count: number
+          pending_count: number
+          completed_revenue: number
+        }[]
+      }
+      expire_stale_pending: {
+        Args: { _business_id?: string; _hours?: number }
+        Returns: number
+      }
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }
       is_slug_available: {
         Args: { _slug: string; _exclude_id?: string }
         Returns: boolean
       }
       normalize_phone: { Args: { p: string }; Returns: string }
+      plan_has_module: {
+        Args: { _plan: string; _module: string }
+        Returns: boolean
+      }
       plan_limit: {
         Args: { _plan: string; _resource: string }
         Returns: number

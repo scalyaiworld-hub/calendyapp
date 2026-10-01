@@ -8,6 +8,9 @@ const schema = z.object({ businessId: z.string().uuid() });
  * Baja el negocio al plan Free. Es la única transición de plan que el dueño
  * puede hacer solo: los planes de pago los activa el equipo (service_role) tras
  * la solicitud de preregistro. El plan ya no se puede escribir desde el navegador.
+ *
+ * No se degrada a la fuerza: si el negocio tiene más sucursales o profesionales
+ * activos de los que permite Free, se rechaza y debe reducirlos antes.
  */
 export const downgradeToFreePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -26,11 +29,8 @@ export const downgradeToFreePlan = createServerFn({ method: "POST" })
     if (!biz) throw new Error("No tienes permiso para cambiar este negocio");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: updErr } = await supabaseAdmin
-      .from("businesses")
-      .update({ plan: "free" })
-      .eq("id", data.businessId);
-    if (updErr) throw new Error(updErr.message);
+    const { applyPlanChange } = await import("@/lib/plan-change.server");
+    await applyPlanChange(supabaseAdmin, { businessId: data.businessId, plan: "free", actorId: userId });
 
     return { plan: "free" as const };
   });

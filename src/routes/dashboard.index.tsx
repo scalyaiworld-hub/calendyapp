@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { CalendarDays, Scissors, Users, Plus, Link2, ArrowRight, Clock3, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { getPlan, MODULE_LABELS } from "@/lib/plans";
+import { getPlan, MODULE_LABELS, MODULES_COMING_SOON } from "@/lib/plans";
 import { Sparkles, Lock, Crown } from "lucide-react";
 import { StatGridSkeleton, BlockSkeleton } from "@/components/Skeletons";
 
@@ -378,6 +378,9 @@ function PlanCard({
                     <Lock className="size-3.5 text-muted-foreground/50 shrink-0" strokeWidth={1.75} />
                   )}
                   <span className={cn(!on && "line-through decoration-muted-foreground/30")}>{MODULE_LABELS[k]}</span>
+                  {on && MODULES_COMING_SOON.has(k) && (
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Próximamente</span>
+                  )}
                 </li>
               );
             })}

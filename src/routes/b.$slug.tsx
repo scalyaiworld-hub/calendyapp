@@ -1,7 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useMutation, useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { getAvailableSlots } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +11,9 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, MapPin, User2, Scissors, Calendar, Clock, Sparkles, Menu, X, Sun, Sunset, Moon, Phone, UserCircle2 } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
-import { createPublicBooking, getPublicBusinessBootstrap } from "@/lib/api/public-booking.functions";
+import { createPublicBooking, getPublicBusinessBootstrap, getPublicSlots } from "@/lib/api/public-booking.functions";
+import { Turnstile, TURNSTILE_SITE_KEY } from "@/components/Turnstile";
+import { hourInTz } from "@/lib/tz";
 import { BrandTheme } from "@/lib/brand-theme";
 
 const bootstrapOptions = (slug: string) =>
@@ -65,10 +66,10 @@ function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; va
   );
 }
 
-function groupSlotsByPartOfDay(slots: { starts_at: Date; ends_at: Date }[]) {
+function groupSlotsByPartOfDay(slots: { starts_at: Date; ends_at: Date }[], tz: string) {
   const groups: Record<"morning" | "afternoon" | "evening", typeof slots> = { morning: [], afternoon: [], evening: [] };
   slots.forEach((s) => {
-    const h = s.starts_at.getHours();
+    const h = hourInTz(s.starts_at, tz);
     if (h < 12) groups.morning.push(s);
     else if (h < 18) groups.afternoon.push(s);
     else groups.evening.push(s);
@@ -100,6 +101,11 @@ function BookingPage() {
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [manageToken, setManageToken] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const captchaRequired = !!TURNSTILE_SITE_KEY;
 
   // Una sola carga: negocio + sucursales + profesionales + servicios + asignaciones.
   // Precargado en el loader → la página aparece sin "Cargando…" y sin cascada de queries.
@@ -167,12 +173,21 @@ function BookingPage() {
 
   const service = allServices.find((s: any) => s.id === serviceId);
 
-  const { data: slots } = useQuery({
-    queryKey: ["slots", business?.id, serviceId, professionalId, locationId, date.toDateString()],
+  // Los horarios los calcula el servidor (misma lógica que valida la reserva), en la zona del negocio.
+  const tz = business.timezone ?? "America/Lima";
+  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const { data: slotsRes } = useQuery({
+    queryKey: ["slots", business?.id, serviceId, professionalId, locationId, dateStr],
     enabled: !!business?.id && !!serviceId && !!professionalId,
-    queryFn: () => getAvailableSlots({ businessId: business!.id, serviceId, date, locationId: locationId || undefined, professionalId }),
-    staleTime: 60_000, // 1 min — evita refetch al volver al mismo día
+    queryFn: () =>
+      getPublicSlots({
+        data: { businessId: business!.id, serviceId, date: dateStr, locationId: locationId || null, professionalId: professionalId || null },
+      }),
+    staleTime: 30_000,
   });
+  const slots = slotsRes
+    ? slotsRes.slots.map((s) => ({ starts_at: new Date(s.startsAt), ends_at: new Date(s.endsAt) }))
+    : undefined;
 
   // Limpiar el horario seleccionado cuando cambian los criterios de búsqueda,
   // para que el botón "Siguiente" no avance con una hora que ya no aplica.
@@ -183,7 +198,7 @@ function BookingPage() {
   const book = useMutation({
     mutationFn: async () => {
       if (!business || !service || !slot) throw new Error("Faltan datos");
-      await createPublicBooking({
+      const res = await createPublicBooking({
         data: {
           businessId: business.id,
           serviceId: service.id,
@@ -194,11 +209,22 @@ function BookingPage() {
           name,
           phone,
           countryCode,
+          captchaToken: captchaToken ?? undefined,
         },
       });
+      return res;
     },
-    onSuccess: () => setStep("done"),
-    onError: (e: Error) => toast.error("No se pudo reservar: " + e.message),
+    onSuccess: (res) => {
+      setManageToken(res.manageToken);
+      setStep("done");
+    },
+    onError: (e: Error) => {
+      toast.error("No se pudo reservar: " + e.message);
+      // El token del captcha es de un solo uso y los horarios pueden haber cambiado.
+      setCaptchaToken(null);
+      setCaptchaKey((k) => k + 1);
+      qc.invalidateQueries({ queryKey: ["slots"] });
+    },
   });
 
   const next7 = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+i); return d; });
@@ -214,7 +240,7 @@ function BookingPage() {
   const resetAll = () => {
     setStep(hasLocations ? "location" : "mode"); setLocationId(""); setMode(null);
     setProfessionalId(""); setServiceId(""); setSlot(null);
-    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE);
+    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setManageToken(null);
   };
 
   const stepIndex = step === "location" ? 0 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 1 : step === "datetime" ? 2 : step === "client" ? 3 : 4;
@@ -273,7 +299,7 @@ function BookingPage() {
                 <SummaryRow icon={User2} label="Profesional" value={professional?.name ?? "Por elegir"} />
                 <SummaryRow icon={Scissors} label="Servicio" value={service ? `${service.name} · ${formatPriceCents(service.price_cents)}` : "Por elegir"} />
                 <SummaryRow icon={Calendar} label="Día" value={slot ? slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : (step === "datetime" ? date.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" }) : "Por elegir")} />
-                <SummaryRow icon={Clock} label="Hora" value={slot ? formatTime(slot.starts_at) : "Por elegir"} />
+                <SummaryRow icon={Clock} label="Hora" value={slot ? formatTime(slot.starts_at, tz) : "Por elegir"} />
               </div>
               {/* Collapsed mobile summary */}
               {!summaryOpen && (
@@ -512,12 +538,12 @@ function BookingPage() {
                 <div className="rounded-2xl border border-dashed border-border p-6 text-center space-y-1">
                   <Calendar className="size-6 text-muted-foreground/50 mx-auto" />
                   <p className="text-sm font-medium">Sin horarios este día</p>
-                  <p className="text-xs text-muted-foreground">Prueba otra fecha de la lista.</p>
+                  <p className="text-xs text-muted-foreground">{slotsRes?.error ?? "Prueba otra fecha de la lista."}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {(() => {
-                    const grouped = groupSlotsByPartOfDay(slots);
+                    const grouped = groupSlotsByPartOfDay(slots, tz);
                     const sections: { key: keyof typeof grouped; label: string; icon: any }[] = [
                       { key: "morning", label: "Mañana", icon: Sun },
                       { key: "afternoon", label: "Tarde", icon: Sunset },
@@ -547,7 +573,7 @@ function BookingPage() {
                                       : "border-border hover:border-primary bg-card"
                                   )}
                                 >
-                                  {formatTime(s.starts_at)}
+                                  {formatTime(s.starts_at, tz)}
                                 </button>
                               );
                             })}
@@ -564,7 +590,7 @@ function BookingPage() {
               <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
                 <div className="flex items-center justify-between mb-2 text-xs">
                   <span className="text-muted-foreground">Seleccionado</span>
-                  <span className="font-medium">{formatTime(slot.starts_at)}</span>
+                  <span className="font-medium">{formatTime(slot.starts_at, tz)}</span>
                 </div>
                 <Button className="w-full" size="lg" onClick={() => setStep("client")}>
                   Siguiente <ChevronRight className="size-4" />
@@ -596,7 +622,7 @@ function BookingPage() {
                   <p className="flex items-center gap-2"><User2 className="size-3.5" /> {professional?.name}</p>
                   {location?.name && <p className="flex items-center gap-2"><MapPin className="size-3.5" /> {location.name}</p>}
                   <p className="flex items-center gap-2"><Calendar className="size-3.5" /> {slot.starts_at.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</p>
-                  <p className="flex items-center gap-2"><Clock className="size-3.5" /> {formatTime(slot.starts_at)} · {service.duration_minutes} min</p>
+                  <p className="flex items-center gap-2"><Clock className="size-3.5" /> {formatTime(slot.starts_at, tz)} · {service.duration_minutes} min</p>
                 </div>
                 <p className="text-lg font-semibold text-primary pt-1">{formatPriceCents(service.price_cents)}</p>
               </CardContent>
@@ -617,15 +643,16 @@ function BookingPage() {
                 />
                 <p className="text-xs text-muted-foreground">Usaremos este número solo para confirmar tu cita.</p>
               </div>
+              <Turnstile key={captchaKey} onToken={setCaptchaToken} />
               {/* Desktop inline CTA */}
-              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending}>
+              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending || (captchaRequired && !captchaToken)}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
             </div>
             {/* Mobile sticky CTA */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
-              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending}>
+              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending || (captchaRequired && !captchaToken)}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
@@ -640,6 +667,14 @@ function BookingPage() {
             </div>
             <h2 className="font-display text-2xl">¡Reserva recibida!</h2>
             <p className="text-muted-foreground">El salón confirmará tu cita por WhatsApp en breve.</p>
+            {manageToken && (
+              <p className="text-sm">
+                Guarda este enlace para ver o cancelar tu reserva:{" "}
+                <a className="underline font-medium break-all" href={`/cita/${manageToken}`}>
+                  {typeof window !== "undefined" ? `${window.location.origin}/cita/${manageToken}` : `/cita/${manageToken}`}
+                </a>
+              </p>
+            )}
             <Button variant="outline" onClick={resetAll}>Reservar otra cita</Button>
           </div>
         )}

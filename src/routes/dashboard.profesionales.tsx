@@ -84,6 +84,7 @@ function ProsTab() {
       qc.invalidateQueries({ queryKey: ["dashboard-ready-counts"] });
       toast.success("Eliminado");
     },
+    onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
   const toggleActive = useMutation({

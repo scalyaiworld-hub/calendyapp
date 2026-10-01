@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { formatTime, formatPriceCents, DAY_NAMES_SHORT } from "@/lib/format";
 import { invalidateAppointments } from "@/lib/query-keys";
 import { translateDbError } from "@/lib/api/error-messages";
+import { StatusSelect, useStatusChange, type StatusChange } from "@/components/AppointmentStatus";
+import { STATUS_LABELS, apptPriceCents, canChangeStatus, nextStatuses, statusOptions } from "@/lib/appointments";
 
 export const Route = createFileRoute("/dashboard/citas")({
   component: CitasPage,
@@ -142,9 +144,12 @@ function CitasPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: ApptStatus }) => {
+    mutationFn: async ({ id, status, reason }: StatusChange) => {
       const patch: any = { status };
-      if (status === "cancelled") patch.cancelled_at = new Date().toISOString();
+      if (status === "cancelled") {
+        patch.cancelled_at = new Date().toISOString();
+        if (reason) patch.cancelled_reason = reason;
+      }
       const { error } = await supabase.from("appointments").update(patch).eq("id", id);
       if (error) throw error;
     },
@@ -156,12 +161,15 @@ function CitasPage() {
     onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
+  const statusChange = useStatusChange((v) => updateStatus.mutate(v));
+
   const [editClientId, setEditClientId] = useState("");
   const [editServiceId, setEditServiceId] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editStatus, setEditStatus] = useState<ApptStatus>("booked");
   const [editNotes, setEditNotes] = useState("");
+  const [editCancelReason, setEditCancelReason] = useState("");
 
   useEffect(() => {
     if (!selectedAppt) return;
@@ -173,6 +181,7 @@ function CitasPage() {
     setEditTime(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
     setEditStatus((selectedAppt.status as ApptStatus) ?? "booked");
     setEditNotes(selectedAppt.notes ?? "");
+    setEditCancelReason("");
   }, [selectedAppt?.id]);
 
   const saveAppt = useMutation({
@@ -195,6 +204,7 @@ function CitasPage() {
       };
       if (editStatus === "cancelled" && !selectedAppt.cancelled_at) {
         patch.cancelled_at = new Date().toISOString();
+        if (editCancelReason.trim()) patch.cancelled_reason = editCancelReason.trim();
       }
       const { error } = await supabase.from("appointments").update(patch).eq("id", selectedAppt.id);
       if (error) throw error;
@@ -235,39 +245,14 @@ function CitasPage() {
     enabled: !!businessId,
     staleTime: 60_000,
     queryFn: async () => {
-      const start = new Date(); start.setHours(0, 0, 0, 0);
-      const end = new Date(start); end.setDate(end.getDate() + 1);
-      const [todayRes, pendingRes, revenueRes] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select("id", { count: "exact", head: true })
-          .eq("business_id", businessId!)
-          .gte("starts_at", start.toISOString())
-          .lt("starts_at", end.toISOString())
-          .neq("status", "cancelled"),
-        supabase
-          .from("appointments")
-          .select("id", { count: "exact", head: true })
-          .eq("business_id", businessId!)
-          .eq("status", "pending"),
-        supabase
-          .from("appointments")
-          .select("services(price_cents)")
-          .eq("business_id", businessId!)
-          .eq("status", "completed")
-          .limit(5000),
-      ]);
-      if (todayRes.error) throw todayRes.error;
-      if (pendingRes.error) throw pendingRes.error;
-      if (revenueRes.error) throw revenueRes.error;
-      const completedRevenue = ((revenueRes.data ?? []) as any[]).reduce(
-        (sum, r) => sum + (r.services?.price_cents ?? 0),
-        0,
-      );
+      // Agregados en SQL con el "hoy" de la zona del negocio y el precio congelado de cada cita.
+      const { data, error } = await supabase.rpc("appointment_stats", { _business_id: businessId! });
+      if (error) throw error;
+      const row = data?.[0];
       return {
-        todayCount: todayRes.count ?? 0,
-        pendingCount: pendingRes.count ?? 0,
-        completedRevenue,
+        todayCount: Number(row?.today_count ?? 0),
+        pendingCount: Number(row?.pending_count ?? 0),
+        completedRevenue: Number(row?.completed_revenue ?? 0),
       };
     },
   });
@@ -449,13 +434,20 @@ function CitasPage() {
       ) : view === "kanban" ? (
         <KanbanBoard
           appts={filteredItems}
-          onChangeStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onChangeStatus={(id, status) => {
+            const appt = (appointments?.items ?? []).find((x: any) => x.id === id);
+            if (appt && !canChangeStatus(appt.status, status, appt.starts_at)) {
+              toast.info("Ese cambio de estado no está permitido para esta cita.");
+              return;
+            }
+            statusChange.request(id, status);
+          }}
           onSelect={(a) => setSelectedAppt(a)}
         />
       ) : (
         <div className="space-y-5">
           {grouped.map((g) => {
-            const dayRevenue = g.items.reduce((acc: number, a: any) => acc + (a.status === "completed" ? (a.services?.price_cents ?? 0) : 0), 0);
+            const dayRevenue = g.items.reduce((acc: number, a: any) => acc + (a.status === "completed" ? apptPriceCents(a) : 0), 0);
             return (
               <div key={g.key} className="space-y-2">
                 <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur z-10 py-1.5">
@@ -505,12 +497,12 @@ function CitasPage() {
                                   <CheckCircle2 className="size-3.5 mr-1" /> Confirmar
                                 </Button>
                               )}
-                              {a.status === "booked" && (
+                              {a.status === "booked" && nextStatuses(a.status, a.starts_at).includes("completed") && (
                                 <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateStatus.mutate({ id: a.id, status: "completed" })}>
                                   <CheckCircle2 className="size-3.5 mr-1" /> Completar
                                 </Button>
                               )}
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => updateStatus.mutate({ id: a.id, status: "cancelled" })}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => statusChange.request(a.id, "cancelled")}>
                                 <XCircle className="size-3.5 text-destructive" />
                               </Button>
                             </div>
@@ -519,7 +511,7 @@ function CitasPage() {
                             <span className={cn("size-1.5 rounded-full", STATUS_DOT[a.status as ApptStatus])} />
                             {STATUS_LABEL[a.status as ApptStatus]}
                           </span>
-                          <p className="text-sm font-medium text-right hidden sm:block">{formatPriceCents(a.services?.price_cents ?? 0)}</p>
+                          <p className="text-sm font-medium text-right hidden sm:block">{formatPriceCents(apptPriceCents(a))}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -548,6 +540,7 @@ function CitasPage() {
         </div>
       )}
 
+      {statusChange.dialog}
       <Dialog open={!!selectedAppt} onOpenChange={(v) => !v && setSelectedAppt(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -595,14 +588,28 @@ function CitasPage() {
                 <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ApptStatus)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="booked">Confirmada</SelectItem>
-                    <SelectItem value="completed">Completada</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
-                    <SelectItem value="no_show">No-show</SelectItem>
+                    {statusOptions(selectedAppt.status, selectedAppt.starts_at).map((st) => (
+                      <SelectItem key={st} value={st}>{STATUS_LABELS[st]}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {editStatus === "cancelled" && selectedAppt.status !== "cancelled" && (
+                  <Input className="mt-2" value={editCancelReason} onChange={(e) => setEditCancelReason(e.target.value)} maxLength={300} placeholder="Motivo de la cancelación (opcional)" />
+                )}
               </div>
+              {selectedAppt.manage_token && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/cita/${selectedAppt.manage_token}`);
+                    toast.success("Enlace de gestión copiado: el cliente puede ver o cancelar su cita");
+                  }}
+                >
+                  Copiar enlace para el cliente
+                </Button>
+              )}
               <div>
                 <Label>Notas</Label>
                 <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} maxLength={1000} placeholder="Notas internas (opcional)" />
