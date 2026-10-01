@@ -39,12 +39,20 @@ function Index() {
   const { session } = useAuth();
   const navigate = useNavigate();
 
-  // Tras el login OAuth, Supabase puede volver a "/" con el token en el hash.
+  // Tras el login OAuth, Supabase puede volver a "/" con el token en el hash (o ?code=).
+  // supabase-js borra esa marca de la URL en cuanto la lee, así que se captura en el primer
+  // render (antes de que corra cualquier efecto) para poder redirigir cuando la sesión esté lista.
+  const [returnedFromOAuth] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const { hash, search } = window.location;
+    return hash.includes("access_token") || new URLSearchParams(search).has("code");
+  });
+
   useEffect(() => {
-    if (session && window.location.hash.includes("access_token")) {
+    if (session && returnedFromOAuth) {
       navigate({ to: "/dashboard", replace: true });
     }
-  }, [session, navigate]);
+  }, [session, returnedFromOAuth, navigate]);
 
   return (
     <div className="min-h-screen bg-background">
