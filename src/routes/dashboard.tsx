@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   UsersRound,
   BarChart3,
+  Plug,
 } from "lucide-react";
 import { useEntityCounts } from "@/lib/entity-counts";
 import { canAccessPath, ROLE_LABELS, type Role } from "@/lib/permissions";
@@ -63,6 +64,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Cuenta",
     items: [
       { to: "/dashboard/equipo", label: "Equipo", icon: UsersRound },
+      { to: "/dashboard/integraciones", label: "Integraciones", icon: Plug },
       { to: "/dashboard/planes", label: "Planes", icon: Sparkles },
       { to: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
     ],
