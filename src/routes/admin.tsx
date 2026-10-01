@@ -39,10 +39,28 @@ function AdminPage() {
     enabled: !!user,
     queryFn: () => getAdminStatus(),
     staleTime: 60_000,
+    retry: false,
   });
 
-  if (loading || !user || status.isLoading) {
+  if (loading || !user || status.isPending) {
     return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+  }
+
+  if (status.isError) {
+    return (
+      <div className="min-h-screen grid place-items-center px-6">
+        <div className="max-w-sm text-center space-y-4">
+          <ShieldAlert className="size-10 mx-auto text-destructive" aria-hidden />
+          <h1 className="font-display text-2xl">No se pudo verificar el acceso</h1>
+          <p role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            {(status.error as Error).message}
+          </p>
+          <Button variant="outline" onClick={() => status.refetch()}>
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (!status.data?.isAdmin) {
