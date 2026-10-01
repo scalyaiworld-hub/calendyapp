@@ -107,18 +107,24 @@ export const exportAppointmentsCsv = createServerFn({ method: "POST" })
       notes: string | null;
       clients: { name: string; phone: string; email: string | null } | null;
       services: { name: string; price_cents: number } | null;
-      professionals: { name: string } | null;
+      professional_id: string | null;
     };
     const { rows, truncated } = await fetchAll<Row>((offset) =>
       supabase
         .from("appointments")
-        .select("starts_at,ends_at,status,source,notes,clients(name,phone,email),services(name,price_cents),professionals(name)")
+        .select("starts_at,ends_at,status,source,notes,clients(name,phone,email),professional_id,services(name,price_cents)")
         .eq("business_id", data.businessId)
         .gte("starts_at", from.toISOString())
         .lte("starts_at", to.toISOString())
         .order("starts_at", { ascending: true })
         .range(offset, offset + PAGE - 1) as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,
     );
+
+    // appointments.professional_id no tiene clave foránea a professionals, así que no se puede incrustar
+    // con select(): se consultan los nombres aparte.
+    const { data: pros, error: prosErr } = await supabase.from("professionals").select("id,name").eq("business_id", data.businessId);
+    if (prosErr) throw new Error(prosErr.message);
+    const proName = new Map((pros ?? []).map((p) => [p.id, p.name]));
 
     const fmt = (iso: string) =>
       new Intl.DateTimeFormat("sv-SE", { timeZone: timezone, dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
@@ -135,7 +141,7 @@ export const exportAppointmentsCsv = createServerFn({ method: "POST" })
         r.clients?.email,
         r.services?.name,
         r.services ? (r.services.price_cents / 100).toFixed(2) : "",
-        r.professionals?.name,
+        r.professional_id ? proName.get(r.professional_id) : "",
         r.notes,
       ]),
     );
