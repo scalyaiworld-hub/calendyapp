@@ -39,3 +39,6 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Git worktrees locales
+.worktrees
