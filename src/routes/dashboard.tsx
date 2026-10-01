@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
 import { hasModule } from "@/lib/plans";
+import { useIsAdmin } from "@/lib/admin";
+import { hasChosenAdminDestination } from "@/lib/admin-choice";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Calendya" }] }),
@@ -47,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
 function DashboardLayout() {
   const { user, loading, signOut } = useAuth();
   const { data: business, isLoading: bizLoading } = useMyBusiness();
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -58,15 +61,22 @@ function DashboardLayout() {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
 
+  // Los administradores eligen primero entre el panel admin y su negocio (/inicio).
+  const needsAdminChoice = isAdmin && !hasChosenAdminDestination();
+
   // Force onboarding before any dashboard route renders
   useEffect(() => {
-    if (loading || bizLoading || !user) return;
+    if (loading || bizLoading || adminLoading || !user) return;
+    if (needsAdminChoice) {
+      navigate({ to: "/inicio", replace: true });
+      return;
+    }
     if (!business || !business.onboarding_completed) {
       navigate({ to: "/onboarding", replace: true });
     }
-  }, [loading, bizLoading, user, business, navigate]);
+  }, [loading, bizLoading, adminLoading, user, business, needsAdminChoice, navigate]);
 
-  if (loading || !user || bizLoading) {
+  if (loading || !user || bizLoading || adminLoading || needsAdminChoice) {
     return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
   }
   if (!business || !business.onboarding_completed) {
