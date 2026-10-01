@@ -123,10 +123,10 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     // El correo es un extra: si falla, la invitación igual queda creada y se aceptará al registrarse.
     let emailSent = false;
     try {
-      const { sendEmail } = await import("@/lib/email.server");
+      const { sendEmailOrThrow } = await import("@/lib/email.server");
       const origin = new URL(getRequest().url).origin;
       const mail = buildInviteEmail({ businessName: business.name, role: data.role, signInUrl: `${origin}/auth` });
-      await sendEmail({ to: data.email, ...mail, idempotencyKey: `invite-${invite.id}` });
+      await sendEmailOrThrow({ to: data.email, ...mail, idempotencyKey: `invite-${invite.id}` });
       emailSent = true;
     } catch (e) {
       console.error("[team] invite email failed", e instanceof Error ? e.message : e);
