@@ -78,7 +78,7 @@ describe("AuthPage - alternar modos", () => {
     const user = setup();
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
     expect(screen.getByText("Crea tu cuenta")).toBeInTheDocument();
-    expect(screen.getByText("Mínimo 6 caracteres")).toBeInTheDocument();
+    expect(screen.getByText("Mínimo 8 caracteres")).toBeInTheDocument();
     expect(screen.queryByText("¿Olvidaste?")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ingresar" }));
     expect(screen.getByText("Bienvenido de vuelta")).toBeInTheDocument();
@@ -115,14 +115,14 @@ describe("AuthPage - alternar modos", () => {
 });
 
 describe("AuthPage - validación del formulario", () => {
-  it("campos requeridos, email tipo email y minLength 6", () => {
+  it("campos requeridos, email tipo email y minLength 8", () => {
     setup();
     const email = screen.getByLabelText("Email");
     const pass = screen.getByLabelText("Contraseña");
     expect(email).toBeRequired();
     expect(email).toHaveAttribute("type", "email");
     expect(pass).toBeRequired();
-    expect(pass).toHaveAttribute("minlength", "6");
+    expect(pass).toHaveAttribute("minlength", "8");
   });
 
   it("no llama a Supabase con el formulario vacío", async () => {
@@ -135,11 +135,11 @@ describe("AuthPage - validación del formulario", () => {
   // solo se verifica el atributo (arriba); el rechazo de Supabase se cubre con la traducción.
   it("traduce el rechazo del servidor por contraseña corta", async () => {
     mocks.signInWithPassword.mockResolvedValue({
-      error: new Error("Password should be at least 6 characters"),
+      error: new Error("Password should be at least 8 characters"),
     });
     const user = setup();
     await fillAndSubmit(user, "a@b.com", "123", "Ingresar");
-    expect(await screen.findByText("La contraseña debe tener al menos 6 caracteres.")).toBeInTheDocument();
+    expect(await screen.findByText("La contraseña debe tener al menos 8 caracteres.")).toBeInTheDocument();
   });
 
   it("no llama a Supabase con email inválido", async () => {
@@ -222,7 +222,7 @@ describe("AuthPage - signUp", () => {
 
   it.each([
     ["User already registered", "Este email ya tiene una cuenta. Ingresa en su lugar."],
-    ["Password should be at least 6 characters", "La contraseña debe tener al menos 6 caracteres."],
+    ["Password should be at least 8 characters", "La contraseña debe tener al menos 8 caracteres."],
     ["Invalid email", "El email no es válido."],
   ])("traduce el error %s", async (original, esperado) => {
     mocks.signUp.mockResolvedValue({ error: new Error(original) });

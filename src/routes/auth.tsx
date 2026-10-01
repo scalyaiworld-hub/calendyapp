@@ -26,7 +26,7 @@ function translateError(msg: string): string {
   if (m.includes("invalid login credentials")) return "Email o contraseña incorrectos.";
   if (m.includes("email not confirmed")) return "Debes confirmar tu correo antes de ingresar.";
   if (m.includes("user already registered")) return "Este email ya tiene una cuenta. Ingresa en su lugar.";
-  if (m.includes("password should be at least")) return "La contraseña debe tener al menos 6 caracteres.";
+  if (m.includes("password should be at least")) return "La contraseña debe tener al menos 8 caracteres.";
   if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos. Espera un momento e inténtalo de nuevo.";
   if (m.includes("network") || m.includes("failed to fetch")) return "Problema de conexión. Revisa tu internet.";
   if (m.includes("invalid email") || m.includes("unable to validate email")) return "El email no es válido.";
@@ -192,7 +192,7 @@ function AuthPage() {
                     type={showPassword ? "text" : "password"}
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     required
-                    minLength={6}
+                    minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-11 pl-9 pr-12"
@@ -209,7 +209,7 @@ function AuthPage() {
                   </button>
                 </div>
                 {mode === "signup" && (
-                  <p className="text-xs text-muted-foreground mt-1.5">Mínimo 6 caracteres</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">Mínimo 8 caracteres</p>
                 )}
               </div>
             )}
