@@ -1,0 +1,281 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowLeft, Building2, Inbox, Search, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { getAdminOverview, getAdminStatus, setBusinessPlan, type AdminBusiness } from "@/lib/api/admin.functions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [{ title: "Admin — Calendya" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
+  component: AdminPage,
+});
+
+const PLAN_LABEL: Record<string, string> = { free: "Free", pro: "Pro", studio: "Studio" };
+
+const dateFmt = (iso: string) =>
+  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+
+function AdminPage() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth", replace: true });
+  }, [loading, user, navigate]);
+
+  const status = useQuery({
+    queryKey: ["admin-status", user?.id],
+    enabled: !!user,
+    queryFn: () => getAdminStatus(),
+    staleTime: 60_000,
+  });
+
+  if (loading || !user || status.isLoading) {
+    return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+  }
+
+  if (!status.data?.isAdmin) {
+    return (
+      <div className="min-h-screen grid place-items-center px-6">
+        <div className="max-w-sm text-center space-y-4">
+          <ShieldAlert className="size-10 mx-auto text-muted-foreground" aria-hidden />
+          <h1 className="font-display text-2xl">Acceso restringido</h1>
+          <p className="text-sm text-muted-foreground">Esta sección es solo para administradores de Calendya.</p>
+          <Button asChild variant="outline">
+            <Link to="/dashboard">Volver al dashboard</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdminPanel email={user.email ?? ""} />;
+}
+
+function AdminPanel({ email }: { email: string }) {
+  const qc = useQueryClient();
+  const [query, setQuery] = useState("");
+
+  const overview = useQuery({
+    queryKey: ["admin-overview"],
+    queryFn: () => getAdminOverview(),
+  });
+
+  const changePlan = useMutation({
+    mutationFn: (v: { businessId: string; plan: "free" | "pro" | "studio" }) => setBusinessPlan({ data: v }),
+    onSuccess: () => {
+      toast.success("Plan actualizado");
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const businesses = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const all = overview.data?.businesses ?? [];
+    if (!q) return all;
+    return all.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        b.slug.toLowerCase().includes(q) ||
+        (b.ownerEmail ?? "").toLowerCase().includes(q),
+    );
+  }, [overview.data, query]);
+
+  const totals = overview.data?.totals;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="size-5 text-primary" aria-hidden />
+            <h1 className="font-display text-lg font-semibold tracking-tight">Panel de administración</h1>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span className="hidden sm:inline">{email}</span>
+            <Link to="/dashboard" className="inline-flex items-center gap-1 hover:text-foreground py-2">
+              <ArrowLeft className="size-3.5" aria-hidden /> Dashboard
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        <section aria-label="Resumen" className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Stat label="Negocios" value={totals?.businesses} loading={overview.isLoading} />
+          <Stat label="Plan Free" value={totals?.free} loading={overview.isLoading} />
+          <Stat label="Plan Pro" value={totals?.pro} loading={overview.isLoading} />
+          <Stat label="Plan Studio" value={totals?.studio} loading={overview.isLoading} />
+          <Stat label="Solicitudes" value={totals?.preregistrations} loading={overview.isLoading} />
+        </section>
+
+        {overview.isError && (
+          <div role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+            {(overview.error as Error).message}
+          </div>
+        )}
+
+        <Tabs defaultValue="businesses">
+          <TabsList>
+            <TabsTrigger value="businesses" className="gap-2">
+              <Building2 className="size-4" aria-hidden /> Negocios
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="gap-2">
+              <Inbox className="size-4" aria-hidden /> Solicitudes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="businesses" className="space-y-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" aria-hidden />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por nombre, link o email"
+                aria-label="Buscar negocios"
+                className="pl-9"
+              />
+            </div>
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Negocio</TableHead>
+                      <TableHead>Dueño</TableHead>
+                      <TableHead>Alta</TableHead>
+                      <TableHead className="text-right">Citas del mes</TableHead>
+                      <TableHead className="w-36">Plan</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overview.isLoading &&
+                      Array.from({ length: 4 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
+                        </TableRow>
+                      ))}
+                    {!overview.isLoading && businesses.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                          {query ? "Ningún negocio coincide con la búsqueda." : "Todavía no hay negocios registrados."}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {businesses.map((b) => (
+                      <BusinessRow
+                        key={b.id}
+                        b={b}
+                        pending={changePlan.isPending && changePlan.variables?.businessId === b.id}
+                        onPlan={(plan) => changePlan.mutate({ businessId: b.id, plan })}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="requests">
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Negocio</TableHead>
+                      <TableHead>Teléfono</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!overview.isLoading && (overview.data?.preregistrations.length ?? 0) === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                          No hay solicitudes de preregistro.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {overview.data?.preregistrations.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell className="whitespace-nowrap">{dateFmt(p.createdAt)}</TableCell>
+                        <TableCell className="font-medium">{p.nombre}</TableCell>
+                        <TableCell>
+                          <a href={`mailto:${p.email}`} className="text-primary hover:underline">{p.email}</a>
+                        </TableCell>
+                        <TableCell>{p.negocio ?? "—"}</TableCell>
+                        <TableCell>{p.telefono ?? "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+}
+
+function Stat({ label, value, loading }: { label: string; value: number | undefined; loading: boolean }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        {loading ? <Skeleton className="h-9 w-14" /> : <div className="font-display text-3xl font-bold tabular-nums">{value ?? 0}</div>}
+        <div className="text-xs uppercase tracking-widest text-muted-foreground mt-1">{label}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BusinessRow({
+  b,
+  pending,
+  onPlan,
+}: {
+  b: AdminBusiness;
+  pending: boolean;
+  onPlan: (plan: "free" | "pro" | "studio") => void;
+}) {
+  return (
+    <TableRow className={b.deleted ? "opacity-50" : undefined}>
+      <TableCell>
+        <div className="font-medium">{b.name}</div>
+        <div className="text-xs text-muted-foreground">
+          /b/{b.slug}
+          {!b.onboardingCompleted && <Badge variant="outline" className="ml-2">Sin terminar onboarding</Badge>}
+          {b.deleted && <Badge variant="outline" className="ml-2">Eliminado</Badge>}
+        </div>
+      </TableCell>
+      <TableCell>{b.ownerEmail ?? "—"}</TableCell>
+      <TableCell className="whitespace-nowrap">{dateFmt(b.createdAt)}</TableCell>
+      <TableCell className="text-right tabular-nums">{b.apptsThisMonth}</TableCell>
+      <TableCell>
+        <Select value={b.plan} onValueChange={(v) => onPlan(v as "free" | "pro" | "studio")} disabled={pending}>
+          <SelectTrigger aria-label={`Plan de ${b.name}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(PLAN_LABEL).map(([id, label]) => (
+              <SelectItem key={id} value={id}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+    </TableRow>
+  );
+}

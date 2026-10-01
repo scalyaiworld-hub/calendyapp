@@ -544,6 +544,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_appointment_slots: {
@@ -677,6 +695,10 @@ export type Database = {
       }
     }
     Functions: {
+      has_role: {
+        Args: { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
+        Returns: boolean
+      }
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }
       is_slug_available: {
         Args: { _slug: string; _exclude_id?: string }
@@ -693,6 +715,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin"
       appointment_source: "manual" | "booking_page" | "chat_ai" | "whatsapp"
       appointment_status:
         | "pending"
@@ -827,6 +850,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin"],
       appointment_source: ["manual", "booking_page", "chat_ai", "whatsapp"],
       appointment_status: [
         "pending",
