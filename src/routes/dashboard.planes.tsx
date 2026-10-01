@@ -7,13 +7,37 @@ import { submitUpgradeRequest } from "@/lib/api/upgrade.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PLANS, MODULE_LABELS, MODULES_COMING_SOON, describeTransitionBlock, getPlan, planTransitionBlock, type PlanId } from "@/lib/plans";
+import {
+  PLANS,
+  MODULE_LABELS,
+  MODULES_COMING_SOON,
+  describeTransitionBlock,
+  getPlan,
+  planTransitionBlock,
+  type PlanId,
+} from "@/lib/plans";
 import { monthBoundsInTz } from "@/lib/tz";
-import { Check, Lock, Crown, Sparkles, ArrowRight, CalendarDays, Building2, Users } from "lucide-react";
+import {
+  Check,
+  Lock,
+  Crown,
+  Sparkles,
+  ArrowRight,
+  CalendarDays,
+  Building2,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
@@ -24,7 +48,11 @@ export const Route = createFileRoute("/dashboard/planes")({
 });
 
 const PLAN_PRICES: Record<PlanId, string> = { free: "$0", pro: "$29", studio: "$99" };
-const PLAN_PERIODS: Record<PlanId, string> = { free: "/ mes", pro: "USD / mes", studio: "USD / mes" };
+const PLAN_PERIODS: Record<PlanId, string> = {
+  free: "/ mes",
+  pro: "USD / mes",
+  studio: "USD / mes",
+};
 const PLAN_ORDER: PlanId[] = ["free", "pro", "studio"];
 
 const BUSINESS_TYPES = [
@@ -56,9 +84,25 @@ function PlanesPage() {
     queryFn: async () => {
       const { start, end } = monthBoundsInTz(new Date(), business!.timezone ?? "America/Lima");
       const [appts, locs, pros] = await Promise.all([
-        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", business!.id).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()).in("status", ["booked", "completed", "no_show"]),
-        supabase.from("locations").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
-        supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", business!.id).is("deleted_at", null).eq("is_active", true),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", business!.id)
+          .gte("starts_at", start.toISOString())
+          .lt("starts_at", end.toISOString())
+          .in("status", ["booked", "completed", "no_show"]),
+        supabase
+          .from("locations")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", business!.id)
+          .is("deleted_at", null)
+          .eq("is_active", true),
+        supabase
+          .from("professionals")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", business!.id)
+          .is("deleted_at", null)
+          .eq("is_active", true),
       ]);
       return { appts: appts.count ?? 0, locs: locs.count ?? 0, pros: pros.count ?? 0 };
     },
@@ -69,12 +113,17 @@ function PlanesPage() {
       if (!business) throw new Error("Sin negocio");
       // El plan ya no se escribe desde el navegador: solo se puede bajar a Free.
       // Los planes de pago se activan desde el servidor tras la solicitud.
-      if (planId !== "free") throw new Error("Los planes de pago se activan al enviar la solicitud.");
+      if (planId !== "free")
+        throw new Error("Los planes de pago se activan al enviar la solicitud.");
       await downgradeToFreePlan({ data: { businessId: business.id } });
       return planId;
     },
     onSuccess: (planId) => {
-      toast.success(planId === "free" ? "Cambiaste al plan Free." : "Solicitud enviada. Te contactaremos para activar el plan.");
+      toast.success(
+        planId === "free"
+          ? "Cambiaste al plan Free."
+          : "Solicitud enviada. Te contactaremos para activar el plan.",
+      );
       qc.invalidateQueries({ queryKey: ["my-business"] });
       qc.invalidateQueries({ queryKey: ["plan-usage"] });
     },
@@ -82,7 +131,9 @@ function PlanesPage() {
   });
 
   // Un negocio no puede bajar a Free mientras tenga más sucursales o profesionales activos de los permitidos.
-  const freeBlock = usage ? planTransitionBlock({ locations: usage.locs, professionals: usage.pros }, "free") : null;
+  const freeBlock = usage
+    ? planTransitionBlock({ locations: usage.locs, professionals: usage.pros }, "free")
+    : null;
   const freeBlockMsg = freeBlock ? describeTransitionBlock(freeBlock, PLANS.free.label) : null;
 
   return (
@@ -98,22 +149,51 @@ function PlanesPage() {
         <CardContent className="pt-6">
           <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className={cn(
-                "size-10 rounded-lg grid place-items-center shrink-0",
-                current.id === "studio" ? "bg-foreground text-background" : current.id === "pro" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-              )}>
-                {current.id === "studio" ? <Crown className="size-5" /> : current.id === "pro" ? <Sparkles className="size-5" /> : <Lock className="size-5" />}
+              <div
+                className={cn(
+                  "size-10 rounded-lg grid place-items-center shrink-0",
+                  current.id === "studio"
+                    ? "bg-foreground text-background"
+                    : current.id === "pro"
+                      ? "bg-primary/15 text-primary"
+                      : "bg-muted text-muted-foreground",
+                )}
+              >
+                {current.id === "studio" ? (
+                  <Crown className="size-5" />
+                ) : current.id === "pro" ? (
+                  <Sparkles className="size-5" />
+                ) : (
+                  <Lock className="size-5" />
+                )}
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Plan actual</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                  Plan actual
+                </p>
                 <p className="font-display text-2xl tracking-tight">{current.label}</p>
               </div>
             </div>
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
-            <UsageRow icon={CalendarDays} label="Citas este mes" used={usage?.appts ?? 0} limit={current.limits.appointmentsPerMonth} />
-            <UsageRow icon={Building2} label="Sucursales activas" used={usage?.locs ?? 0} limit={current.limits.locations} />
-            <UsageRow icon={Users} label="Profesionales activos" used={usage?.pros ?? 0} limit={current.limits.professionals} />
+            <UsageRow
+              icon={CalendarDays}
+              label="Citas este mes"
+              used={usage?.appts ?? 0}
+              limit={current.limits.appointmentsPerMonth}
+            />
+            <UsageRow
+              icon={Building2}
+              label="Sucursales activas"
+              used={usage?.locs ?? 0}
+              limit={current.limits.locations}
+            />
+            <UsageRow
+              icon={Users}
+              label="Profesionales activos"
+              used={usage?.pros ?? 0}
+              limit={current.limits.professionals}
+            />
           </div>
         </CardContent>
       </Card>
@@ -155,7 +235,8 @@ function PlanesPage() {
               }}
               className={cn(
                 "flex flex-col transition-all",
-                !isCurrent && "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                !isCurrent &&
+                  "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                 id === "pro" && "border-primary/40 shadow-soft",
                 id === "studio" && "bg-foreground text-background border-foreground",
                 isCurrent && "ring-2 ring-primary/40",
@@ -165,46 +246,110 @@ function PlanesPage() {
                 <div className="flex items-baseline justify-between mb-1">
                   <p className="font-display text-xl font-semibold">{p.label}</p>
                   {isCurrent && (
-                    <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider", id === "studio" ? "bg-background/15 text-background" : "bg-primary/15 text-primary")}>Actual</span>
+                    <span
+                      className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider",
+                        id === "studio"
+                          ? "bg-background/15 text-background"
+                          : "bg-primary/15 text-primary",
+                      )}
+                    >
+                      Actual
+                    </span>
                   )}
                 </div>
-                <p className={cn("text-sm mb-4", id === "studio" ? "text-background/70" : "text-muted-foreground")}>{p.tagline}</p>
+                <p
+                  className={cn(
+                    "text-sm mb-4",
+                    id === "studio" ? "text-background/70" : "text-muted-foreground",
+                  )}
+                >
+                  {p.tagline}
+                </p>
                 <div className="flex items-baseline gap-1 mb-5">
                   <span className="font-display text-3xl tracking-tight">{PLAN_PRICES[id]}</span>
-                  <span className={cn("text-xs", id === "studio" ? "text-background/60" : "text-muted-foreground")}>{PLAN_PERIODS[id]}</span>
+                  <span
+                    className={cn(
+                      "text-xs",
+                      id === "studio" ? "text-background/60" : "text-muted-foreground",
+                    )}
+                  >
+                    {PLAN_PERIODS[id]}
+                  </span>
                 </div>
 
                 <ul className="space-y-2 mb-6 text-sm">
                   <li className="flex items-start gap-2">
-                    <Check className={cn("size-4 mt-0.5 shrink-0", id === "studio" ? "text-background" : "text-primary")} strokeWidth={2.25} />
+                    <Check
+                      className={cn(
+                        "size-4 mt-0.5 shrink-0",
+                        id === "studio" ? "text-background" : "text-primary",
+                      )}
+                      strokeWidth={2.25}
+                    />
                     <span>
-                      {p.limits.appointmentsPerMonth === null ? "Citas ilimitadas" : `Hasta ${p.limits.appointmentsPerMonth} citas/mes`}
+                      {p.limits.appointmentsPerMonth === null
+                        ? "Citas ilimitadas"
+                        : `Hasta ${p.limits.appointmentsPerMonth} citas/mes`}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <Check className={cn("size-4 mt-0.5 shrink-0", id === "studio" ? "text-background" : "text-primary")} strokeWidth={2.25} />
+                    <Check
+                      className={cn(
+                        "size-4 mt-0.5 shrink-0",
+                        id === "studio" ? "text-background" : "text-primary",
+                      )}
+                      strokeWidth={2.25}
+                    />
                     <span>
-                      {p.limits.locations === null ? "Sucursales ilimitadas" : `${p.limits.locations} ${p.limits.locations === 1 ? "sucursal" : "sucursales"}`}
+                      {p.limits.locations === null
+                        ? "Sucursales ilimitadas"
+                        : `${p.limits.locations} ${p.limits.locations === 1 ? "sucursal" : "sucursales"}`}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <Check className={cn("size-4 mt-0.5 shrink-0", id === "studio" ? "text-background" : "text-primary")} strokeWidth={2.25} />
+                    <Check
+                      className={cn(
+                        "size-4 mt-0.5 shrink-0",
+                        id === "studio" ? "text-background" : "text-primary",
+                      )}
+                      strokeWidth={2.25}
+                    />
                     <span>
-                      {p.limits.professionals === null ? "Profesionales ilimitados" : `Hasta ${p.limits.professionals} profesionales`}
+                      {p.limits.professionals === null
+                        ? "Profesionales ilimitados"
+                        : `Hasta ${p.limits.professionals} profesionales`}
                     </span>
                   </li>
                   {moduleKeys.map((k) => {
                     const on = p.modules[k];
                     return (
-                      <li key={k} className={cn("flex items-start gap-2", !on && (id === "studio" ? "text-background/40" : "text-muted-foreground/60"))}>
+                      <li
+                        key={k}
+                        className={cn(
+                          "flex items-start gap-2",
+                          !on &&
+                            (id === "studio" ? "text-background/40" : "text-muted-foreground/60"),
+                        )}
+                      >
                         {on ? (
-                          <Check className={cn("size-4 mt-0.5 shrink-0", id === "studio" ? "text-background" : "text-primary")} strokeWidth={2.25} />
+                          <Check
+                            className={cn(
+                              "size-4 mt-0.5 shrink-0",
+                              id === "studio" ? "text-background" : "text-primary",
+                            )}
+                            strokeWidth={2.25}
+                          />
                         ) : (
                           <Lock className="size-3.5 mt-1 shrink-0 opacity-60" strokeWidth={1.75} />
                         )}
-                        <span className={cn(!on && "line-through decoration-current/30")}>{MODULE_LABELS[k]}</span>
+                        <span className={cn(!on && "line-through decoration-current/30")}>
+                          {MODULE_LABELS[k]}
+                        </span>
                         {on && MODULES_COMING_SOON.has(k) && (
-                          <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">Próximamente</span>
+                          <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">
+                            Próximamente
+                          </span>
                         )}
                       </li>
                     );
@@ -213,7 +358,15 @@ function PlanesPage() {
 
                 <div className="mt-auto">
                   {isCurrent ? (
-                    <Button variant="outline" className={cn("w-full", id === "studio" && "bg-background/10 text-background border-background/20 hover:bg-background/20")} disabled>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full",
+                        id === "studio" &&
+                          "bg-background/10 text-background border-background/20 hover:bg-background/20",
+                      )}
+                      disabled
+                    >
                       Plan actual
                     </Button>
                   ) : id === "free" ? (
@@ -233,7 +386,12 @@ function PlanesPage() {
                     </Button>
                   ) : (
                     <Button
-                      className={cn("w-full", id === "studio" ? "bg-background text-foreground hover:bg-background/90" : "")}
+                      className={cn(
+                        "w-full",
+                        id === "studio"
+                          ? "bg-background text-foreground hover:bg-background/90"
+                          : "",
+                      )}
                       onClick={(e) => {
                         e.stopPropagation();
                         setRequestPlan(id);
@@ -243,7 +401,8 @@ function PlanesPage() {
                         ? "Hablar con ventas"
                         : isDowngrade
                           ? "Cambiar a " + p.label
-                          : "Mejorar a " + p.label} <ArrowRight className="size-4" />
+                          : "Mejorar a " + p.label}{" "}
+                      <ArrowRight className="size-4" />
                     </Button>
                   )}
                   {!isCurrent && id === "free" && freeBlockMsg && (
@@ -257,7 +416,11 @@ function PlanesPage() {
       </div>
 
       <p className="text-xs text-muted-foreground text-center mt-6">
-        ¿Dudas sobre qué plan elegir? <Link to="/" hash="pricing" className="underline hover:text-foreground">Compara todos los planes</Link>.
+        ¿Dudas sobre qué plan elegir?{" "}
+        <Link to="/" hash="pricing" className="underline hover:text-foreground">
+          Compara todos los planes
+        </Link>
+        .
       </p>
 
       <UpgradeRequestDialog
@@ -278,7 +441,17 @@ function PlanesPage() {
   );
 }
 
-function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { planId: PlanId | null; onClose: () => void; businessName: string; businessId?: string }) {
+function UpgradeRequestDialog({
+  planId,
+  onClose,
+  businessName,
+  businessId,
+}: {
+  planId: PlanId | null;
+  onClose: () => void;
+  businessName: string;
+  businessId?: string;
+}) {
   const open = planId !== null;
   const plan = planId ? getPlan(planId) : null;
   const [name, setName] = useState("");
@@ -289,7 +462,12 @@ function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { p
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
-    setName(""); setEmail(""); setPhone(""); setIndustry(""); setMessage(""); setSubmitting(false);
+    setName("");
+    setEmail("");
+    setPhone("");
+    setIndustry("");
+    setMessage("");
+    setSubmitting(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -297,9 +475,11 @@ function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { p
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
     if (trimmedName.length < 2) return toast.error("Ingresa tu nombre");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return toast.error("Ingresa un email válido");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail))
+      return toast.error("Ingresa un email válido");
     if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
-    if (!businessId || !planId || planId === "free") return toast.error("No se encontró tu negocio");
+    if (!businessId || !planId || planId === "free")
+      return toast.error("No se encontró tu negocio");
     setSubmitting(true);
     try {
       await submitUpgradeRequest({
@@ -323,26 +503,53 @@ function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { p
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          reset();
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Solicitar plan {plan?.label ?? ""}</DialogTitle>
           <DialogDescription>
-            Déjanos tus datos y un asesor te contactará para activar tu plan y resolver cualquier duda.
+            Déjanos tus datos y un asesor te contactará para activar tu plan y resolver cualquier
+            duda.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="up-name">Nombre completo</Label>
-            <Input id="up-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required />
+            <Input
+              id="up-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="up-email">Email</Label>
-            <Input id="up-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} required />
+            <Input
+              id="up-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={255}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="up-phone">Teléfono (opcional)</Label>
-            <Input id="up-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+            <Input
+              id="up-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={30}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="up-industry">¿Qué tipo de negocio tienes?</Label>
@@ -355,16 +562,33 @@ function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { p
             >
               <option value="">Selecciona una opción</option>
               {BUSINESS_TYPES.map((b) => (
-                <option key={b} value={b}>{b}</option>
+                <option key={b} value={b}>
+                  {b}
+                </option>
               ))}
             </select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="up-msg">¿Algo que debamos saber? (opcional)</Label>
-            <Textarea id="up-msg" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={500} rows={3} placeholder={`Negocio: ${businessName}`} />
+            <Textarea
+              id="up-msg"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder={`Negocio: ${businessName}`}
+            />
           </div>
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset();
+                onClose();
+              }}
+              disabled={submitting}
+            >
               Cancelar
             </Button>
             <Button type="submit" disabled={submitting}>
@@ -377,7 +601,17 @@ function UpgradeRequestDialog({ planId, onClose, businessName, businessId }: { p
   );
 }
 
-function UsageRow({ icon: Icon, label, used, limit }: { icon: any; label: string; used: number; limit: number | null }) {
+function UsageRow({
+  icon: Icon,
+  label,
+  used,
+  limit,
+}: {
+  icon: any;
+  label: string;
+  used: number;
+  limit: number | null;
+}) {
   const isUnlimited = limit === null;
   const pct = isUnlimited ? 0 : Math.min(100, Math.round((used / Math.max(1, limit!)) * 100));
   const reached = !isUnlimited && used >= (limit ?? 0);
@@ -389,12 +623,22 @@ function UsageRow({ icon: Icon, label, used, limit }: { icon: any; label: string
           <Icon className="size-3.5" strokeWidth={1.75} /> {label}
         </div>
         <p className="font-display text-sm tabular-nums">
-          {used}<span className="text-muted-foreground">/{isUnlimited ? "∞" : limit}</span>
+          {used}
+          <span className="text-muted-foreground">/{isUnlimited ? "∞" : limit}</span>
         </p>
       </div>
       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
         <div
-          className={cn("h-full transition-all", isUnlimited ? "bg-primary/40 w-full" : reached ? "bg-rose-500" : warn ? "bg-amber-500" : "bg-primary")}
+          className={cn(
+            "h-full transition-all",
+            isUnlimited
+              ? "bg-primary/40 w-full"
+              : reached
+                ? "bg-rose-500"
+                : warn
+                  ? "bg-amber-500"
+                  : "bg-primary",
+          )}
           style={isUnlimited ? undefined : { width: `${pct}%` }}
         />
       </div>
@@ -433,9 +677,17 @@ function StudioRequestDialog({
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
-    setName(""); setRole(""); setEmail(""); setPhone("");
-    setLocations(""); setTeam(""); setIndustry(""); setAppointmentsRange("");
-    setCurrentTool(""); setTiming(""); setNeeds("");
+    setName("");
+    setRole("");
+    setEmail("");
+    setPhone("");
+    setLocations("");
+    setTeam("");
+    setIndustry("");
+    setAppointmentsRange("");
+    setCurrentTool("");
+    setTiming("");
+    setNeeds("");
     setSubmitting(false);
   };
 
@@ -449,7 +701,8 @@ function StudioRequestDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length < 2) return toast.error("Ingresa tu nombre");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return toast.error("Ingresa un email válido");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      return toast.error("Ingresa un email válido");
     if (!industry) return toast.error("Cuéntanos qué tipo de negocio tienes");
     if (!timing) return toast.error("Indica cuándo te gustaría empezar");
     if (!businessId) return toast.error("No se encontró tu negocio");
@@ -484,7 +737,15 @@ function StudioRequestDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          reset();
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -494,7 +755,8 @@ function StudioRequestDialog({
             <DialogTitle>Hablemos del plan Studio</DialogTitle>
           </div>
           <DialogDescription>
-            Te armamos una propuesta a medida: sucursales ilimitadas, equipo grande, onboarding asistido y soporte prioritario.
+            Te armamos una propuesta a medida: sucursales ilimitadas, equipo grande, onboarding
+            asistido y soporte prioritario.
           </DialogDescription>
         </DialogHeader>
 
@@ -502,24 +764,50 @@ function StudioRequestDialog({
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="st-name">Nombre completo *</Label>
-              <Input id="st-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required />
+              <Input
+                id="st-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={100}
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="st-role">Cargo en el negocio</Label>
-              <Input id="st-role" value={role} onChange={(e) => setRole(e.target.value)} maxLength={80} placeholder="Dueño, gerente, etc." />
+              <Input
+                id="st-role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                maxLength={80}
+                placeholder="Dueño, gerente, etc."
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="st-email">Email corporativo *</Label>
-              <Input id="st-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} required />
+              <Input
+                id="st-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={255}
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="st-phone">Teléfono / WhatsApp</Label>
-              <Input id="st-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+              <Input
+                id="st-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                maxLength={30}
+              />
             </div>
           </div>
 
           <div className="rounded-lg border border-border p-3 bg-muted/30 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sobre tu operación</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Sobre tu operación
+            </p>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="st-industry">¿Qué tipo de negocio tienes? *</Label>
@@ -532,17 +820,33 @@ function StudioRequestDialog({
                 >
                   <option value="">Selecciona una opción</option>
                   {BUSINESS_TYPES.map((b) => (
-                    <option key={b} value={b}>{b}</option>
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="st-locs">Sucursales</Label>
-                <Input id="st-locs" type="number" min={1} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="ej. 4" />
+                <Input
+                  id="st-locs"
+                  type="number"
+                  min={1}
+                  value={locations}
+                  onChange={(e) => setLocations(e.target.value)}
+                  placeholder="ej. 4"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="st-team">Tamaño del equipo</Label>
-                <Input id="st-team" type="number" min={1} value={team} onChange={(e) => setTeam(e.target.value)} placeholder="ej. 12 profesionales" />
+                <Input
+                  id="st-team"
+                  type="number"
+                  min={1}
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                  placeholder="ej. 12 profesionales"
+                />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="st-vol">Citas estimadas por mes</Label>
@@ -561,7 +865,13 @@ function StudioRequestDialog({
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="st-tool">¿Qué herramienta usan hoy? (opcional)</Label>
-                <Input id="st-tool" value={currentTool} onChange={(e) => setCurrentTool(e.target.value)} maxLength={120} placeholder="Excel, Booksy, agenda en papel…" />
+                <Input
+                  id="st-tool"
+                  value={currentTool}
+                  onChange={(e) => setCurrentTool(e.target.value)}
+                  maxLength={120}
+                  placeholder="Excel, Booksy, agenda en papel…"
+                />
               </div>
             </div>
           </div>
@@ -596,10 +906,22 @@ function StudioRequestDialog({
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset();
+                onClose();
+              }}
+              disabled={submitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting} className="bg-foreground text-background hover:bg-foreground/90">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bg-foreground text-background hover:bg-foreground/90"
+            >
               {submitting ? "Enviando…" : "Solicitar contacto Studio"}
             </Button>
           </DialogFooter>

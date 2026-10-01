@@ -3,7 +3,11 @@ import { ROLE_LABELS, type AssignableRole } from "@/lib/permissions";
 
 export const MAX_TEAM_SIZE = 25; // miembros + invitaciones pendientes por negocio
 
-export function buildInviteEmail(input: { businessName: string; role: AssignableRole; signInUrl: string }) {
+export function buildInviteEmail(input: {
+  businessName: string;
+  role: AssignableRole;
+  signInUrl: string;
+}) {
   const business = input.businessName.replace(/[\u0000-\u001f\u007f]+/g, " ").trim();
   const role = ROLE_LABELS[input.role];
   const subject = `Te invitaron a ${business} en Calendya`;

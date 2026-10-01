@@ -22,7 +22,9 @@ describe("shouldAttempt", () => {
   });
   it("reintenta fallidos y 'sending' caídos, pero no los recientes", () => {
     expect(shouldAttempt({ status: "failed", attempts: 1, updated_at: at(1) }, now)).toBe("retry");
-    expect(shouldAttempt({ status: "sending", attempts: 1, updated_at: at(20) }, now)).toBe("retry");
+    expect(shouldAttempt({ status: "sending", attempts: 1, updated_at: at(20) }, now)).toBe(
+      "retry",
+    );
     expect(shouldAttempt({ status: "sending", attempts: 1, updated_at: at(2) }, now)).toBe("skip");
   });
 });
@@ -36,7 +38,13 @@ describe("isValidEmail", () => {
 });
 
 describe("buildReminderEmail", () => {
-  const base = { businessName: "Salón <b>X</b>", clientName: 'Ana "A"', serviceName: "Corte", startsAt: new Date("2026-10-02T15:00:00Z"), timezone: "America/Lima" };
+  const base = {
+    businessName: "Salón <b>X</b>",
+    clientName: 'Ana "A"',
+    serviceName: "Corte",
+    startsAt: new Date("2026-10-02T15:00:00Z"),
+    timezone: "America/Lima",
+  };
   it("escapa HTML en el cuerpo y usa la zona horaria del negocio", () => {
     const m = buildReminderEmail(base);
     expect(m.html).not.toContain("<b>X</b>");
@@ -46,5 +54,6 @@ describe("buildReminderEmail", () => {
   it("no revienta con una zona horaria inválida", () => {
     expect(() => buildReminderEmail({ ...base, timezone: "No/Existe" })).not.toThrow();
   });
-  it("escapeHtml cubre comillas y &", () => expect(escapeHtml(`&"'<`)).toBe("&amp;&quot;&#39;&lt;"));
+  it("escapeHtml cubre comillas y &", () =>
+    expect(escapeHtml(`&"'<`)).toBe("&amp;&quot;&#39;&lt;"));
 });

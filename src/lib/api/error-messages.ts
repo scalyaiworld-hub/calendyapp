@@ -28,7 +28,12 @@ export function translateDbError(err: unknown): string {
   }
   if (msg.includes("ENTITY_HAS_FUTURE_APPTS")) {
     const n = msg.match(/ENTITY_HAS_FUTURE_APPTS:(\w+):(\d+)/);
-    const what = n?.[1] === "services" ? "este servicio" : n?.[1] === "professionals" ? "este profesional" : "esta sucursal";
+    const what =
+      n?.[1] === "services"
+        ? "este servicio"
+        : n?.[1] === "professionals"
+          ? "este profesional"
+          : "esta sucursal";
     const count = n?.[2] ? ` (${n[2]})` : "";
     return `No puedes eliminar ni desactivar ${what} porque tiene citas futuras${count}. Cancélalas o reasígnalas primero.`;
   }
@@ -44,7 +49,10 @@ export function translateDbError(err: unknown): string {
   if (msg.includes("appts_no_overlap")) {
     return "Ese horario ya fue tomado por otra cita. Elige otro.";
   }
-  if (msg.includes("clients_unique_phone_per_business") || msg.includes("clients_business_id_phone_key")) {
+  if (
+    msg.includes("clients_unique_phone_per_business") ||
+    msg.includes("clients_business_id_phone_key")
+  ) {
     return "Ya existe un cliente con ese teléfono en este negocio.";
   }
   if (msg.includes("clients_phone_check")) {

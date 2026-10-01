@@ -42,13 +42,24 @@ export const getPublicSlots = createServerFn({ method: "POST" })
   .inputValidator((input) => slotsSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { loadBookingContext, slotsFromContext, BookingError } = await import("@/lib/booking.server");
+    const { loadBookingContext, slotsFromContext, BookingError } =
+      await import("@/lib/booking.server");
     try {
       const ctx = await loadBookingContext(supabaseAdmin, data);
-      if (ctx.closed) return { slots: [], timezone: ctx.business.timezone, error: "El negocio no atiende ese día" as string | null };
-      return { slots: slotsFromContext(ctx, data.date), timezone: ctx.business.timezone, error: null as string | null };
+      if (ctx.closed)
+        return {
+          slots: [],
+          timezone: ctx.business.timezone,
+          error: "El negocio no atiende ese día" as string | null,
+        };
+      return {
+        slots: slotsFromContext(ctx, data.date),
+        timezone: ctx.business.timezone,
+        error: null as string | null,
+      };
     } catch (e) {
-      if (e instanceof BookingError) return { slots: [], timezone: null as string | null, error: e.message };
+      if (e instanceof BookingError)
+        return { slots: [], timezone: null as string | null, error: e.message };
       throw e;
     }
   });
@@ -57,8 +68,10 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   .inputValidator((input) => schema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { loadBookingContext, slotsFromContext, BookingError } = await import("@/lib/booking.server");
-    const { BOOKING_LIMITS, enforceBookingRate, getClientIp, hashIp, verifyCaptcha } = await import("@/lib/booking-guard.server");
+    const { loadBookingContext, slotsFromContext, BookingError } =
+      await import("@/lib/booking.server");
+    const { BOOKING_LIMITS, enforceBookingRate, getClientIp, hashIp, verifyCaptcha } =
+      await import("@/lib/booking-guard.server");
 
     const startsAt = new Date(data.startsAt);
     const endsAt = new Date(data.endsAt);
@@ -88,10 +101,14 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     const rules = settingsFromBusiness(bizRow);
     const now = Date.now();
     if (startsAt.getTime() < now + rules.minLeadMinutes * 60_000) {
-      throw new BookingError(`La reserva debe ser con al menos ${rules.minLeadMinutes} minutos de anticipación`);
+      throw new BookingError(
+        `La reserva debe ser con al menos ${rules.minLeadMinutes} minutos de anticipación`,
+      );
     }
     if (startsAt.getTime() > now + rules.maxAheadDays * 86_400_000) {
-      throw new BookingError(`Solo puedes reservar hasta ${rules.maxAheadDays} días por adelantado`);
+      throw new BookingError(
+        `Solo puedes reservar hasta ${rules.maxAheadDays} días por adelantado`,
+      );
     }
 
     await enforceBookingRate(supabaseAdmin, {
@@ -125,7 +142,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         .in("status", ["booked", "completed", "no_show"])
         .gte("starts_at", start.toISOString())
         .lt("starts_at", end.toISOString());
-      if ((count ?? 0) >= monthlyLimit) throw new BookingError("Este negocio alcanzó su límite de citas del mes");
+      if ((count ?? 0) >= monthlyLimit)
+        throw new BookingError("Este negocio alcanzó su límite de citas del mes");
     }
 
     // Dedupe de cliente por teléfono (con bypass de RLS)
@@ -142,7 +160,9 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     // Política de no-shows: pasado el umbral, la reserva online requiere hablar con el negocio.
     if (rules.maxNoShows !== null && (existing?.no_show_count ?? 0) >= rules.maxNoShows) {
-      throw new BookingError("No puedes reservar en línea por inasistencias previas. Contacta directamente al negocio");
+      throw new BookingError(
+        "No puedes reservar en línea por inasistencias previas. Contacta directamente al negocio",
+      );
     }
 
     let clientId = existing?.id;
@@ -154,7 +174,9 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         .eq("client_id", clientId)
         .eq("status", "pending");
       if ((pendingCount ?? 0) >= BOOKING_LIMITS.MAX_PENDING_PER_CLIENT) {
-        throw new BookingError("Ya tienes reservas pendientes de confirmar con este negocio. Espera su confirmación");
+        throw new BookingError(
+          "Ya tienes reservas pendientes de confirmar con este negocio. Espera su confirmación",
+        );
       }
     }
     if (!clientId) {
@@ -176,17 +198,21 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     // podría alterar la ficha. El negocio puede corregirla desde Clientes.
 
     // Crear la cita (los constraints de la base son la última barrera ante carreras)
-    const { data: created, error: apptErr } = await supabaseAdmin.from("appointments").insert({
-      business_id: data.businessId,
-      client_id: clientId,
-      service_id: data.serviceId,
-      location_id: ctx.locationId,
-      professional_id: ctx.professionalId,
-      starts_at: startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-      source: "booking_page",
-      status: "pending",
-    }).select("manage_token").single();
+    const { data: created, error: apptErr } = await supabaseAdmin
+      .from("appointments")
+      .insert({
+        business_id: data.businessId,
+        client_id: clientId,
+        service_id: data.serviceId,
+        location_id: ctx.locationId,
+        professional_id: ctx.professionalId,
+        starts_at: startsAt.toISOString(),
+        ends_at: endsAt.toISOString(),
+        source: "booking_page",
+        status: "pending",
+      })
+      .select("manage_token")
+      .single();
     if (apptErr) {
       const msg = apptErr.message ?? "";
       if (msg.includes("appts_no_overlap")) {
@@ -208,7 +234,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
             ? supabaseAdmin.from("locations").select("name").eq("id", ctx.locationId).maybeSingle()
             : Promise.resolve({ data: null as { name: string } | null }),
         ]);
-        const { sendEmail, buildBookingReceivedEmail, getSiteOrigin } = await import("@/lib/email.server");
+        const { sendEmail, buildBookingReceivedEmail, getSiteOrigin } =
+          await import("@/lib/email.server");
         const origin = await getSiteOrigin();
         await sendEmail({
           to: data.email,
@@ -219,7 +246,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
             locationName: loc.data?.name ?? null,
             startsAt,
             timezone: tz,
-            manageUrl: origin && created.manage_token ? `${origin}/cita/${created.manage_token}` : null,
+            manageUrl:
+              origin && created.manage_token ? `${origin}/cita/${created.manage_token}` : null,
           }),
         });
       } catch (e) {
@@ -246,7 +274,9 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
 
     const { data: business } = await supabaseAdmin
       .from("businesses")
-      .select("id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font,plan")
+      .select(
+        "id,name,slug,timezone,logo_url,industry,created_at,brand_primary,brand_background,brand_font,plan",
+      )
       .eq("slug", data.slug)
       .is("deleted_at", null)
       .maybeSingle();
@@ -290,7 +320,9 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
         .order("name"),
       supabaseAdmin
         .from("services")
-        .select("id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at")
+        .select(
+          "id,name,description,duration_minutes,price_cents,display_order,is_active,deleted_at",
+        )
         .eq("business_id", businessId)
         .is("deleted_at", null)
         .eq("is_active", true)
@@ -303,10 +335,16 @@ export const getPublicBusinessBootstrap = createServerFn({ method: "GET" })
     // 2) Asignaciones, acotadas a los IDs de este negocio
     const [locProsRes, proSvcsRes] = await Promise.all([
       proIds.length
-        ? supabaseAdmin.from("location_professionals").select("location_id, professional_id").in("professional_id", proIds)
+        ? supabaseAdmin
+            .from("location_professionals")
+            .select("location_id, professional_id")
+            .in("professional_id", proIds)
         : Promise.resolve({ data: [] as any[] }),
       proIds.length && svcIds.length
-        ? supabaseAdmin.from("professional_services").select("professional_id, service_id").in("professional_id", proIds)
+        ? supabaseAdmin
+            .from("professional_services")
+            .select("professional_id, service_id")
+            .in("professional_id", proIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 

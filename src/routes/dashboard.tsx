@@ -3,7 +3,25 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut, Lock, Sparkles, ShieldCheck, UsersRound } from "lucide-react";
+import {
+  CalendarDays,
+  Scissors,
+  Users,
+  Clock,
+  Settings,
+  LayoutDashboard,
+  ExternalLink,
+  Building2,
+  User2,
+  ClipboardList,
+  Menu,
+  X,
+  LogOut,
+  Lock,
+  Sparkles,
+  ShieldCheck,
+  UsersRound,
+} from "lucide-react";
 import { useEntityCounts } from "@/lib/entity-counts";
 import { canAccessPath, ROLE_LABELS, type Role } from "@/lib/permissions";
 import { toast } from "sonner";
@@ -58,7 +76,9 @@ function DashboardLayout() {
 
   const { data: readyCounts } = useEntityCounts(business?.id);
   const canShareLink =
-    (readyCounts?.pros ?? 0) > 0 && (readyCounts?.services ?? 0) > 0 && (readyCounts?.locations ?? 0) > 0;
+    (readyCounts?.pros ?? 0) > 0 &&
+    (readyCounts?.services ?? 0) > 0 &&
+    (readyCounts?.locations ?? 0) > 0;
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const role = ((business as { my_role?: Role } | null | undefined)?.my_role ?? "owner") as Role;
@@ -89,10 +109,14 @@ function DashboardLayout() {
   }, [loading, bizLoading, adminLoading, user, business, needsAdminChoice, navigate]);
 
   if (loading || !user || bizLoading || adminLoading || needsAdminChoice) {
-    return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>
+    );
   }
   if (!business || !business.onboarding_completed) {
-    return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>
+    );
   }
 
   const plan = ((business as any)?.plan ?? "free") as string;
@@ -100,11 +124,14 @@ function DashboardLayout() {
     plan === "studio"
       ? "bg-foreground text-background"
       : plan === "pro"
-      ? "bg-primary/15 text-primary"
-      : "bg-muted text-muted-foreground";
+        ? "bg-primary/15 text-primary"
+        : "bg-muted text-muted-foreground";
   const planLabel = plan === "studio" ? "Studio" : plan === "pro" ? "Pro" : "Free";
 
-  const visibleGroups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => canAccessPath(role, i.to)) })).filter((g) => g.items.length > 0);
+  const visibleGroups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => canAccessPath(role, i.to)),
+  })).filter((g) => g.items.length > 0);
 
   const SidebarInner = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
@@ -115,7 +142,14 @@ function DashboardLayout() {
         {business && (
           <div className="mt-4 flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground truncate font-medium">{business.name}</p>
-            <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider shrink-0", planStyles)}>{role === "owner" ? planLabel : ROLE_LABELS[role]}</span>
+            <span
+              className={cn(
+                "text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider shrink-0",
+                planStyles,
+              )}
+            >
+              {role === "owner" ? planLabel : ROLE_LABELS[role]}
+            </span>
           </div>
         )}
       </div>
@@ -134,7 +168,10 @@ function DashboardLayout() {
                   activeOptions={{ exact: !!exact }}
                   onClick={onNavigate}
                   className="group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                  activeProps={{ className: "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm bg-accent text-foreground font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:bg-foreground before:rounded-full" }}
+                  activeProps={{
+                    className:
+                      "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm bg-accent text-foreground font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:bg-foreground before:rounded-full",
+                  }}
                 >
                   <Icon className="size-4 shrink-0" strokeWidth={1.75} />
                   {label}
@@ -160,7 +197,11 @@ function DashboardLayout() {
             ) : (
               <button
                 type="button"
-                onClick={() => toast.info("Agrega al menos un profesional y un servicio para activar tu página pública.")}
+                onClick={() =>
+                  toast.info(
+                    "Agrega al menos un profesional y un servicio para activar tu página pública.",
+                  )
+                }
                 className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground/60 cursor-not-allowed text-left"
                 title="Agrega al menos un profesional y un servicio"
               >
@@ -184,9 +225,13 @@ function DashboardLayout() {
       <div className="p-3 border-t border-border">
         <div className="flex items-center gap-2 rounded-lg bg-background/60 px-3 py-2 border border-border">
           <div className="size-7 rounded-full bg-foreground grid place-items-center shrink-0">
-            <span className="text-background text-xs font-semibold">{user.email?.[0]?.toUpperCase() ?? "U"}</span>
+            <span className="text-background text-xs font-semibold">
+              {user.email?.[0]?.toUpperCase() ?? "U"}
+            </span>
           </div>
-          <p className="text-xs text-foreground truncate font-medium flex-1 min-w-0">{user.email}</p>
+          <p className="text-xs text-foreground truncate font-medium flex-1 min-w-0">
+            {user.email}
+          </p>
           <button
             onClick={signOut}
             title="Cerrar sesión"

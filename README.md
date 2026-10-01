@@ -29,16 +29,16 @@ Aplicación de reservas en línea al estilo Calendly, pensada para negocios de s
 
 ## Stack
 
-| Capa | Tecnología |
-| --- | --- |
-| Framework | [TanStack Start](https://tanstack.com/start) (React 19, SSR) con enrutado por archivos de TanStack Router |
-| Lenguaje | TypeScript |
-| Estilos / UI | Tailwind CSS 4, shadcn/ui (Radix UI), framer-motion, lucide-react |
-| Datos en cliente | TanStack Query, react-hook-form, zod |
-| Backend | Supabase (Postgres, Auth, RLS) y server functions de TanStack Start |
-| Build | Vite 7 con el plugin de TanStack Start y Nitro (destino por defecto: Cloudflare) |
-| Pruebas / calidad | Vitest, Testing Library, ESLint, Prettier |
-| Gestor de paquetes | npm (`package-lock.json`) |
+| Capa               | Tecnología                                                                                                |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| Framework          | [TanStack Start](https://tanstack.com/start) (React 19, SSR) con enrutado por archivos de TanStack Router |
+| Lenguaje           | TypeScript                                                                                                |
+| Estilos / UI       | Tailwind CSS 4, shadcn/ui (Radix UI), framer-motion, lucide-react                                         |
+| Datos en cliente   | TanStack Query, react-hook-form, zod                                                                      |
+| Backend            | Supabase (Postgres, Auth, RLS) y server functions de TanStack Start                                       |
+| Build              | Vite 7 con el plugin de TanStack Start y Nitro (destino por defecto: Cloudflare)                          |
+| Pruebas / calidad  | Vitest, Testing Library, ESLint, Prettier                                                                 |
+| Gestor de paquetes | npm (`package-lock.json`)                                                                                 |
 
 ## Requisitos
 
@@ -62,27 +62,27 @@ La app queda disponible en la URL que imprime Vite (normalmente `http://localhos
 Después de crear el proyecto de Supabase:
 
 1. Aplica las migraciones de `supabase/migrations/` (ver [Base de datos y migraciones](#base-de-datos-y-migraciones)).
-2. En Supabase, habilita el proveedor **Google** en Authentication si quieres el inicio de sesión con Google, y agrega la URL de tu app a las *Redirect URLs*.
+2. En Supabase, habilita el proveedor **Google** en Authentication si quieres el inicio de sesión con Google, y agrega la URL de tu app a las _Redirect URLs_.
 
 ## Variables de entorno
 
 Copia `.env.example` a `.env`. El archivo `.env` está en `.gitignore`; no lo subas al repositorio.
 
-| Variable | Ámbito | Descripción |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | Cliente y servidor | URL del proyecto Supabase. |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cliente y servidor | Clave publishable (anon). Es pública. |
-| `VITE_SUPABASE_PROJECT_ID` | Cliente y servidor | ID del proyecto Supabase. |
-| `SUPABASE_URL` | Servidor | URL del proyecto, usada por el cliente de servidor. |
-| `SUPABASE_PUBLISHABLE_KEY` | Servidor | Clave publishable para el middleware de autenticación. |
-| `SUPABASE_PROJECT_ID` | Servidor | ID del proyecto Supabase. |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Solo servidor, secreta** | Clave con la que `src/integrations/supabase/client.server.ts` omite RLS. Se necesita para `/admin`, el cambio de plan y las reservas públicas. |
-| `VITE_TURNSTILE_SITE_KEY` | Cliente | Clave pública de Cloudflare Turnstile para la página de reservas. Opcional: sin ella no se muestra captcha. |
-| `TURNSTILE_SECRET_KEY` | **Solo servidor, secreta** | Verifica el captcha en `createPublicBooking`. Si no está definida, no se exige (recomendado definirla en producción). |
-| `BOOKING_IP_SALT` | Solo servidor | Sal para guardar con hash las IP del límite de intentos de reserva. |
-| `RESEND_API_KEY` | **Solo servidor, secreta** | Envía el correo "recibimos tu reserva" cuando el cliente deja su email. Sin ella (o sin `EMAIL_FROM`) no se envía nada y la reserva funciona igual. |
-| `EMAIL_FROM` | Solo servidor | Remitente verificado en Resend, por ejemplo `Calendya <reservas@tu-dominio.com>`. |
-| `SITE_URL` | Solo servidor | Base de los enlaces `/cita/:token` de los correos. Si falta, se usa el host de la petición. |
+| Variable                        | Ámbito                     | Descripción                                                                                                                                         |
+| ------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`             | Cliente y servidor         | URL del proyecto Supabase.                                                                                                                          |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cliente y servidor         | Clave publishable (anon). Es pública.                                                                                                               |
+| `VITE_SUPABASE_PROJECT_ID`      | Cliente y servidor         | ID del proyecto Supabase.                                                                                                                           |
+| `SUPABASE_URL`                  | Servidor                   | URL del proyecto, usada por el cliente de servidor.                                                                                                 |
+| `SUPABASE_PUBLISHABLE_KEY`      | Servidor                   | Clave publishable para el middleware de autenticación.                                                                                              |
+| `SUPABASE_PROJECT_ID`           | Servidor                   | ID del proyecto Supabase.                                                                                                                           |
+| `SUPABASE_SERVICE_ROLE_KEY`     | **Solo servidor, secreta** | Clave con la que `src/integrations/supabase/client.server.ts` omite RLS. Se necesita para `/admin`, el cambio de plan y las reservas públicas.      |
+| `VITE_TURNSTILE_SITE_KEY`       | Cliente                    | Clave pública de Cloudflare Turnstile para la página de reservas. Opcional: sin ella no se muestra captcha.                                         |
+| `TURNSTILE_SECRET_KEY`          | **Solo servidor, secreta** | Verifica el captcha en `createPublicBooking`. Si no está definida, no se exige (recomendado definirla en producción).                               |
+| `BOOKING_IP_SALT`               | Solo servidor              | Sal para guardar con hash las IP del límite de intentos de reserva.                                                                                 |
+| `RESEND_API_KEY`                | **Solo servidor, secreta** | Envía el correo "recibimos tu reserva" cuando el cliente deja su email. Sin ella (o sin `EMAIL_FROM`) no se envía nada y la reserva funciona igual. |
+| `EMAIL_FROM`                    | Solo servidor              | Remitente verificado en Resend, por ejemplo `Calendya <reservas@tu-dominio.com>`.                                                                   |
+| `SITE_URL`                      | Solo servidor              | Base de los enlaces `/cita/:token` de los correos. Si falta, se usa el host de la petición.                                                         |
 
 Reglas importantes:
 
@@ -92,15 +92,15 @@ Reglas importantes:
 
 ## Scripts
 
-| Comando | Descripción |
-| --- | --- |
-| `bun run dev` | Servidor de desarrollo de Vite. |
-| `bun run build` | Build de producción. |
-| `bun run build:dev` | Build en modo desarrollo. |
-| `bun run preview` | Sirve localmente el build. |
-| `bun run lint` | Ejecuta ESLint. |
-| `bun run format` | Formatea el código con Prettier. |
-| `bun run test` | Ejecuta las pruebas con Vitest (una sola pasada). |
+| Comando             | Descripción                                       |
+| ------------------- | ------------------------------------------------- |
+| `bun run dev`       | Servidor de desarrollo de Vite.                   |
+| `bun run build`     | Build de producción.                              |
+| `bun run build:dev` | Build en modo desarrollo.                         |
+| `bun run preview`   | Sirve localmente el build.                        |
+| `bun run lint`      | Ejecuta ESLint.                                   |
+| `bun run format`    | Formatea el código con Prettier.                  |
+| `bun run test`      | Ejecuta las pruebas con Vitest (una sola pasada). |
 
 ## Estructura del proyecto
 
@@ -137,24 +137,24 @@ calendyapp/
 
 Server functions principales (`src/lib/api/`):
 
-| Archivo | Propósito |
-| --- | --- |
-| `admin.functions.ts` | Estado de admin, resumen de negocios/preregistros y cambio de plan. |
-| `plan.functions.ts` | Bajar un negocio al plan Free (única transición que hace el dueño). |
-| `public-booking.functions.ts` | Creación de reservas públicas con validaciones en servidor. |
-| `limits.functions.ts` | Consulta de límites según el plan. |
+| Archivo                       | Propósito                                                           |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `admin.functions.ts`          | Estado de admin, resumen de negocios/preregistros y cambio de plan. |
+| `plan.functions.ts`           | Bajar un negocio al plan Free (única transición que hace el dueño). |
+| `public-booking.functions.ts` | Creación de reservas públicas con validaciones en servidor.         |
+| `limits.functions.ts`         | Consulta de límites según el plan.                                  |
 
 ## Rutas
 
-| Ruta | Acceso |
-| --- | --- |
-| `/` | Pública (landing) |
-| `/auth`, `/reset-password` | Pública |
-| `/b/:slug` | Pública (reserva de un negocio) |
-| `/privacidad`, `/terminos` | Pública |
-| `/onboarding` | Usuario autenticado |
-| `/dashboard/*` | Usuario autenticado (dueño del negocio) |
-| `/admin` | Solo rol `admin` (`noindex, nofollow`) |
+| Ruta                       | Acceso                                  |
+| -------------------------- | --------------------------------------- |
+| `/`                        | Pública (landing)                       |
+| `/auth`, `/reset-password` | Pública                                 |
+| `/b/:slug`                 | Pública (reserva de un negocio)         |
+| `/privacidad`, `/terminos` | Pública                                 |
+| `/onboarding`              | Usuario autenticado                     |
+| `/dashboard/*`             | Usuario autenticado (dueño del negocio) |
+| `/admin`                   | Solo rol `admin` (`noindex, nofollow`)  |
 
 ## Autenticación y roles
 
@@ -233,7 +233,7 @@ Buenas prácticas al contribuir:
 
 ## Despliegue
 
-El build usa Nitro con Cloudflare como destino por defecto (`bun run build`). Configura en el hosting las variables de la sección [Variables de entorno](#variables-de-entorno), incluida `SUPABASE_SERVICE_ROLE_KEY` como secreto, y agrega la URL de producción a las *Redirect URLs* de Supabase Auth para que funcionen Google OAuth y la recuperación de contraseña.
+El build usa Nitro con Cloudflare como destino por defecto (`bun run build`). Configura en el hosting las variables de la sección [Variables de entorno](#variables-de-entorno), incluida `SUPABASE_SERVICE_ROLE_KEY` como secreto, y agrega la URL de producción a las _Redirect URLs_ de Supabase Auth para que funcionen Google OAuth y la recuperación de contraseña.
 
 ## Licencia
 

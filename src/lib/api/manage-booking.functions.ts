@@ -29,7 +29,9 @@ async function loadByToken(token: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: appt } = await supabaseAdmin
     .from("appointments")
-    .select("id,business_id,service_id,professional_id,location_id,starts_at,ends_at,status,cancelled_reason")
+    .select(
+      "id,business_id,service_id,professional_id,location_id,starts_at,ends_at,status,cancelled_reason",
+    )
     .eq("manage_token", token)
     .maybeSingle();
   if (!appt) return null;
@@ -37,12 +39,22 @@ async function loadByToken(token: string) {
   const [biz, svc, pro, loc] = await Promise.all([
     supabaseAdmin
       .from("businesses")
-      .select("name,slug,timezone,booking_cancel_min_hours,booking_min_lead_minutes,booking_max_ahead_days,booking_slot_step_minutes,booking_buffer_minutes,booking_max_no_shows")
+      .select(
+        "name,slug,timezone,booking_cancel_min_hours,booking_min_lead_minutes,booking_max_ahead_days,booking_slot_step_minutes,booking_buffer_minutes,booking_max_no_shows",
+      )
       .eq("id", appt.business_id)
       .maybeSingle(),
-    supabaseAdmin.from("services").select("name,duration_minutes").eq("id", appt.service_id).maybeSingle(),
+    supabaseAdmin
+      .from("services")
+      .select("name,duration_minutes")
+      .eq("id", appt.service_id)
+      .maybeSingle(),
     appt.professional_id
-      ? supabaseAdmin.from("professionals").select("name").eq("id", appt.professional_id).maybeSingle()
+      ? supabaseAdmin
+          .from("professionals")
+          .select("name")
+          .eq("id", appt.professional_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     appt.location_id
       ? supabaseAdmin.from("locations").select("name").eq("id", appt.location_id).maybeSingle()
@@ -109,7 +121,11 @@ export const cancelBookingByToken = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("appointments")
-      .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancelled_reason: "Cancelada por el cliente" })
+      .update({
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+        cancelled_reason: "Cancelada por el cliente",
+      })
       .eq("id", appt.id)
       .in("status", ["pending", "booked"]);
     if (error) throw new Error(error.message);

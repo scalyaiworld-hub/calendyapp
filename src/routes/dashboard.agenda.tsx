@@ -7,11 +7,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Link2, Building2, Users, Clock, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  CalendarIcon,
+  Link2,
+  Building2,
+  Users,
+  Clock,
+  Search,
+} from "lucide-react";
 import { DAY_NAMES_SHORT, formatTime, formatPriceCents } from "@/lib/format";
 import { toast } from "sonner";
 import { translateDbError } from "@/lib/api/error-messages";
@@ -35,8 +58,16 @@ export const Route = createFileRoute("/dashboard/agenda")({
   component: AgendaPage,
 });
 
-function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function addDays(d: Date, n: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
 function timeFromOffset(offsetY: number, startHour: number, pxPerMinute: number, endHour: number) {
   const rawMin = Math.max(0, offsetY / pxPerMinute);
   const snapped = Math.round(rawMin / 15) * 15;
@@ -96,7 +127,10 @@ function AgendaPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("week");
   const [newApptOpen, setNewApptOpen] = useState(false);
-  const [newApptSlot, setNewApptSlot] = useState<{ date: Date; time: string }>({ date: new Date(), time: "10:00" });
+  const [newApptSlot, setNewApptSlot] = useState<{ date: Date; time: string }>({
+    date: new Date(),
+    time: "10:00",
+  });
   const [proFilter, setProFilter] = useState<string>("all");
 
   function openNewAppt(slotDate: Date, time = "10:00") {
@@ -150,7 +184,12 @@ function AgendaPage() {
   const weekEnd = endOfWeek(date);
 
   const { data: appts, error: apptsError } = useQuery({
-    queryKey: ["appts", businessId, view, view === "day" ? date.toDateString() : weekStart.toDateString()],
+    queryKey: [
+      "appts",
+      businessId,
+      view,
+      view === "day" ? date.toDateString() : weekStart.toDateString(),
+    ],
     enabled: !!businessId,
     queryFn: async () => {
       let query = supabase
@@ -164,7 +203,9 @@ function AgendaPage() {
         query = query.gte("starts_at", date.toISOString()).lt("starts_at", end.toISOString());
       } else {
         const nextDay = addDays(weekEnd, 1);
-        query = query.gte("starts_at", weekStart.toISOString()).lt("starts_at", nextDay.toISOString());
+        query = query
+          .gte("starts_at", weekStart.toISOString())
+          .lt("starts_at", nextDay.toISOString());
       }
 
       const { data, error } = await query;
@@ -180,7 +221,11 @@ function AgendaPage() {
   // Próxima cita activa de hoy (para destacar en el header)
   const nowTs = Date.now();
   const nextAppt = filteredAppts
-    .filter((a) => (a.status === "booked" || a.status === "pending") && new Date(a.starts_at).getTime() >= nowTs)
+    .filter(
+      (a) =>
+        (a.status === "booked" || a.status === "pending") &&
+        new Date(a.starts_at).getTime() >= nowTs,
+    )
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
 
   const updateStatus = useMutation({
@@ -227,7 +272,9 @@ function AgendaPage() {
         qc.setQueryData(
           s.key,
           prev.map((a) =>
-            a.id === vars.id ? { ...a, starts_at: start.toISOString(), ends_at: end.toISOString() } : a,
+            a.id === vars.id
+              ? { ...a, starts_at: start.toISOString(), ends_at: end.toISOString() }
+              : a,
           ),
         );
       }
@@ -248,7 +295,10 @@ function AgendaPage() {
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const isToday = date.toDateString() === new Date().toDateString();
-  const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
+  const bookingUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/b/${business.slug}`
+      : `/b/${business.slug}`;
 
   const goPrev = () => {
     if (view === "day") setDate(addDays(date, -1));
@@ -260,9 +310,10 @@ function AgendaPage() {
   };
 
   const today = startOfDay(new Date());
-  const weekLabel = view === "week"
-    ? `${weekStart.toLocaleDateString("es-PE", { day: "numeric", month: "short" })} – ${weekEnd.toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}`
-    : `${DAY_NAMES_SHORT[date.getDay()]} ${date.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}`;
+  const weekLabel =
+    view === "week"
+      ? `${weekStart.toLocaleDateString("es-PE", { day: "numeric", month: "short" })} – ${weekEnd.toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}`
+      : `${DAY_NAMES_SHORT[date.getDay()]} ${date.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}`;
 
   return (
     <div className="space-y-6">
@@ -281,7 +332,9 @@ function AgendaPage() {
               <SelectContent>
                 <SelectItem value="all">Todos los profesionales</SelectItem>
                 {prosList.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -290,14 +343,24 @@ function AgendaPage() {
             <button
               type="button"
               onClick={() => setView("day")}
-              className={cn("px-3 py-1.5 text-sm rounded-sm transition", view === "day" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+              className={cn(
+                "px-3 py-1.5 text-sm rounded-sm transition",
+                view === "day"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               Día
             </button>
             <button
               type="button"
               onClick={() => setView("week")}
-              className={cn("px-3 py-1.5 text-sm rounded-sm transition", view === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+              className={cn(
+                "px-3 py-1.5 text-sm rounded-sm transition",
+                view === "week"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               Semana
             </button>
@@ -324,7 +387,9 @@ function AgendaPage() {
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <Button variant="outline" size="sm" onClick={goPrev}><ChevronLeft className="size-4" /></Button>
+        <Button variant="outline" size="sm" onClick={goPrev}>
+          <ChevronLeft className="size-4" />
+        </Button>
         <div className="flex items-center gap-2 flex-wrap justify-center">
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
@@ -337,17 +402,30 @@ function AgendaPage() {
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(d) => { if (d) { setDate(view === "week" ? startOfWeek(d) : startOfDay(d)); setPickerOpen(false); } }}
+                onSelect={(d) => {
+                  if (d) {
+                    setDate(view === "week" ? startOfWeek(d) : startOfDay(d));
+                    setPickerOpen(false);
+                  }
+                }}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
           {!isToday && (
-            <Button variant="ghost" size="sm" onClick={() => setDate(view === "week" ? startOfWeek(today) : today)}>Hoy</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDate(view === "week" ? startOfWeek(today) : today)}
+            >
+              Hoy
+            </Button>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={goNext}><ChevronRight className="size-4" /></Button>
+        <Button variant="outline" size="sm" onClick={goNext}>
+          <ChevronRight className="size-4" />
+        </Button>
       </div>
 
       {nextAppt && (
@@ -356,9 +434,12 @@ function AgendaPage() {
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
               <Clock className="size-3.5" /> Próxima cita
             </span>
-            <span className="font-display text-base tabular-nums">{formatTime(nextAppt.starts_at)}</span>
+            <span className="font-display text-base tabular-nums">
+              {formatTime(nextAppt.starts_at)}
+            </span>
             <span className="text-sm text-foreground truncate min-w-0">
-              {nextAppt.clients?.name ?? "Sin cliente"} · <span className="text-muted-foreground">{nextAppt.services?.name}</span>
+              {nextAppt.clients?.name ?? "Sin cliente"} ·{" "}
+              <span className="text-muted-foreground">{nextAppt.services?.name}</span>
             </span>
             {(() => {
               const proName = prosList?.find((p) => p.id === nextAppt.professional_id)?.name;
@@ -371,7 +452,11 @@ function AgendaPage() {
       )}
 
       {apptsError ? (
-        <Card><CardContent className="pt-6 text-center text-destructive text-sm">Error al cargar las citas: {(apptsError as Error).message}</CardContent></Card>
+        <Card>
+          <CardContent className="pt-6 text-center text-destructive text-sm">
+            Error al cargar las citas: {(apptsError as Error).message}
+          </CardContent>
+        </Card>
       ) : view === "week" ? (
         <WeekCalendar
           weekStart={weekStart}
@@ -460,17 +545,25 @@ function WeekCalendar({
       <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-b border-border bg-muted/30 text-xs">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5">
-            <span className="font-display text-base text-foreground tabular-nums">{active.length}</span>
+            <span className="font-display text-base text-foreground tabular-nums">
+              {active.length}
+            </span>
             <span className="text-muted-foreground">{active.length === 1 ? "cita" : "citas"}</span>
           </span>
           {totalMinutes > 0 && (
             <span className="text-muted-foreground">
-              <span className="text-foreground font-medium tabular-nums">{Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m</span> reservadas
+              <span className="text-foreground font-medium tabular-nums">
+                {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m
+              </span>{" "}
+              reservadas
             </span>
           )}
           {totalRevenueCents > 0 && (
             <span className="text-muted-foreground">
-              <span className="text-foreground font-medium tabular-nums">{formatPriceCents(totalRevenueCents)}</span> facturado
+              <span className="text-foreground font-medium tabular-nums">
+                {formatPriceCents(totalRevenueCents)}
+              </span>{" "}
+              facturado
             </span>
           )}
         </div>
@@ -506,14 +599,37 @@ function WeekCalendar({
               return s.toDateString() === day.toDateString();
             });
             const nowMinutes = isToday ? (now.getHours() - startHour) * 60 + now.getMinutes() : -1;
-            const nowVisible = isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
+            const nowVisible =
+              isToday && nowMinutes >= 0 && nowMinutes <= (endHour - startHour) * 60;
 
             return (
-              <div key={idx} className="relative flex-1 min-w-[140px] border-r border-border last:border-r-0">
+              <div
+                key={idx}
+                className="relative flex-1 min-w-[140px] border-r border-border last:border-r-0"
+              >
                 {/* Day header */}
-                <div className={cn("h-12 border-b border-border flex flex-col items-center justify-center text-xs", isToday ? "bg-primary/5" : "bg-muted/20")}>
-                  <span className={cn("font-medium", isToday ? "text-primary" : "text-muted-foreground")}>{DAY_NAMES_SHORT[day.getDay()]}</span>
-                  <span className={cn("tabular-nums", isToday ? "text-primary font-semibold" : "text-foreground")}>{day.getDate()}</span>
+                <div
+                  className={cn(
+                    "h-12 border-b border-border flex flex-col items-center justify-center text-xs",
+                    isToday ? "bg-primary/5" : "bg-muted/20",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "font-medium",
+                      isToday ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    {DAY_NAMES_SHORT[day.getDay()]}
+                  </span>
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      isToday ? "text-primary font-semibold" : "text-foreground",
+                    )}
+                  >
+                    {day.getDate()}
+                  </span>
                 </div>
 
                 {/* Grid */}
@@ -523,7 +639,12 @@ function WeekCalendar({
                     if (!onSlotClick) return;
                     if ((e.target as HTMLElement).closest("[data-appt]")) return;
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+                    const time = timeFromOffset(
+                      e.clientY - rect.top,
+                      startHour,
+                      pxPerMinute,
+                      endHour,
+                    );
                     onSlotClick(day, time);
                   }}
                   onDragOver={(e) => {
@@ -538,7 +659,12 @@ function WeekCalendar({
                     const durationMin = Number(e.dataTransfer.getData("text/appt-duration")) || 30;
                     if (!id) return;
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const time = timeFromOffset(e.clientY - rect.top, startHour, pxPerMinute, endHour);
+                    const time = timeFromOffset(
+                      e.clientY - rect.top,
+                      startHour,
+                      pxPerMinute,
+                      endHour,
+                    );
                     onReschedule({ id, newDate: day, newTime: time, durationMin });
                   }}
                 >
@@ -569,12 +695,40 @@ function WeekCalendar({
                     if (startMin + dur < 0 || startMin > (endHour - startHour) * 60) return null;
                     const top = Math.max(0, startMin) * pxPerMinute;
                     const height = Math.max(28, dur * pxPerMinute - 3);
-                    const colorMap: Record<string, { bg: string; border: string; text: string; bar: string }> = {
-                      pending: { bg: "bg-amber-50", border: "border-amber-300/70", text: "text-amber-950", bar: "bg-amber-500" },
-                      booked: { bg: "bg-primary/10", border: "border-primary/40", text: "text-foreground", bar: "bg-primary" },
-                      completed: { bg: "bg-emerald-50", border: "border-emerald-300/70", text: "text-emerald-950", bar: "bg-emerald-500" },
-                      cancelled: { bg: "bg-muted/60", border: "border-border", text: "text-muted-foreground line-through", bar: "bg-muted-foreground/30" },
-                      no_show: { bg: "bg-destructive/10", border: "border-destructive/40", text: "text-destructive", bar: "bg-destructive" },
+                    const colorMap: Record<
+                      string,
+                      { bg: string; border: string; text: string; bar: string }
+                    > = {
+                      pending: {
+                        bg: "bg-amber-50",
+                        border: "border-amber-300/70",
+                        text: "text-amber-950",
+                        bar: "bg-amber-500",
+                      },
+                      booked: {
+                        bg: "bg-primary/10",
+                        border: "border-primary/40",
+                        text: "text-foreground",
+                        bar: "bg-primary",
+                      },
+                      completed: {
+                        bg: "bg-emerald-50",
+                        border: "border-emerald-300/70",
+                        text: "text-emerald-950",
+                        bar: "bg-emerald-500",
+                      },
+                      cancelled: {
+                        bg: "bg-muted/60",
+                        border: "border-border",
+                        text: "text-muted-foreground line-through",
+                        bar: "bg-muted-foreground/30",
+                      },
+                      no_show: {
+                        bg: "bg-destructive/10",
+                        border: "border-destructive/40",
+                        text: "text-destructive",
+                        bar: "bg-destructive",
+                      },
                     };
                     const c = colorMap[a.status] ?? colorMap.booked;
                     const compact = height < 40;
@@ -595,18 +749,33 @@ function WeekCalendar({
                               "hover:shadow-md hover:-translate-y-px transition-all duration-150",
                               "focus:outline-none focus:ring-2 focus:ring-primary/40",
                               onReschedule && "cursor-grab active:cursor-grabbing",
-                              c.bg, c.border, c.text
+                              c.bg,
+                              c.border,
+                              c.text,
                             )}
                             style={{ top, height }}
                           >
-                            <span className={cn("absolute left-0 top-0.5 bottom-0.5 w-1 rounded-full", c.bar)} />
+                            <span
+                              className={cn(
+                                "absolute left-0 top-0.5 bottom-0.5 w-1 rounded-full",
+                                c.bar,
+                              )}
+                            />
                             <div className="flex items-baseline gap-1 leading-tight">
-                              <span className="font-display text-[11px] tabular-nums">{formatTime(a.starts_at)}</span>
-                              {!compact && <span className="text-[9px] opacity-60 tabular-nums">· {dur}m</span>}
+                              <span className="font-display text-[11px] tabular-nums">
+                                {formatTime(a.starts_at)}
+                              </span>
+                              {!compact && (
+                                <span className="text-[9px] opacity-60 tabular-nums">· {dur}m</span>
+                              )}
                             </div>
-                            <div className="text-[10px] font-medium truncate leading-tight">{a.clients?.name ?? "Sin cliente"}</div>
+                            <div className="text-[10px] font-medium truncate leading-tight">
+                              {a.clients?.name ?? "Sin cliente"}
+                            </div>
                             {!compact && (
-                              <div className="text-[9px] truncate opacity-75 leading-tight">{a.services?.name}</div>
+                              <div className="text-[9px] truncate opacity-75 leading-tight">
+                                {a.services?.name}
+                              </div>
                             )}
                           </button>
                         </PopoverTrigger>
@@ -614,19 +783,36 @@ function WeekCalendar({
                           <div className="space-y-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="font-medium truncate">{a.clients?.name ?? "Sin cliente"}</p>
-                                {a.clients?.phone && <p className="text-xs text-muted-foreground truncate">{a.clients.phone}</p>}
+                                <p className="font-medium truncate">
+                                  {a.clients?.name ?? "Sin cliente"}
+                                </p>
+                                {a.clients?.phone && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {a.clients.phone}
+                                  </p>
+                                )}
                               </div>
-                              <span className={cn("size-2 rounded-full mt-1.5 shrink-0", STATUS_DOT[a.status] ?? STATUS_DOT.booked)} />
+                              <span
+                                className={cn(
+                                  "size-2 rounded-full mt-1.5 shrink-0",
+                                  STATUS_DOT[a.status] ?? STATUS_DOT.booked,
+                                )}
+                              />
                             </div>
                             <div className="text-sm space-y-0.5 border-t border-border pt-2">
                               <p className="font-medium">{a.services?.name}</p>
                               <p className="text-xs text-muted-foreground tabular-nums">
                                 {formatTime(a.starts_at)} · {a.services?.duration_minutes}m
-                                {apptPriceCents(a) ? ` · ${formatPriceCents(apptPriceCents(a))}` : ""}
+                                {apptPriceCents(a)
+                                  ? ` · ${formatPriceCents(apptPriceCents(a))}`
+                                  : ""}
                               </p>
                             </div>
-                            <StatusSelect status={a.status} startsAt={a.starts_at} onChange={(v) => onChangeStatus(a.id, v)} />
+                            <StatusSelect
+                              status={a.status}
+                              startsAt={a.starts_at}
+                              onChange={(v) => onChangeStatus(a.id, v)}
+                            />
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -697,17 +883,25 @@ function DayCalendar({
       <div className="flex items-center justify-between gap-4 px-4 sm:px-5 py-3 border-b border-border bg-muted/30 text-xs">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5">
-            <span className="font-display text-base text-foreground tabular-nums">{active.length}</span>
+            <span className="font-display text-base text-foreground tabular-nums">
+              {active.length}
+            </span>
             <span className="text-muted-foreground">{active.length === 1 ? "cita" : "citas"}</span>
           </span>
           {totalMinutes > 0 && (
             <span className="text-muted-foreground">
-              <span className="text-foreground font-medium tabular-nums">{Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m</span> reservadas
+              <span className="text-foreground font-medium tabular-nums">
+                {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m
+              </span>{" "}
+              reservadas
             </span>
           )}
           {totalRevenueCents > 0 && (
             <span className="text-muted-foreground">
-              <span className="text-foreground font-medium tabular-nums">{formatPriceCents(totalRevenueCents)}</span> facturado
+              <span className="text-foreground font-medium tabular-nums">
+                {formatPriceCents(totalRevenueCents)}
+              </span>{" "}
+              facturado
             </span>
           )}
         </div>
@@ -719,7 +913,10 @@ function DayCalendar({
       </div>
       <CardContent className="p-0">
         {active.length === 0 && !nowVisible && (
-          <div className="absolute inset-x-0 z-10 pointer-events-none flex justify-center" style={{ top: 120 }}>
+          <div
+            className="absolute inset-x-0 z-10 pointer-events-none flex justify-center"
+            style={{ top: 120 }}
+          >
             <div className="pointer-events-auto bg-background/90 backdrop-blur border border-border rounded-full px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
               Sin citas este día. Comparte tu link o crea una nueva.
             </div>
@@ -797,12 +994,40 @@ function DayCalendar({
               if (startMin + dur < 0 || startMin > (endHour - startHour) * 60) return null;
               const top = Math.max(0, startMin) * pxPerMinute;
               const height = Math.max(34, dur * pxPerMinute - 3);
-              const colorMap: Record<string, { bg: string; border: string; text: string; bar: string }> = {
-                pending: { bg: "bg-amber-50", border: "border-amber-300/70", text: "text-amber-950", bar: "bg-amber-500" },
-                booked: { bg: "bg-primary/10", border: "border-primary/40", text: "text-foreground", bar: "bg-primary" },
-                completed: { bg: "bg-emerald-50", border: "border-emerald-300/70", text: "text-emerald-950", bar: "bg-emerald-500" },
-                cancelled: { bg: "bg-muted/60", border: "border-border", text: "text-muted-foreground line-through", bar: "bg-muted-foreground/30" },
-                no_show: { bg: "bg-destructive/10", border: "border-destructive/40", text: "text-destructive", bar: "bg-destructive" },
+              const colorMap: Record<
+                string,
+                { bg: string; border: string; text: string; bar: string }
+              > = {
+                pending: {
+                  bg: "bg-amber-50",
+                  border: "border-amber-300/70",
+                  text: "text-amber-950",
+                  bar: "bg-amber-500",
+                },
+                booked: {
+                  bg: "bg-primary/10",
+                  border: "border-primary/40",
+                  text: "text-foreground",
+                  bar: "bg-primary",
+                },
+                completed: {
+                  bg: "bg-emerald-50",
+                  border: "border-emerald-300/70",
+                  text: "text-emerald-950",
+                  bar: "bg-emerald-500",
+                },
+                cancelled: {
+                  bg: "bg-muted/60",
+                  border: "border-border",
+                  text: "text-muted-foreground line-through",
+                  bar: "bg-muted-foreground/30",
+                },
+                no_show: {
+                  bg: "bg-destructive/10",
+                  border: "border-destructive/40",
+                  text: "text-destructive",
+                  bar: "bg-destructive",
+                },
               };
               const c = colorMap[a.status] ?? colorMap.booked;
               const compact = height < 48;
@@ -823,18 +1048,28 @@ function DayCalendar({
                         "hover:shadow-md hover:-translate-y-px transition-all duration-150",
                         "focus:outline-none focus:ring-2 focus:ring-primary/40",
                         onReschedule && "cursor-grab active:cursor-grabbing",
-                        c.bg, c.border, c.text
+                        c.bg,
+                        c.border,
+                        c.text,
                       )}
                       style={{ top, height }}
                     >
-                      <span className={cn("absolute left-0 top-1 bottom-1 w-1 rounded-full", c.bar)} />
+                      <span
+                        className={cn("absolute left-0 top-1 bottom-1 w-1 rounded-full", c.bar)}
+                      />
                       <div className="flex items-baseline gap-1.5 leading-tight">
-                        <span className="font-display text-[13px] tabular-nums">{formatTime(a.starts_at)}</span>
+                        <span className="font-display text-[13px] tabular-nums">
+                          {formatTime(a.starts_at)}
+                        </span>
                         <span className="text-[10px] opacity-60 tabular-nums">· {dur}m</span>
                       </div>
-                      <div className="text-xs font-medium truncate leading-tight mt-0.5">{a.clients?.name ?? "Sin cliente"}</div>
+                      <div className="text-xs font-medium truncate leading-tight mt-0.5">
+                        {a.clients?.name ?? "Sin cliente"}
+                      </div>
                       {!compact && (
-                        <div className="text-[11px] truncate opacity-75 leading-tight">{a.services?.name}</div>
+                        <div className="text-[11px] truncate opacity-75 leading-tight">
+                          {a.services?.name}
+                        </div>
                       )}
                     </button>
                   </PopoverTrigger>
@@ -843,9 +1078,18 @@ function DayCalendar({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium truncate">{a.clients?.name ?? "Sin cliente"}</p>
-                          {a.clients?.phone && <p className="text-xs text-muted-foreground truncate">{a.clients.phone}</p>}
+                          {a.clients?.phone && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {a.clients.phone}
+                            </p>
+                          )}
                         </div>
-                        <span className={cn("size-2 rounded-full mt-1.5 shrink-0", STATUS_DOT[a.status] ?? STATUS_DOT.booked)} />
+                        <span
+                          className={cn(
+                            "size-2 rounded-full mt-1.5 shrink-0",
+                            STATUS_DOT[a.status] ?? STATUS_DOT.booked,
+                          )}
+                        />
                       </div>
                       <div className="text-sm space-y-0.5 border-t border-border pt-2">
                         <p className="font-medium">{a.services?.name}</p>
@@ -854,7 +1098,11 @@ function DayCalendar({
                           {apptPriceCents(a) ? ` · ${formatPriceCents(apptPriceCents(a))}` : ""}
                         </p>
                       </div>
-                      <StatusSelect status={a.status} startsAt={a.starts_at} onChange={(v) => onChangeStatus(a.id, v)} />
+                      <StatusSelect
+                        status={a.status}
+                        startsAt={a.starts_at}
+                        onChange={(v) => onChangeStatus(a.id, v)}
+                      />
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -924,29 +1172,66 @@ function NewApptDialog({
   const { data: services } = useQuery({
     queryKey: ["services-active", businessId],
     enabled: open,
-    queryFn: async () => (await supabase.from("services").select("*").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("services")
+          .select("*")
+          .eq("business_id", businessId)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .order("name")
+      ).data ?? [],
   });
   const { data: clients } = useQuery({
     queryKey: ["clients-min", businessId],
     enabled: open,
-    queryFn: async () => (await supabase.from("clients").select("id,name,phone").eq("business_id", businessId).is("deleted_at", null).order("name")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("clients")
+          .select("id,name,phone")
+          .eq("business_id", businessId)
+          .is("deleted_at", null)
+          .order("name")
+      ).data ?? [],
   });
   const { data: pros } = useQuery({
     queryKey: ["pros-active-dialog", businessId],
     enabled: open,
-    queryFn: async () => (await supabase.from("professionals").select("id,name").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("professionals")
+          .select("id,name")
+          .eq("business_id", businessId)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .order("name")
+      ).data ?? [],
   });
   const { data: locs } = useQuery({
     queryKey: ["locs-active-dialog", businessId],
     enabled: open,
-    queryFn: async () => (await supabase.from("locations").select("id,name").eq("business_id", businessId).is("deleted_at", null).eq("is_active", true).order("name")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("locations")
+          .select("id,name")
+          .eq("business_id", businessId)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .order("name")
+      ).data ?? [],
   });
 
-  const filteredClients = (clients ?? []).filter((c) => {
-    if (!clientSearch.trim()) return true;
-    const q = clientSearch.toLowerCase();
-    return c.name?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q);
-  }).slice(0, 50);
+  const filteredClients = (clients ?? [])
+    .filter((c) => {
+      if (!clientSearch.trim()) return true;
+      const q = clientSearch.toLowerCase();
+      return c.name?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q);
+    })
+    .slice(0, 50);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -987,9 +1272,13 @@ function NewApptDialog({
       starts.setHours(h, m, 0, 0);
       const ends = new Date(starts.getTime() + svc.duration_minutes * 60000);
       const { error } = await supabase.from("appointments").insert({
-        business_id: businessId, client_id: cid, service_id: serviceId,
-        starts_at: starts.toISOString(), ends_at: ends.toISOString(),
-        source: "manual", status: "booked",
+        business_id: businessId,
+        client_id: cid,
+        service_id: serviceId,
+        starts_at: starts.toISOString(),
+        ends_at: ends.toISOString(),
+        source: "manual",
+        status: "booked",
         professional_id: professionalId || null,
         location_id: locationId || null,
       });
@@ -999,7 +1288,14 @@ function NewApptDialog({
       toast.success("Cita creada");
       invalidateAppointments(qc);
       setOpen(false);
-      setServiceId(""); setClientId(""); setNewClientName(""); setNewClientPhone(""); setNewClientCountry(DEFAULT_COUNTRY_CODE); setCreatingClient(false); setClientSearch(""); setLocationId("");
+      setServiceId("");
+      setClientId("");
+      setNewClientName("");
+      setNewClientPhone("");
+      setNewClientCountry(DEFAULT_COUNTRY_CODE);
+      setCreatingClient(false);
+      setClientSearch("");
+      setLocationId("");
     },
     onError: (e: Error) => toast.error(translateDbError(e)),
   });
@@ -1008,14 +1304,22 @@ function NewApptDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
-        <DialogHeader><DialogTitle>Nueva cita</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Nueva cita</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label>Servicio</Label>
             <Select value={serviceId} onValueChange={setServiceId}>
-              <SelectTrigger><SelectValue placeholder="Elegir servicio" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Elegir servicio" />
+              </SelectTrigger>
               <SelectContent>
-                {services?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} · {s.duration_minutes}m</SelectItem>)}
+                {services?.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} · {s.duration_minutes}m
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -1023,9 +1327,15 @@ function NewApptDialog({
             <div>
               <Label>Profesional</Label>
               <Select value={professionalId} onValueChange={setProfessionalId}>
-                <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin asignar" />
+                </SelectTrigger>
                 <SelectContent>
-                  {pros?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  {pros?.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1034,9 +1344,15 @@ function NewApptDialog({
             <div>
               <Label>Sucursal</Label>
               <Select value={locationId} onValueChange={setLocationId}>
-                <SelectTrigger><SelectValue placeholder="Elegir sucursal" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Elegir sucursal" />
+                </SelectTrigger>
                 <SelectContent>
-                  {locs?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                  {locs?.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1044,13 +1360,21 @@ function NewApptDialog({
           <div>
             <div className="flex items-center justify-between">
               <Label>Cliente</Label>
-              <button type="button" className="text-xs text-primary underline" onClick={() => setCreatingClient(!creatingClient)}>
+              <button
+                type="button"
+                className="text-xs text-primary underline"
+                onClick={() => setCreatingClient(!creatingClient)}
+              >
                 {creatingClient ? "Elegir existente" : "+ Nuevo cliente"}
               </button>
             </div>
             {creatingClient ? (
               <div className="space-y-2">
-                <Input placeholder="Nombre" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                <Input
+                  placeholder="Nombre"
+                  value={newClientName}
+                  onChange={(e) => setNewClientName(e.target.value)}
+                />
                 <PhoneInput
                   countryCode={newClientCountry}
                   number={newClientPhone}
@@ -1072,12 +1396,20 @@ function NewApptDialog({
                   </div>
                 )}
                 <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger><SelectValue placeholder="Elegir cliente" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Elegir cliente" />
+                  </SelectTrigger>
                   <SelectContent>
                     {filteredClients.length === 0 ? (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin resultados</div>
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        Sin resultados
+                      </div>
                     ) : (
-                      filteredClients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} · {c.phone}</SelectItem>)
+                      filteredClients.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} · {c.phone}
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
@@ -1085,19 +1417,35 @@ function NewApptDialog({
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Fecha</Label><Input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} /></div>
-            <div><Label>Hora</Label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
+            <div>
+              <Label>Fecha</Label>
+              <Input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} />
+            </div>
+            <div>
+              <Label>Hora</Label>
+              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            </div>
           </div>
-          {serviceId && (() => {
-            const svc = services?.find((s) => s.id === serviceId);
-            if (!svc) return null;
-            return (
-              <p className="text-xs text-muted-foreground">
-                Duración: <span className="text-foreground font-medium">{svc.duration_minutes} min</span>
-                {svc.price_cents ? <> · Precio: <span className="text-foreground font-medium">{formatPriceCents(svc.price_cents)}</span></> : null}
-              </p>
-            );
-          })()}
+          {serviceId &&
+            (() => {
+              const svc = services?.find((s) => s.id === serviceId);
+              if (!svc) return null;
+              return (
+                <p className="text-xs text-muted-foreground">
+                  Duración:{" "}
+                  <span className="text-foreground font-medium">{svc.duration_minutes} min</span>
+                  {svc.price_cents ? (
+                    <>
+                      {" "}
+                      · Precio:{" "}
+                      <span className="text-foreground font-medium">
+                        {formatPriceCents(svc.price_cents)}
+                      </span>
+                    </>
+                  ) : null}
+                </p>
+              );
+            })()}
         </div>
         <DialogFooter>
           <Button onClick={() => create.mutate()} disabled={create.isPending}>

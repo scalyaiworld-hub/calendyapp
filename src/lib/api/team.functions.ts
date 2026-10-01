@@ -37,7 +37,11 @@ async function requireOwner(context: { supabase: any; userId: string }, business
   return data as { id: string; name: string };
 }
 
-async function assertProfessionalInBusiness(supabase: any, businessId: string, professionalId: string | null | undefined) {
+async function assertProfessionalInBusiness(
+  supabase: any,
+  businessId: string,
+  professionalId: string | null | undefined,
+) {
   if (!professionalId) return;
   const { data, error } = await supabase
     .from("professionals")
@@ -50,8 +54,20 @@ async function assertProfessionalInBusiness(supabase: any, businessId: string, p
   if (!data) throw new Error("Ese profesional no existe en tu negocio.");
 }
 
-export type TeamMember = { userId: string; email: string | null; role: AssignableRole; professionalId: string | null; createdAt: string };
-export type TeamInvite = { id: string; email: string; role: AssignableRole; professionalId: string | null; createdAt: string };
+export type TeamMember = {
+  userId: string;
+  email: string | null;
+  role: AssignableRole;
+  professionalId: string | null;
+  createdAt: string;
+};
+export type TeamInvite = {
+  id: string;
+  email: string;
+  role: AssignableRole;
+  professionalId: string | null;
+  createdAt: string;
+};
 
 export const listTeam = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -61,8 +77,16 @@ export const listTeam = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const [{ data: members, error: mErr }, { data: invites, error: iErr }] = await Promise.all([
-      supabaseAdmin.from("business_members").select("user_id,role,professional_id,created_at").eq("business_id", data.businessId).order("created_at"),
-      supabaseAdmin.from("business_invites").select("id,email,role,professional_id,created_at").eq("business_id", data.businessId).order("created_at"),
+      supabaseAdmin
+        .from("business_members")
+        .select("user_id,role,professional_id,created_at")
+        .eq("business_id", data.businessId)
+        .order("created_at"),
+      supabaseAdmin
+        .from("business_invites")
+        .select("id,email,role,professional_id,created_at")
+        .eq("business_id", data.businessId)
+        .order("created_at"),
     ]);
     if (mErr) throw new Error(mErr.message);
     if (iErr) throw new Error(iErr.message);
@@ -81,7 +105,13 @@ export const listTeam = createServerFn({ method: "POST" })
         professionalId: m.professional_id,
         createdAt: m.created_at,
       })),
-      invites: (invites ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role, professionalId: i.professional_id, createdAt: i.created_at })),
+      invites: (invites ?? []).map((i) => ({
+        id: i.id,
+        email: i.email,
+        role: i.role,
+        professionalId: i.professional_id,
+        createdAt: i.created_at,
+      })),
     };
   });
 
@@ -99,10 +129,17 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     }
 
     const [{ count: members }, { count: invites }] = await Promise.all([
-      supabaseAdmin.from("business_members").select("id", { count: "exact", head: true }).eq("business_id", data.businessId),
-      supabaseAdmin.from("business_invites").select("id", { count: "exact", head: true }).eq("business_id", data.businessId),
+      supabaseAdmin
+        .from("business_members")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", data.businessId),
+      supabaseAdmin
+        .from("business_invites")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", data.businessId),
     ]);
-    if ((members ?? 0) + (invites ?? 0) >= MAX_TEAM_SIZE) throw new Error(`Llegaste al máximo de ${MAX_TEAM_SIZE} personas en el equipo.`);
+    if ((members ?? 0) + (invites ?? 0) >= MAX_TEAM_SIZE)
+      throw new Error(`Llegaste al máximo de ${MAX_TEAM_SIZE} personas en el equipo.`);
 
     const { data: invite, error } = await supabaseAdmin
       .from("business_invites")
@@ -116,7 +153,8 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) {
-      if (error.code === "23505") throw new Error("Ya hay una invitación pendiente para ese email.");
+      if (error.code === "23505")
+        throw new Error("Ya hay una invitación pendiente para ese email.");
       throw new Error(error.message);
     }
 
@@ -125,7 +163,11 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     try {
       const { sendEmailOrThrow } = await import("@/lib/email.server");
       const origin = new URL(getRequest().url).origin;
-      const mail = buildInviteEmail({ businessName: business.name, role: data.role, signInUrl: `${origin}/auth` });
+      const mail = buildInviteEmail({
+        businessName: business.name,
+        role: data.role,
+        signInUrl: `${origin}/auth`,
+      });
       await sendEmailOrThrow({ to: data.email, ...mail, idempotencyKey: `invite-${invite.id}` });
       emailSent = true;
     } catch (e) {
@@ -143,7 +185,10 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: updated, error } = await supabaseAdmin
       .from("business_members")
-      .update({ role: data.role, professional_id: data.role === "professional" ? data.professionalId! : null })
+      .update({
+        role: data.role,
+        professional_id: data.role === "professional" ? data.professionalId! : null,
+      })
       .eq("business_id", data.businessId)
       .eq("user_id", data.userId)
       .select("id");
@@ -158,7 +203,11 @@ export const removeTeamMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireOwner(context, data.businessId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("business_members").delete().eq("business_id", data.businessId).eq("user_id", data.userId);
+    const { error } = await supabaseAdmin
+      .from("business_members")
+      .delete()
+      .eq("business_id", data.businessId)
+      .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -169,7 +218,11 @@ export const revokeTeamInvite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireOwner(context, data.businessId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("business_invites").delete().eq("id", data.inviteId).eq("business_id", data.businessId);
+    const { error } = await supabaseAdmin
+      .from("business_invites")
+      .delete()
+      .eq("id", data.inviteId)
+      .eq("business_id", data.businessId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -196,14 +249,22 @@ export const acceptPendingInvites = createServerFn({ method: "POST" })
 
     let accepted = 0;
     for (const inv of invites ?? []) {
-      const { data: biz } = await supabaseAdmin.from("businesses").select("owner_id,plan,deleted_at").eq("id", inv.business_id).maybeSingle();
-      if (!biz || biz.deleted_at || biz.plan !== "studio" || biz.owner_id === context.userId) continue;
-      const { error: upErr } = await supabaseAdmin
-        .from("business_members")
-        .upsert(
-          { business_id: inv.business_id, user_id: context.userId, role: inv.role, professional_id: inv.professional_id },
-          { onConflict: "business_id,user_id" },
-        );
+      const { data: biz } = await supabaseAdmin
+        .from("businesses")
+        .select("owner_id,plan,deleted_at")
+        .eq("id", inv.business_id)
+        .maybeSingle();
+      if (!biz || biz.deleted_at || biz.plan !== "studio" || biz.owner_id === context.userId)
+        continue;
+      const { error: upErr } = await supabaseAdmin.from("business_members").upsert(
+        {
+          business_id: inv.business_id,
+          user_id: context.userId,
+          role: inv.role,
+          professional_id: inv.professional_id,
+        },
+        { onConflict: "business_id,user_id" },
+      );
       if (upErr) {
         console.error("[team] accept invite failed", upErr.message);
         continue; // se conserva la invitación (p. ej. el profesional ya no existe)

@@ -17,11 +17,26 @@ export function Logo({
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <img src="/calendya-icon.svg" alt={showWordmark ? "" : "Calendya"} width={size} height={size} className="shrink-0" style={{ width: size, height: size }} />
+      <img
+        src="/calendya-icon.svg"
+        alt={showWordmark ? "" : "Calendya"}
+        width={size}
+        height={size}
+        className="shrink-0"
+        style={{ width: size, height: size }}
+      />
       {showWordmark && (
         <span
-          className={cn("font-semibold tracking-tight text-[#16276b] dark:text-foreground", wordmarkClassName)}
-          style={{ fontFamily: "Outfit, sans-serif", fontSize: size * 0.8, letterSpacing: "-0.03em", lineHeight: 1 }}
+          className={cn(
+            "font-semibold tracking-tight text-[#16276b] dark:text-foreground",
+            wordmarkClassName,
+          )}
+          style={{
+            fontFamily: "Outfit, sans-serif",
+            fontSize: size * 0.8,
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+          }}
         >
           calendya
         </span>

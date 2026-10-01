@@ -2,16 +2,43 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowUpCircle, Building2, Inbox, Search, ShieldAlert, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpCircle,
+  Building2,
+  Inbox,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { getAdminOverview, getAdminStatus, setBusinessPlan, setUpgradeRequestStatus, type AdminBusiness } from "@/lib/api/admin.functions";
+import {
+  getAdminOverview,
+  getAdminStatus,
+  setBusinessPlan,
+  setUpgradeRequestStatus,
+  type AdminBusiness,
+} from "@/lib/api/admin.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/admin")({
@@ -43,7 +70,9 @@ function AdminPage() {
   });
 
   if (loading || !user || status.isPending) {
-    return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>
+    );
   }
 
   if (status.isError) {
@@ -52,7 +81,10 @@ function AdminPage() {
         <div className="max-w-sm text-center space-y-4">
           <ShieldAlert className="size-10 mx-auto text-destructive" aria-hidden />
           <h1 className="font-display text-2xl">No se pudo verificar el acceso</h1>
-          <p role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+          <p
+            role="alert"
+            className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2"
+          >
             {(status.error as Error).message}
           </p>
           <Button variant="outline" onClick={() => status.refetch()}>
@@ -69,7 +101,9 @@ function AdminPage() {
         <div className="max-w-sm text-center space-y-4">
           <ShieldAlert className="size-10 mx-auto text-muted-foreground" aria-hidden />
           <h1 className="font-display text-2xl">Acceso restringido</h1>
-          <p className="text-sm text-muted-foreground">Esta sección es solo para administradores de Calendya.</p>
+          <p className="text-sm text-muted-foreground">
+            Esta sección es solo para administradores de Calendya.
+          </p>
           <Button asChild variant="outline">
             <Link to="/dashboard">Volver al dashboard</Link>
           </Button>
@@ -103,7 +137,8 @@ function AdminPanel({ email }: { email: string }) {
   });
 
   const changePlan = useMutation({
-    mutationFn: (v: { businessId: string; plan: "free" | "pro" | "studio" }) => setBusinessPlan({ data: v }),
+    mutationFn: (v: { businessId: string; plan: "free" | "pro" | "studio" }) =>
+      setBusinessPlan({ data: v }),
     onSuccess: () => {
       toast.success("Plan actualizado");
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
@@ -112,7 +147,8 @@ function AdminPanel({ email }: { email: string }) {
   });
 
   const changeRequestStatus = useMutation({
-    mutationFn: (v: { requestId: string; status: "new" | "contacted" | "won" | "lost" }) => setUpgradeRequestStatus({ data: v }),
+    mutationFn: (v: { requestId: string; status: "new" | "contacted" | "won" | "lost" }) =>
+      setUpgradeRequestStatus({ data: v }),
     onSuccess: () => {
       toast.success("Solicitud actualizada");
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
@@ -121,7 +157,10 @@ function AdminPanel({ email }: { email: string }) {
   });
 
   const businesses = overview.data?.businesses ?? [];
-  const totalPages = Math.max(1, Math.ceil((overview.data?.businessesTotal ?? 0) / (overview.data?.pageSize ?? 50)));
+  const totalPages = Math.max(
+    1,
+    Math.ceil((overview.data?.businessesTotal ?? 0) / (overview.data?.pageSize ?? 50)),
+  );
 
   const totals = overview.data?.totals;
 
@@ -131,11 +170,16 @@ function AdminPanel({ email }: { email: string }) {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <ShieldCheck className="size-5 text-primary" aria-hidden />
-            <h1 className="font-display text-lg font-semibold tracking-tight">Panel de administración</h1>
+            <h1 className="font-display text-lg font-semibold tracking-tight">
+              Panel de administración
+            </h1>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="hidden sm:inline">{email}</span>
-            <Link to="/inicio" className="inline-flex items-center gap-1 hover:text-foreground py-2">
+            <Link
+              to="/inicio"
+              className="inline-flex items-center gap-1 hover:text-foreground py-2"
+            >
               <ArrowLeft className="size-3.5" aria-hidden /> Inicio
             </Link>
           </div>
@@ -148,12 +192,19 @@ function AdminPanel({ email }: { email: string }) {
           <Stat label="Plan Free" value={totals?.free} loading={overview.isLoading} />
           <Stat label="Plan Pro" value={totals?.pro} loading={overview.isLoading} />
           <Stat label="Plan Studio" value={totals?.studio} loading={overview.isLoading} />
-          <Stat label="Upgrades nuevos" value={totals?.upgradeRequests} loading={overview.isLoading} />
+          <Stat
+            label="Upgrades nuevos"
+            value={totals?.upgradeRequests}
+            loading={overview.isLoading}
+          />
           <Stat label="Solicitudes" value={totals?.preregistrations} loading={overview.isLoading} />
         </section>
 
         {overview.isError && (
-          <div role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+          <div
+            role="alert"
+            className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2"
+          >
             {(overview.error as Error).message}
           </div>
         )}
@@ -173,7 +224,10 @@ function AdminPanel({ email }: { email: string }) {
 
           <TabsContent value="businesses" className="space-y-4">
             <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" aria-hidden />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
+                aria-hidden
+              />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -198,13 +252,17 @@ function AdminPanel({ email }: { email: string }) {
                     {overview.isLoading &&
                       Array.from({ length: 4 }).map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell colSpan={5}><Skeleton className="h-6 w-full" /></TableCell>
+                          <TableCell colSpan={5}>
+                            <Skeleton className="h-6 w-full" />
+                          </TableCell>
                         </TableRow>
                       ))}
                     {!overview.isLoading && businesses.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
-                          {query ? "Ningún negocio coincide con la búsqueda." : "Todavía no hay negocios registrados."}
+                          {query
+                            ? "Ningún negocio coincide con la búsqueda."
+                            : "Todavía no hay negocios registrados."}
                         </TableCell>
                       </TableRow>
                     )}
@@ -225,10 +283,20 @@ function AdminPanel({ email }: { email: string }) {
                 {overview.data?.businessesTotal ?? 0} negocio(s) · página {page + 1} de {totalPages}
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
                   Anterior
                 </Button>
-                <Button variant="outline" size="sm" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page + 1 >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
                   Siguiente
                 </Button>
               </div>
@@ -262,23 +330,41 @@ function AdminPanel({ email }: { email: string }) {
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap">{dateFmt(r.createdAt)}</TableCell>
                         <TableCell>
-                          <Badge variant={r.plan === "studio" ? "default" : "secondary"}>{PLAN_LABEL[r.plan] ?? r.plan}</Badge>
+                          <Badge variant={r.plan === "studio" ? "default" : "secondary"}>
+                            {PLAN_LABEL[r.plan] ?? r.plan}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">{r.businessName ?? "—"}</div>
-                          {r.businessSlug && <div className="text-xs text-muted-foreground">/b/{r.businessSlug}</div>}
+                          {r.businessSlug && (
+                            <div className="text-xs text-muted-foreground">/b/{r.businessSlug}</div>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">{r.name}</div>
-                          <a href={`mailto:${r.email}`} className="text-primary hover:underline text-sm">{r.email}</a>
-                          {r.phone && <div className="text-xs text-muted-foreground">{r.phone}</div>}
+                          <a
+                            href={`mailto:${r.email}`}
+                            className="text-primary hover:underline text-sm"
+                          >
+                            {r.email}
+                          </a>
+                          {r.phone && (
+                            <div className="text-xs text-muted-foreground">{r.phone}</div>
+                          )}
                         </TableCell>
                         <TableCell>{r.industry}</TableCell>
-                        <TableCell className="max-w-xs text-sm text-muted-foreground">{r.message ?? "—"}</TableCell>
+                        <TableCell className="max-w-xs text-sm text-muted-foreground">
+                          {r.message ?? "—"}
+                        </TableCell>
                         <TableCell>
                           <Select
                             value={r.status}
-                            onValueChange={(v) => changeRequestStatus.mutate({ requestId: r.id, status: v as "new" | "contacted" | "won" | "lost" })}
+                            onValueChange={(v) =>
+                              changeRequestStatus.mutate({
+                                requestId: r.id,
+                                status: v as "new" | "contacted" | "won" | "lost",
+                              })
+                            }
                             disabled={changeRequestStatus.isPending}
                           >
                             <SelectTrigger aria-label={`Estado de la solicitud de ${r.name}`}>
@@ -286,7 +372,9 @@ function AdminPanel({ email }: { email: string }) {
                             </SelectTrigger>
                             <SelectContent>
                               {Object.entries(REQUEST_STATUS_LABEL).map(([id, label]) => (
-                                <SelectItem key={id} value={id}>{label}</SelectItem>
+                                <SelectItem key={id} value={id}>
+                                  {label}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -325,7 +413,9 @@ function AdminPanel({ email }: { email: string }) {
                         <TableCell className="whitespace-nowrap">{dateFmt(p.createdAt)}</TableCell>
                         <TableCell className="font-medium">{p.nombre}</TableCell>
                         <TableCell>
-                          <a href={`mailto:${p.email}`} className="text-primary hover:underline">{p.email}</a>
+                          <a href={`mailto:${p.email}`} className="text-primary hover:underline">
+                            {p.email}
+                          </a>
                         </TableCell>
                         <TableCell>{p.negocio ?? "—"}</TableCell>
                         <TableCell>{p.telefono ?? "—"}</TableCell>
@@ -342,13 +432,30 @@ function AdminPanel({ email }: { email: string }) {
   );
 }
 
-const REQUEST_STATUS_LABEL: Record<string, string> = { new: "Nueva", contacted: "Contactada", won: "Ganada", lost: "Perdida" };
+const REQUEST_STATUS_LABEL: Record<string, string> = {
+  new: "Nueva",
+  contacted: "Contactada",
+  won: "Ganada",
+  lost: "Perdida",
+};
 
-function Stat({ label, value, loading }: { label: string; value: number | undefined; loading: boolean }) {
+function Stat({
+  label,
+  value,
+  loading,
+}: {
+  label: string;
+  value: number | undefined;
+  loading: boolean;
+}) {
   return (
     <Card>
       <CardContent className="pt-6">
-        {loading ? <Skeleton className="h-9 w-14" /> : <div className="font-display text-3xl font-bold tabular-nums">{value ?? 0}</div>}
+        {loading ? (
+          <Skeleton className="h-9 w-14" />
+        ) : (
+          <div className="font-display text-3xl font-bold tabular-nums">{value ?? 0}</div>
+        )}
         <div className="text-xs uppercase tracking-widest text-muted-foreground mt-1">{label}</div>
       </CardContent>
     </Card>
@@ -370,21 +477,35 @@ function BusinessRow({
         <div className="font-medium">{b.name}</div>
         <div className="text-xs text-muted-foreground">
           /b/{b.slug}
-          {!b.onboardingCompleted && <Badge variant="outline" className="ml-2">Sin terminar onboarding</Badge>}
-          {b.deleted && <Badge variant="outline" className="ml-2">Eliminado</Badge>}
+          {!b.onboardingCompleted && (
+            <Badge variant="outline" className="ml-2">
+              Sin terminar onboarding
+            </Badge>
+          )}
+          {b.deleted && (
+            <Badge variant="outline" className="ml-2">
+              Eliminado
+            </Badge>
+          )}
         </div>
       </TableCell>
       <TableCell>{b.ownerEmail ?? "—"}</TableCell>
       <TableCell className="whitespace-nowrap">{dateFmt(b.createdAt)}</TableCell>
       <TableCell className="text-right tabular-nums">{b.apptsThisMonth}</TableCell>
       <TableCell>
-        <Select value={b.plan} onValueChange={(v) => onPlan(v as "free" | "pro" | "studio")} disabled={pending}>
+        <Select
+          value={b.plan}
+          onValueChange={(v) => onPlan(v as "free" | "pro" | "studio")}
+          disabled={pending}
+        >
           <SelectTrigger aria-label={`Plan de ${b.name}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {Object.entries(PLAN_LABEL).map(([id, label]) => (
-              <SelectItem key={id} value={id}>{label}</SelectItem>
+              <SelectItem key={id} value={id}>
+                {label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

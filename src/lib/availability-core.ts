@@ -45,7 +45,9 @@ type BusinessBookingColumns = {
   booking_max_no_shows?: number | null;
 };
 
-export function settingsFromBusiness(b: BusinessBookingColumns | null | undefined): BookingSettings {
+export function settingsFromBusiness(
+  b: BusinessBookingColumns | null | undefined,
+): BookingSettings {
   const d = DEFAULT_BOOKING_SETTINGS;
   return {
     minLeadMinutes: b?.booking_min_lead_minutes ?? d.minLeadMinutes,
@@ -87,7 +89,10 @@ export function computeSlots(opts: {
   const buffer = cfg.bufferMinutes * 60_000;
 
   // El margen se aplica a ambos lados de cada cita existente.
-  const busyMs = busy.map((b) => [new Date(b.starts_at).getTime() - buffer, new Date(b.ends_at).getTime() + buffer] as const);
+  const busyMs = busy.map(
+    (b) =>
+      [new Date(b.starts_at).getTime() - buffer, new Date(b.ends_at).getTime() + buffer] as const,
+  );
   const out: SlotRange[] = [];
 
   for (const w of windows) {
@@ -108,7 +113,11 @@ export function computeSlots(opts: {
 
 /** ¿Esta hora de inicio exacta forma parte de los horarios disponibles? */
 export function isSlotOffered(slots: SlotRange[], startsAt: Date, endsAt: Date): boolean {
-  return slots.some((s) => new Date(s.startsAt).getTime() === startsAt.getTime() && new Date(s.endsAt).getTime() === endsAt.getTime());
+  return slots.some(
+    (s) =>
+      new Date(s.startsAt).getTime() === startsAt.getTime() &&
+      new Date(s.endsAt).getTime() === endsAt.getTime(),
+  );
 }
 
 export { dayOfWeekOfYmd };

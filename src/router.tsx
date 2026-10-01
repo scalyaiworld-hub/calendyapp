@@ -7,11 +7,11 @@ export const getRouter = () => {
     defaultOptions: {
       queries: {
         // Cache agresivo para reducir llamadas al backend
-        staleTime: 5 * 60_000,        // 5 min frescos → sin refetch al volver
-        gcTime: 30 * 60_000,          // 30 min en memoria
+        staleTime: 5 * 60_000, // 5 min frescos → sin refetch al volver
+        gcTime: 30 * 60_000, // 30 min en memoria
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        refetchOnMount: false,        // si está en caché y fresco, no refetch
+        refetchOnMount: false, // si está en caché y fresco, no refetch
         retry: 1,
       },
     },

@@ -10,7 +10,8 @@ declare global {
 }
 
 /** Clave pública de Cloudflare Turnstile. Si no está definida, el captcha no se muestra. */
-export const TURNSTILE_SITE_KEY: string | undefined = import.meta.env.VITE_TURNSTILE_SITE_KEY || undefined;
+export const TURNSTILE_SITE_KEY: string | undefined =
+  import.meta.env.VITE_TURNSTILE_SITE_KEY || undefined;
 
 const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
@@ -18,7 +19,8 @@ function loadScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.turnstile) return resolve();
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`);
-    const script = existing ?? Object.assign(document.createElement("script"), { src: SCRIPT_SRC, async: true });
+    const script =
+      existing ?? Object.assign(document.createElement("script"), { src: SCRIPT_SRC, async: true });
     script.addEventListener("load", () => resolve());
     script.addEventListener("error", () => reject(new Error("turnstile")));
     if (!existing) document.head.appendChild(script);
