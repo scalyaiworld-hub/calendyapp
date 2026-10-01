@@ -255,7 +255,7 @@ describe("AuthPage - Google OAuth", () => {
     await user.click(screen.getByRole("button", { name: /Continuar con Google/ }));
     expect(mocks.signInWithOAuth).toHaveBeenCalledWith({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/dashboard` },
     });
     expect(await screen.findByText("Conectando…")).toBeInTheDocument();
   });
