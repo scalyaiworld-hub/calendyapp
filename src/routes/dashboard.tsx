@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
-import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut, Lock, Sparkles } from "lucide-react";
+import { CalendarDays, Scissors, Users, Clock, Settings, LayoutDashboard, ExternalLink, Building2, User2, ClipboardList, Menu, X, LogOut, Lock, Sparkles, ShieldCheck } from "lucide-react";
 import { useEntityCounts } from "@/lib/entity-counts";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -156,6 +156,16 @@ function DashboardLayout() {
                 <Lock className="size-4" strokeWidth={1.75} />
                 Página pública
               </button>
+            )}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={onNavigate}
+                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                <ShieldCheck className="size-4" strokeWidth={1.75} />
+                Panel de administración
+              </Link>
             )}
           </div>
         )}
