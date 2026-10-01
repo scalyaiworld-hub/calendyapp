@@ -16,9 +16,7 @@ export const Route = createFileRoute("/privacidad")({
         content: "Prácticas de privacidad de Calendya.",
       },
       { property: "og:type", content: "article" },
-      { property: "og:url", content: "https://calendya.lovable.app/privacidad" },
     ],
-    links: [{ rel: "canonical", href: "https://calendya.lovable.app/privacidad" }],
   }),
 });
 
@@ -126,8 +124,8 @@ function PrivacidadPage() {
         <section className="space-y-3">
           <h2 className="font-display text-xl font-semibold">5. Dónde se guarda</h2>
           <p>
-            La información se aloja en la infraestructura administrada de Lovable
-            Cloud (base de datos gestionada, almacenamiento privado y autenticación).
+            La información se aloja en la infraestructura administrada de Supabase
+            (base de datos gestionada, almacenamiento privado y autenticación).
             Se aplican controles de acceso por fila para que cada negocio solo
             pueda leer su propia información.
           </p>

@@ -36,11 +36,9 @@ Aplicación de reservas en línea al estilo Calendly, pensada para negocios de s
 | Estilos / UI | Tailwind CSS 4, shadcn/ui (Radix UI), framer-motion, lucide-react |
 | Datos en cliente | TanStack Query, react-hook-form, zod |
 | Backend | Supabase (Postgres, Auth, RLS) y server functions de TanStack Start |
-| Build | Vite 7 con `@lovable.dev/vite-tanstack-config` y Nitro (destino por defecto: Cloudflare) |
+| Build | Vite 7 con el plugin de TanStack Start y Nitro (destino por defecto: Cloudflare) |
 | Pruebas / calidad | Vitest, Testing Library, ESLint, Prettier |
-| Gestor de paquetes | Bun (`bun.lock`) |
-
-El proyecto fue generado con Lovable; algunos archivos en `src/integrations/` son autogenerados y no deben editarse a mano.
+| Gestor de paquetes | npm (`package-lock.json`) |
 
 ## Requisitos
 
@@ -118,8 +116,7 @@ calendyapp/
 │   ├── components/             # Componentes propios y shadcn/ui (components/ui)
 │   ├── hooks/
 │   ├── integrations/
-│   │   ├── supabase/           # Clientes (browser y server) y middleware de auth (autogenerados)
-│   │   └── lovable/            # Integración de auth de Lovable Cloud
+│   │   └── supabase/           # Clientes (browser y server) y middleware de auth
 │   ├── lib/
 │   │   ├── api/                # Server functions (*.functions.ts)
 │   │   ├── auth-context.tsx    # Contexto de sesión

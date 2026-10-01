@@ -15,9 +15,7 @@ export const Route = createFileRoute("/terminos")({
         content: "Reglas de uso de la plataforma Calendya.",
       },
       { property: "og:type", content: "article" },
-      { property: "og:url", content: "https://calendya.lovable.app/terminos" },
     ],
-    links: [{ rel: "canonical", href: "https://calendya.lovable.app/terminos" }],
   }),
 });
 
