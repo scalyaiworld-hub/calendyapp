@@ -16,6 +16,19 @@ export default defineConfig(({ command, mode }) => {
     ]),
   );
 
+  // Estas variables se incrustan en el bundle al compilar: si faltan, el build "sale bien"
+  // y la app se rompe en el navegador. Mejor fallar aquí con un mensaje claro.
+  if (command === "build") {
+    const env = loadEnv(mode, process.cwd(), "VITE_");
+    const missing = ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"].filter((k) => !env[k]);
+    if (missing.length > 0) {
+      throw new Error(
+        `Faltan variables de entorno para compilar: ${missing.join(", ")}. ` +
+          "Defínelas en el hosting (p. ej. Vercel → Settings → Environment Variables) o en .env y vuelve a compilar.",
+      );
+    }
+  }
+
   return {
     define,
     server: { host: "::", port: 8080 },
