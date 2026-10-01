@@ -76,9 +76,14 @@ export function RotatingWord({
 }) {
   const [word, setWord] = useState(finalWord);
   const [visible, setVisible] = useState(true);
+  // Al terminar la rotación se libera el ancho reservado para que no quede hueco tras la palabra final.
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
-    if (prefersReducedMotion() || words.length < 2) return;
+    if (prefersReducedMotion() || words.length < 2) {
+      setSettled(true);
+      return;
+    }
     const total = words.length * loops;
     let step = 0;
     let swap: ReturnType<typeof setTimeout> | undefined;
@@ -90,6 +95,7 @@ export function RotatingWord({
       swap = setTimeout(() => {
         setWord(step >= total ? finalWord : words[step % words.length]);
         setVisible(true);
+        if (step >= total) setSettled(true);
       }, 300);
       if (step >= total) clearInterval(timer);
     };
@@ -103,7 +109,7 @@ export function RotatingWord({
 
   return (
     <span className="inline-grid align-baseline">
-      {words.map((w) => (
+      {(settled ? [finalWord] : words).map((w) => (
         <span key={w} aria-hidden className="col-start-1 row-start-1 invisible">
           {w}
         </span>
