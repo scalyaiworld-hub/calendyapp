@@ -40,8 +40,8 @@ function ResetPasswordPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
     if (password !== confirm) {
@@ -95,7 +95,7 @@ function ResetPasswordPage() {
                     type={show ? "text" : "password"}
                     autoComplete="new-password"
                     required
-                    minLength={6}
+                    minLength={8}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-11 pl-9 pr-10"
@@ -110,7 +110,7 @@ function ResetPasswordPage() {
                     {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">Mínimo 6 caracteres</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Mínimo 8 caracteres</p>
               </div>
 
               <div>
@@ -122,7 +122,7 @@ function ResetPasswordPage() {
                     type={show ? "text" : "password"}
                     autoComplete="new-password"
                     required
-                    minLength={6}
+                    minLength={8}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     className="h-11 pl-9"
