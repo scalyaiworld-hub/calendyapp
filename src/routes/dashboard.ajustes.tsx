@@ -16,6 +16,8 @@ import { useEntityCounts } from "@/lib/entity-counts";
 import { hasModule } from "@/lib/plans";
 import { translateDbError } from "@/lib/api/error-messages";
 import { Link } from "@tanstack/react-router";
+import { PlanGate } from "@/components/PlanGate";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/dashboard/ajustes")({
   component: AjustesPage,
@@ -32,6 +34,8 @@ function AjustesPage() {
   const [brandPrimary, setBrandPrimary] = useState<string>("#3b82f6");
   const [brandBackground, setBrandBackground] = useState<string>("#fafbfc");
   const [brandFont, setBrandFont] = useState<string>("Inter");
+  const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [reminderHours, setReminderHours] = useState(24);
 
   // Only prefill once so background refetches don't overwrite the user's edits.
   const prefilledRef = useRef(false);
@@ -45,6 +49,8 @@ function AjustesPage() {
       setBrandPrimary((business as any).brand_primary ?? "#3b82f6");
       setBrandBackground((business as any).brand_background ?? "#fafbfc");
       setBrandFont((business as any).brand_font ?? "Inter");
+      setRemindersEnabled((business as any).reminders_enabled ?? true);
+      setReminderHours((business as any).reminder_hours_before ?? 24);
     }
   }, [business]);
 
@@ -143,6 +149,18 @@ function AjustesPage() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Reglas de reserva guardadas"); },
     onError: (e: Error) => toast.error(translateDbError(e)),
+  });
+
+  const saveReminders = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("businesses")
+        .update({ reminders_enabled: remindersEnabled, reminder_hours_before: reminderHours })
+        .eq("id", business!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Recordatorios guardados"); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const resetBrand = () => {
@@ -341,6 +359,38 @@ function AjustesPage() {
           <Button onClick={() => saveRules.mutate()} disabled={saveRules.isPending}>Guardar reglas</Button>
         </CardContent>
       </Card>
+
+      <PlanGate module="reminders">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <h2 className="font-display text-xl mb-1">Recordatorios por email</h2>
+              <p className="text-sm text-muted-foreground">
+                Enviamos un email automático a tus clientes antes de su cita. Solo se envía si el cliente tiene email registrado.
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="reminders-enabled">Enviar recordatorios</Label>
+              <Switch id="reminders-enabled" checked={remindersEnabled} onCheckedChange={setRemindersEnabled} />
+            </div>
+            <div>
+              <Label htmlFor="reminder-hours">Cuánto antes de la cita</Label>
+              <select
+                id="reminder-hours"
+                value={reminderHours}
+                onChange={(e) => setReminderHours(Number(e.target.value))}
+                disabled={!remindersEnabled}
+                className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+              >
+                {[2, 6, 12, 24, 48, 72].map((h) => (
+                  <option key={h} value={h}>{h} horas antes</option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={() => saveReminders.mutate()} disabled={saveReminders.isPending}>Guardar</Button>
+          </CardContent>
+        </Card>
+      </PlanGate>
 
       <Card>
         <CardContent className="pt-6 space-y-2">
