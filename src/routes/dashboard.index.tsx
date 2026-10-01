@@ -122,7 +122,7 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
         actions={
           <>
             <Button asChild variant="outline">
-              <Link to="/dashboard/agenda"><Plus className="size-4" /> Nueva cita</Link>
+              <Link to="/dashboard/agenda" search={{ nueva: true }}><Plus className="size-4" /> Nueva cita</Link>
             </Button>
             <Button
               disabled={!isReady}
@@ -201,7 +201,7 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
                   <Clock3 className="size-8 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground mb-3">Sin citas próximas hoy</p>
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/dashboard/agenda"><Plus className="size-3.5" /> Crear cita</Link>
+                    <Link to="/dashboard/agenda" search={{ nueva: true }}><Plus className="size-3.5" /> Crear cita</Link>
                   </Button>
                 </div>
               )}
@@ -226,7 +226,7 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
                   <p className="font-medium mb-1">No hay citas hoy</p>
                   <p className="text-sm text-muted-foreground mb-4">Crea una desde la agenda o comparte tu link público.</p>
                   <Button asChild size="sm">
-                    <Link to="/dashboard/agenda"><Plus className="size-3.5" /> Crear cita</Link>
+                    <Link to="/dashboard/agenda" search={{ nueva: true }}><Plus className="size-3.5" /> Crear cita</Link>
                   </Button>
                 </div>
               ) : (

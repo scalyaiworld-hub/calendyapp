@@ -27,6 +27,8 @@ type ViewMode = "day" | "week";
 type RescheduleInput = { id: string; newDate: Date; newTime: string; durationMin: number };
 
 export const Route = createFileRoute("/dashboard/agenda")({
+  validateSearch: (search: Record<string, unknown>): { nueva?: boolean } =>
+    search.nueva === true || search.nueva === "1" || search.nueva === "true" ? { nueva: true } : {},
   component: AgendaPage,
 });
 
@@ -98,6 +100,16 @@ function AgendaPage() {
     setNewApptSlot({ date: slotDate, time });
     setNewApptOpen(true);
   }
+
+  // Deep link desde el inicio: /dashboard/agenda?nueva=1 abre el formulario.
+  const { nueva } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  useEffect(() => {
+    if (!nueva) return;
+    openNewAppt(new Date());
+    navigate({ search: {}, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nueva]);
 
   const { data: entityCounts } = useEntityCounts(businessId);
   const locations = entityCounts ? { count: entityCounts.locations } : undefined;
@@ -1083,7 +1095,9 @@ function NewApptDialog({
           })()}
         </div>
         <DialogFooter>
-          <Button onClick={() => create.mutate()} disabled={create.isPending}>Crear cita</Button>
+          <Button onClick={() => create.mutate()} disabled={create.isPending}>
+            {create.isPending ? "Creando..." : "Crear cita"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
