@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useMyBusiness } from "@/lib/business";
@@ -18,8 +18,10 @@ import {
   LogOut,
   Lock,
   Sparkles,
+  UsersRound,
 } from "lucide-react";
 import { useEntityCounts } from "@/lib/entity-counts";
+import { canAccessPath, ROLE_LABELS, type Role } from "@/lib/permissions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandTheme } from "@/lib/brand-theme";
@@ -54,6 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Cuenta",
     items: [
+      { to: "/dashboard/equipo", label: "Equipo", icon: UsersRound },
       { to: "/dashboard/planes", label: "Planes", icon: Sparkles },
       { to: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
     ],
@@ -72,9 +75,18 @@ function DashboardLayout() {
     (readyCounts?.services ?? 0) > 0 &&
     (readyCounts?.locations ?? 0) > 0;
 
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const role = ((business as { my_role?: Role } | null | undefined)?.my_role ?? "owner") as Role;
+
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
+
+  // Un miembro que entra por URL a una pantalla que su rol no tiene vuelve al resumen
+  // (la seguridad real la aplica la base con RLS; esto es solo para no mostrar pantallas rotas).
+  useEffect(() => {
+    if (business && !canAccessPath(role, pathname)) navigate({ to: "/dashboard", replace: true });
+  }, [business, role, pathname, navigate]);
 
   // Force onboarding before any dashboard route renders
   useEffect(() => {
@@ -104,6 +116,11 @@ function DashboardLayout() {
         : "bg-muted text-muted-foreground";
   const planLabel = plan === "studio" ? "Studio" : plan === "pro" ? "Pro" : "Free";
 
+  const visibleGroups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => canAccessPath(role, i.to)),
+  })).filter((g) => g.items.length > 0);
+
   const SidebarInner = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
       <div className="px-5 py-5 border-b border-border">
@@ -122,13 +139,13 @@ function DashboardLayout() {
                 planStyles,
               )}
             >
-              {planLabel}
+              {role === "owner" ? planLabel : ROLE_LABELS[role]}
             </span>
           </div>
         )}
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {NAV_GROUPS.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label}>
             <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
               {group.label}
