@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 function prefersReducedMotion(): boolean {
-  return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  return (
+    typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  );
 }
 
 /** Devuelve true cuando el elemento entra en pantalla (una sola vez). */
@@ -239,9 +241,7 @@ export function LiveAgenda() {
       className="bg-background rounded-2xl aspect-[4/3] w-full p-5 flex flex-col gap-3 overflow-hidden"
     >
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-medium">
-          Ejemplo · Martes 6
-        </span>
+        <span className="font-medium">Ejemplo · Martes 6</span>
         <span className="inline-flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-primary" />
           <span className="tabular-nums">{8 + added}</span> citas
@@ -249,7 +249,10 @@ export function LiveAgenda() {
       </div>
       <div className="flex-1 space-y-2 overflow-hidden">
         {list.map((a) => (
-          <div key={a.h} className={cn("flex items-center gap-3 rounded-lg border px-3 py-2 animate-pop", a.c)}>
+          <div
+            key={a.h}
+            className={cn("flex items-center gap-3 rounded-lg border px-3 py-2 animate-pop", a.c)}
+          >
             <span className="font-mono text-xs tabular-nums">{a.h}</span>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold truncate text-foreground">{a.n}</div>

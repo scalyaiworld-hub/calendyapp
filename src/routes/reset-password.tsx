@@ -70,14 +70,20 @@ function ResetPasswordPage() {
             <span className="font-display text-3xl gradient-rose-text">Calendya</span>
           </Link>
           <h1 className="font-display text-2xl mt-6 mb-2">Nueva contraseña</h1>
-          <p className="text-sm text-muted-foreground">Elige una contraseña segura para tu cuenta.</p>
+          <p className="text-sm text-muted-foreground">
+            Elige una contraseña segura para tu cuenta.
+          </p>
         </div>
 
         <div className="surface-elev rounded-2xl p-6 sm:p-7 shadow-rose space-y-5">
           {!ready ? (
             <p className="text-sm text-muted-foreground text-center">
-              Este enlace debe abrirse desde el correo de recuperación. Si llegaste aquí sin ese enlace, solicita uno nuevo desde{" "}
-              <Link to="/auth" className="text-primary hover:underline">ingresar</Link>.
+              Este enlace debe abrirse desde el correo de recuperación. Si llegaste aquí sin ese
+              enlace, solicita uno nuevo desde{" "}
+              <Link to="/auth" className="text-primary hover:underline">
+                ingresar
+              </Link>
+              .
             </p>
           ) : done ? (
             <div className="text-sm text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-3 flex items-start gap-2">
@@ -89,7 +95,10 @@ function ResetPasswordPage() {
               <div>
                 <Label htmlFor="password">Nueva contraseña</Label>
                 <div className="relative mt-1.5">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" aria-hidden />
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
+                    aria-hidden
+                  />
                   <Input
                     id="password"
                     type={show ? "text" : "password"}
@@ -116,7 +125,10 @@ function ResetPasswordPage() {
               <div>
                 <Label htmlFor="confirm">Confirmar contraseña</Label>
                 <div className="relative mt-1.5">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" aria-hidden />
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none"
+                    aria-hidden
+                  />
                   <Input
                     id="confirm"
                     type={show ? "text" : "password"}

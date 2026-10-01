@@ -77,13 +77,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Calendya — Tu negocio agenda sola" },
-      { name: "description", content: "Plataforma para negocios que convierte mensajes y clicks en citas confirmadas automáticamente." },
+      {
+        name: "description",
+        content:
+          "Plataforma para negocios que convierte mensajes y clicks en citas confirmadas automáticamente.",
+      },
       { property: "og:title", content: "Calendya — Tu negocio agenda sola" },
-      { property: "og:description", content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes." },
+      {
+        property: "og:description",
+        content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Calendya — Tu negocio agenda sola" },
-      { name: "twitter:description", content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes." },
+      {
+        name: "twitter:description",
+        content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes.",
+      },
     ],
     links: [
       {

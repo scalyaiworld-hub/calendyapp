@@ -139,7 +139,9 @@ describe("AuthPage - validación del formulario", () => {
     });
     const user = setup();
     await fillAndSubmit(user, "a@b.com", "123", "Ingresar");
-    expect(await screen.findByText("La contraseña debe tener al menos 6 caracteres.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("La contraseña debe tener al menos 6 caracteres."),
+    ).toBeInTheDocument();
   });
 
   it("no llama a Supabase con email inválido", async () => {
@@ -154,7 +156,10 @@ describe("AuthPage - signInWithPassword", () => {
     const user = setup();
     await fillAndSubmit(user, "a@b.com", "secreto1", "Ingresar");
     await waitFor(() =>
-      expect(mocks.signInWithPassword).toHaveBeenCalledWith({ email: "a@b.com", password: "secreto1" }),
+      expect(mocks.signInWithPassword).toHaveBeenCalledWith({
+        email: "a@b.com",
+        password: "secreto1",
+      }),
     );
     expect(mocks.signUp).not.toHaveBeenCalled();
   });
@@ -216,7 +221,9 @@ describe("AuthPage - signUp", () => {
         options: { emailRedirectTo: `${window.location.origin}/dashboard` },
       }),
     );
-    expect(await screen.findByText("Revisa tu correo para confirmar tu cuenta.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Revisa tu correo para confirmar tu cuenta."),
+    ).toBeInTheDocument();
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
@@ -230,7 +237,9 @@ describe("AuthPage - signUp", () => {
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
     await fillAndSubmit(user, "nuevo@b.com", "secreto1", "Crear cuenta");
     expect(await screen.findByText(esperado)).toBeInTheDocument();
-    expect(screen.queryByText("Revisa tu correo para confirmar tu cuenta.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Revisa tu correo para confirmar tu cuenta."),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -264,7 +273,9 @@ describe("AuthPage - Google OAuth", () => {
     mocks.signInWithOAuth.mockResolvedValue({ error: new Error("Failed to fetch") });
     const user = setup();
     await user.click(screen.getByRole("button", { name: /Continuar con Google/ }));
-    expect(await screen.findByText("Problema de conexión. Revisa tu internet.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Problema de conexión. Revisa tu internet."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Continuar con Google/ })).toBeEnabled();
   });
 

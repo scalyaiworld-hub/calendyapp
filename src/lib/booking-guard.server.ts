@@ -43,12 +43,18 @@ export async function verifyCaptcha(token: string | undefined, ip: string): Prom
   if (ip !== "unknown") body.set("remoteip", ip);
   let ok = false;
   try {
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body });
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body,
+    });
     ok = !!((await res.json()) as { success?: boolean }).success;
   } catch {
     throw new BookingError("No se pudo verificar la seguridad. Inténtalo de nuevo");
   }
-  if (!ok) throw new BookingError("La verificación de seguridad falló. Recarga la página e inténtalo de nuevo");
+  if (!ok)
+    throw new BookingError(
+      "La verificación de seguridad falló. Recarga la página e inténtalo de nuevo",
+    );
 }
 
 /** Limita intentos por IP y por teléfono y registra el intento actual. */
@@ -60,7 +66,11 @@ export async function enforceBookingRate(
   const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
 
   const [byIp, byPhone] = await Promise.all([
-    sb.from("booking_attempts").select("id", { count: "exact", head: true }).eq("ip_hash", opts.ipHash).gte("created_at", hourAgo),
+    sb
+      .from("booking_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", opts.ipHash)
+      .gte("created_at", hourAgo),
     sb
       .from("booking_attempts")
       .select("id", { count: "exact", head: true })
@@ -71,13 +81,21 @@ export async function enforceBookingRate(
   if (byIp.error) throw new Error(byIp.error.message);
   if (byPhone.error) throw new Error(byPhone.error.message);
 
-  if ((byIp.count ?? 0) >= BOOKING_LIMITS.PER_IP_PER_HOUR || (byPhone.count ?? 0) >= BOOKING_LIMITS.PER_PHONE_PER_DAY) {
+  if (
+    (byIp.count ?? 0) >= BOOKING_LIMITS.PER_IP_PER_HOUR ||
+    (byPhone.count ?? 0) >= BOOKING_LIMITS.PER_PHONE_PER_DAY
+  ) {
     throw new BookingError("Demasiados intentos de reserva. Inténtalo más tarde");
   }
 
-  await sb.from("booking_attempts").insert({ business_id: opts.businessId, ip_hash: opts.ipHash, phone: opts.phone });
+  await sb
+    .from("booking_attempts")
+    .insert({ business_id: opts.businessId, ip_hash: opts.ipHash, phone: opts.phone });
   // Limpieza ocasional de intentos viejos para que la tabla no crezca sin límite.
   if (Math.random() < 0.02) {
-    await sb.from("booking_attempts").delete().lt("created_at", new Date(Date.now() - 2 * 86_400_000).toISOString());
+    await sb
+      .from("booking_attempts")
+      .delete()
+      .lt("created_at", new Date(Date.now() - 2 * 86_400_000).toISOString());
   }
 }

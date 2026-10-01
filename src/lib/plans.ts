@@ -88,7 +88,10 @@ export const MODULE_LABELS: Record<keyof PlanDef["modules"], string> = {
   prioritySupport: "Soporte prioritario",
 };
 
-export function hasModule(plan: string | null | undefined, module: keyof PlanDef["modules"]): boolean {
+export function hasModule(
+  plan: string | null | undefined,
+  module: keyof PlanDef["modules"],
+): boolean {
   return getPlan(plan).modules[module];
 }
 
@@ -131,7 +134,13 @@ export function planTransitionBlock(
 
 export function describeTransitionBlock(b: PlanTransitionBlock, targetLabel: string): string {
   const parts: string[] = [];
-  if (b.locations) parts.push(`${b.locations.over} sucursal(es) activa(s) de más (${targetLabel} permite ${b.locations.limit})`);
-  if (b.professionals) parts.push(`${b.professionals.over} profesional(es) activo(s) de más (${targetLabel} permite ${b.professionals.limit})`);
+  if (b.locations)
+    parts.push(
+      `${b.locations.over} sucursal(es) activa(s) de más (${targetLabel} permite ${b.locations.limit})`,
+    );
+  if (b.professionals)
+    parts.push(
+      `${b.professionals.over} profesional(es) activo(s) de más (${targetLabel} permite ${b.professionals.limit})`,
+    );
   return `No puedes pasar al plan ${targetLabel} todavía: tienes ${parts.join(" y ")}. Desactiva o elimina el excedente y vuelve a intentarlo.`;
 }

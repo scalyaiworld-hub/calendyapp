@@ -82,7 +82,10 @@ function AjustesPage() {
         .eq("id", business!.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Guardado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-business"] });
+      toast.success("Guardado");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -98,7 +101,10 @@ function AjustesPage() {
         .eq("id", business!.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Tema guardado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-business"] });
+      toast.success("Tema guardado");
+    },
     onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
@@ -124,10 +130,12 @@ function AjustesPage() {
     mutationFn: async () => {
       const num = (v: string, min: number, max: number, label: string) => {
         const n = Number(v);
-        if (!Number.isInteger(n) || n < min || n > max) throw new Error(`${label}: indica un número entre ${min} y ${max}.`);
+        if (!Number.isInteger(n) || n < min || n > max)
+          throw new Error(`${label}: indica un número entre ${min} y ${max}.`);
         return n;
       };
-      const noShows = maxNoShows.trim() === "" ? null : num(maxNoShows, 1, 50, "Límite de no-shows");
+      const noShows =
+        maxNoShows.trim() === "" ? null : num(maxNoShows, 1, 50, "Límite de no-shows");
       const { error } = await supabase
         .from("businesses")
         .update({
@@ -141,7 +149,10 @@ function AjustesPage() {
         .eq("id", business!.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-business"] }); toast.success("Reglas de reserva guardadas"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-business"] });
+      toast.success("Reglas de reserva guardadas");
+    },
     onError: (e: Error) => toast.error(translateDbError(e)),
   });
 
@@ -168,7 +179,10 @@ function AjustesPage() {
   if (!hasServices) missing.push("un servicio");
   const canBrand = hasModule((business as any).plan, "branding");
   const missingMsg = `Agrega al menos ${missing.join(", ")} para activar el link de reservas.`;
-  const url = typeof window !== "undefined" ? `${window.location.origin}/b/${business.slug}` : `/b/${business.slug}`;
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/b/${business.slug}`
+      : `/b/${business.slug}`;
 
   return (
     <div className="space-y-6 max-w-xl">
@@ -178,14 +192,22 @@ function AjustesPage() {
       </div>
       <Card>
         <CardContent className="pt-6 space-y-4">
-          <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div>
+            <Label>Nombre</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
           <div>
             <Label>Link público</Label>
             <div className="flex items-center gap-1 mt-1.5">
-              <span className="text-sm text-muted-foreground shrink-0">{typeof window !== "undefined" ? `${window.location.origin}/b/` : "/b/"}</span>
+              <span className="text-sm text-muted-foreground shrink-0">
+                {typeof window !== "undefined" ? `${window.location.origin}/b/` : "/b/"}
+              </span>
               <Input
                 value={slug}
-                onChange={(e) => { setSlugTouched(true); setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-")); }}
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"));
+                }}
                 placeholder="mi-salon"
               />
             </div>
@@ -206,7 +228,9 @@ function AjustesPage() {
               />
             </div>
           </div>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !name}>Guardar</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !name}>
+            Guardar
+          </Button>
         </CardContent>
       </Card>
 
@@ -215,90 +239,106 @@ function AjustesPage() {
           <div>
             <h2 className="font-display text-xl mb-1">Marca y apariencia</h2>
             <p className="text-sm text-muted-foreground">
-              Personaliza los colores y la tipografía de tu panel y de tu página pública de reservas.
+              Personaliza los colores y la tipografía de tu panel y de tu página pública de
+              reservas.
             </p>
           </div>
 
           {!canBrand && (
             <p className="text-sm rounded-md border border-border bg-muted/50 px-3 py-2">
               La marca personalizada está disponible desde el plan Pro.{" "}
-              <Link to="/dashboard/planes" className="underline font-medium">Ver planes</Link>
+              <Link to="/dashboard/planes" className="underline font-medium">
+                Ver planes
+              </Link>
             </p>
           )}
 
           <fieldset disabled={!canBrand} className="space-y-4 disabled:opacity-60">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Color principal</Label>
-              <div className="flex gap-2 mt-1.5">
-                <input
-                  type="color"
-                  value={brandPrimary}
-                  onChange={(e) => setBrandPrimary(e.target.value)}
-                  className="h-10 w-14 rounded border border-input cursor-pointer"
-                />
-                <Input
-                  value={brandPrimary}
-                  onChange={(e) => setBrandPrimary(e.target.value)}
-                  placeholder="#3b82f6"
-                />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Color principal</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <input
+                    type="color"
+                    value={brandPrimary}
+                    onChange={(e) => setBrandPrimary(e.target.value)}
+                    className="h-10 w-14 rounded border border-input cursor-pointer"
+                  />
+                  <Input
+                    value={brandPrimary}
+                    onChange={(e) => setBrandPrimary(e.target.value)}
+                    placeholder="#3b82f6"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Color de fondo</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <input
+                    type="color"
+                    value={brandBackground}
+                    onChange={(e) => setBrandBackground(e.target.value)}
+                    className="h-10 w-14 rounded border border-input cursor-pointer"
+                  />
+                  <Input
+                    value={brandBackground}
+                    onChange={(e) => setBrandBackground(e.target.value)}
+                    placeholder="#fafbfc"
+                  />
+                </div>
               </div>
             </div>
+
             <div>
-              <Label>Color de fondo</Label>
-              <div className="flex gap-2 mt-1.5">
-                <input
-                  type="color"
-                  value={brandBackground}
-                  onChange={(e) => setBrandBackground(e.target.value)}
-                  className="h-10 w-14 rounded border border-input cursor-pointer"
-                />
-                <Input
-                  value={brandBackground}
-                  onChange={(e) => setBrandBackground(e.target.value)}
-                  placeholder="#fafbfc"
-                />
+              <Label>Tipografía</Label>
+              <select
+                value={brandFont}
+                onChange={(e) => setBrandFont(e.target.value)}
+                className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                style={{ fontFamily: `"${brandFont}"` }}
+              >
+                {AVAILABLE_FONTS.map((f) => (
+                  <option key={f} value={f} style={{ fontFamily: `"${f}"` }}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <BrandTheme
+              brand={{
+                brand_primary: brandPrimary,
+                brand_background: brandBackground,
+                brand_font: brandFont,
+              }}
+            >
+              <div
+                className="rounded-lg border border-border p-4"
+                style={{ background: brandBackground, fontFamily: `"${brandFont}"` }}
+              >
+                <p className="text-xs text-muted-foreground mb-2">Vista previa</p>
+                <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: `"${brandFont}"` }}>
+                  {name || "Tu negocio"}
+                </h3>
+                <Button style={{ background: brandPrimary, color: "white" }}>Reservar cita</Button>
               </div>
+            </BrandTheme>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => saveBrand.mutate()}
+                disabled={!canBrand || saveBrand.isPending}
+              >
+                Guardar tema
+              </Button>
+              <Button
+                variant="outline"
+                onClick={resetBrand}
+                disabled={!canBrand || saveBrand.isPending}
+              >
+                Restablecer
+              </Button>
             </div>
-          </div>
-
-          <div>
-            <Label>Tipografía</Label>
-            <select
-              value={brandFont}
-              onChange={(e) => setBrandFont(e.target.value)}
-              className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              style={{ fontFamily: `"${brandFont}"` }}
-            >
-              {AVAILABLE_FONTS.map((f) => (
-                <option key={f} value={f} style={{ fontFamily: `"${f}"` }}>{f}</option>
-              ))}
-            </select>
-          </div>
-
-          <BrandTheme
-            brand={{ brand_primary: brandPrimary, brand_background: brandBackground, brand_font: brandFont }}
-          >
-            <div
-              className="rounded-lg border border-border p-4"
-              style={{ background: brandBackground, fontFamily: `"${brandFont}"` }}
-            >
-              <p className="text-xs text-muted-foreground mb-2">Vista previa</p>
-              <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: `"${brandFont}"` }}>
-                {name || "Tu negocio"}
-              </h3>
-              <Button style={{ background: brandPrimary, color: "white" }}>Reservar cita</Button>
-            </div>
-          </BrandTheme>
-
-          <div className="flex gap-2">
-            <Button onClick={() => saveBrand.mutate()} disabled={!canBrand || saveBrand.isPending}>
-              Guardar tema
-            </Button>
-            <Button variant="outline" onClick={resetBrand} disabled={!canBrand || saveBrand.isPending}>
-              Restablecer
-            </Button>
-          </div>
           </fieldset>
         </CardContent>
       </Card>
@@ -307,38 +347,76 @@ function AjustesPage() {
         <CardContent className="pt-6 space-y-4">
           <div>
             <h2 className="font-display text-xl mb-1">Reglas de reserva</h2>
-            <p className="text-sm text-muted-foreground">Cómo reservan tus clientes desde tu página pública.</p>
+            <p className="text-sm text-muted-foreground">
+              Cómo reservan tus clientes desde tu página pública.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Anticipación mínima (min)</Label>
-              <Input className="mt-1.5" inputMode="numeric" value={lead} onChange={(e) => setLead(e.target.value)} />
+              <Input
+                className="mt-1.5"
+                inputMode="numeric"
+                value={lead}
+                onChange={(e) => setLead(e.target.value)}
+              />
             </div>
             <div>
               <Label>Reservar hasta (días)</Label>
-              <Input className="mt-1.5" inputMode="numeric" value={ahead} onChange={(e) => setAhead(e.target.value)} />
+              <Input
+                className="mt-1.5"
+                inputMode="numeric"
+                value={ahead}
+                onChange={(e) => setAhead(e.target.value)}
+              />
             </div>
             <div>
               <Label>Intervalo entre horarios</Label>
-              <select value={step} onChange={(e) => setStep(e.target.value)} className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+              <select
+                value={step}
+                onChange={(e) => setStep(e.target.value)}
+                className="mt-1.5 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
                 <option value="duration">Duración del servicio</option>
-                {[10, 15, 20, 30, 60].map((m) => <option key={m} value={m}>{m} min</option>)}
+                {[10, 15, 20, 30, 60].map((m) => (
+                  <option key={m} value={m}>
+                    {m} min
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <Label>Margen entre citas (min)</Label>
-              <Input className="mt-1.5" inputMode="numeric" value={buffer} onChange={(e) => setBuffer(e.target.value)} />
+              <Input
+                className="mt-1.5"
+                inputMode="numeric"
+                value={buffer}
+                onChange={(e) => setBuffer(e.target.value)}
+              />
             </div>
             <div>
               <Label>El cliente puede cancelar hasta (h antes)</Label>
-              <Input className="mt-1.5" inputMode="numeric" value={cancelHours} onChange={(e) => setCancelHours(e.target.value)} />
+              <Input
+                className="mt-1.5"
+                inputMode="numeric"
+                value={cancelHours}
+                onChange={(e) => setCancelHours(e.target.value)}
+              />
             </div>
             <div>
               <Label>Bloquear tras N no-shows</Label>
-              <Input className="mt-1.5" inputMode="numeric" value={maxNoShows} onChange={(e) => setMaxNoShows(e.target.value)} placeholder="Sin límite" />
+              <Input
+                className="mt-1.5"
+                inputMode="numeric"
+                value={maxNoShows}
+                onChange={(e) => setMaxNoShows(e.target.value)}
+                placeholder="Sin límite"
+              />
             </div>
           </div>
-          <Button onClick={() => saveRules.mutate()} disabled={saveRules.isPending}>Guardar reglas</Button>
+          <Button onClick={() => saveRules.mutate()} disabled={saveRules.isPending}>
+            Guardar reglas
+          </Button>
         </CardContent>
       </Card>
 
@@ -350,7 +428,10 @@ function AjustesPage() {
             <Button
               variant="outline"
               disabled={!canShare}
-              onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}
+              onClick={() => {
+                navigator.clipboard.writeText(url);
+                toast.success("Copiado");
+              }}
               title={canShare ? undefined : missingMsg}
             >
               Copiar

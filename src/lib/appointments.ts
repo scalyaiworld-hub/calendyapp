@@ -23,7 +23,11 @@ export function isTerminalStatus(status: string): boolean {
  * Marcar completed o no_show antes de la hora de inicio no tiene sentido y
  * distorsiona ingresos y contadores de no-show.
  */
-export function nextStatuses(current: string, startsAt: string | Date, now: Date = new Date()): ApptStatus[] {
+export function nextStatuses(
+  current: string,
+  startsAt: string | Date,
+  now: Date = new Date(),
+): ApptStatus[] {
   if (isTerminalStatus(current)) return [];
   const started = new Date(startsAt).getTime() <= now.getTime();
   const next: ApptStatus[] = [];
@@ -34,16 +38,28 @@ export function nextStatuses(current: string, startsAt: string | Date, now: Date
 }
 
 /** Opciones para un <Select>: el estado actual (para mostrarlo) más los destinos válidos. */
-export function statusOptions(current: string, startsAt: string | Date, now: Date = new Date()): ApptStatus[] {
+export function statusOptions(
+  current: string,
+  startsAt: string | Date,
+  now: Date = new Date(),
+): ApptStatus[] {
   const cur = current as ApptStatus;
   return [cur, ...nextStatuses(current, startsAt, now)];
 }
 
-export function canChangeStatus(current: string, target: string, startsAt: string | Date, now: Date = new Date()): boolean {
+export function canChangeStatus(
+  current: string,
+  target: string,
+  startsAt: string | Date,
+  now: Date = new Date(),
+): boolean {
   return nextStatuses(current, startsAt, now).includes(target as ApptStatus);
 }
 
 /** Precio efectivo de una cita: el congelado al crearla; para filas antiguas, el del servicio. */
-export function apptPriceCents(a: { price_cents?: number | null; services?: { price_cents?: number | null } | null }): number {
+export function apptPriceCents(a: {
+  price_cents?: number | null;
+  services?: { price_cents?: number | null } | null;
+}): number {
   return a.price_cents ?? a.services?.price_cents ?? 0;
 }

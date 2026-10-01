@@ -39,8 +39,14 @@ export function SmartImage({
           decoding="async"
           // @ts-expect-error fetchpriority is a valid HTML attr not yet typed everywhere
           fetchpriority={priority ? "high" : "auto"}
-          onLoad={(e) => { setLoaded(true); onLoad?.(e); }}
-          onError={(e) => { setFailed(true); onError?.(e); }}
+          onLoad={(e) => {
+            setLoaded(true);
+            onLoad?.(e);
+          }}
+          onError={(e) => {
+            setFailed(true);
+            onError?.(e);
+          }}
           className={cn(
             "w-full h-full object-cover transition-opacity duration-300",
             loaded ? "opacity-100" : "opacity-0",

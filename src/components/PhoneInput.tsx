@@ -1,5 +1,11 @@
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { COUNTRIES, DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 
 interface PhoneInputProps {
@@ -23,7 +29,11 @@ export function PhoneInput({
 }: PhoneInputProps) {
   return (
     <div className="flex gap-2">
-      <Select value={countryCode || DEFAULT_COUNTRY_CODE} onValueChange={onCountryCodeChange} disabled={disabled}>
+      <Select
+        value={countryCode || DEFAULT_COUNTRY_CODE}
+        onValueChange={onCountryCodeChange}
+        disabled={disabled}
+      >
         <SelectTrigger className="w-32 shrink-0">
           <SelectValue />
         </SelectTrigger>
@@ -51,7 +61,10 @@ export function PhoneInput({
   );
 }
 
-export function formatPhone(countryCode: string | null | undefined, number: string | null | undefined): string {
+export function formatPhone(
+  countryCode: string | null | undefined,
+  number: string | null | undefined,
+): string {
   if (!number) return "";
   return `${countryCode || ""} ${number}`.trim();
 }

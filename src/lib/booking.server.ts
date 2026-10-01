@@ -1,5 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeSlots, dayOfWeekOfYmd, settingsFromBusiness, type BookingSettings, type BusyRange, type HourWindow } from "@/lib/availability-core";
+import {
+  computeSlots,
+  dayOfWeekOfYmd,
+  settingsFromBusiness,
+  type BookingSettings,
+  type BusyRange,
+  type HourWindow,
+} from "@/lib/availability-core";
 import { dayBoundsOfYmd } from "@/lib/tz";
 
 /** Error con mensaje seguro para mostrar al visitante. */
@@ -25,7 +32,13 @@ export type BookingContext = {
  */
 export async function loadBookingContext(
   sb: SupabaseClient,
-  input: { businessId: string; serviceId: string; locationId?: string | null; professionalId?: string | null; date: string },
+  input: {
+    businessId: string;
+    serviceId: string;
+    locationId?: string | null;
+    professionalId?: string | null;
+    date: string;
+  },
 ): Promise<BookingContext> {
   const { businessId, serviceId } = input;
   const locationId = input.locationId ?? null;
@@ -36,7 +49,9 @@ export async function loadBookingContext(
 
   const { data: biz } = await sb
     .from("businesses")
-    .select("id,timezone,plan,booking_min_lead_minutes,booking_max_ahead_days,booking_slot_step_minutes,booking_buffer_minutes,booking_cancel_min_hours,booking_max_no_shows")
+    .select(
+      "id,timezone,plan,booking_min_lead_minutes,booking_max_ahead_days,booking_slot_step_minutes,booking_buffer_minutes,booking_cancel_min_hours,booking_max_no_shows",
+    )
     .eq("id", businessId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -85,12 +100,18 @@ export async function loadBookingContext(
 
   if (professionalId) {
     // Las asignaciones se exigen cuando el negocio las configuró (mismo criterio que la página pública).
-    const { data: offered } = await sb.from("professional_services").select("service_id").eq("professional_id", professionalId);
+    const { data: offered } = await sb
+      .from("professional_services")
+      .select("service_id")
+      .eq("professional_id", professionalId);
     if ((offered?.length ?? 0) > 0 && !offered!.some((r) => r.service_id === serviceId)) {
       throw new BookingError("Ese profesional no ofrece el servicio elegido");
     }
     if (locationId) {
-      const { data: atLoc } = await sb.from("location_professionals").select("professional_id").eq("location_id", locationId);
+      const { data: atLoc } = await sb
+        .from("location_professionals")
+        .select("professional_id")
+        .eq("location_id", locationId);
       if ((atLoc?.length ?? 0) > 0 && !atLoc!.some((r) => r.professional_id === professionalId)) {
         throw new BookingError("Ese profesional no atiende en la sucursal elegida");
       }
@@ -111,11 +132,19 @@ export async function loadBookingContext(
   const dow = dayOfWeekOfYmd(input.date);
   let windows: HourWindow[] = [];
   if (!closed && locationId) {
-    const { data } = await sb.from("location_hours").select("start_time,end_time").eq("location_id", locationId).eq("day_of_week", dow);
+    const { data } = await sb
+      .from("location_hours")
+      .select("start_time,end_time")
+      .eq("location_id", locationId)
+      .eq("day_of_week", dow);
     windows = data ?? [];
   }
   if (!closed && windows.length === 0) {
-    const { data } = await sb.from("availability_rules").select("start_time,end_time").eq("business_id", businessId).eq("day_of_week", dow);
+    const { data } = await sb
+      .from("availability_rules")
+      .select("start_time,end_time")
+      .eq("business_id", businessId)
+      .eq("day_of_week", dow);
     windows = data ?? [];
   }
 

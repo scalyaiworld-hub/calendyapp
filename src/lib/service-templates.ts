@@ -7,8 +7,18 @@ export interface ServiceTemplate {
 export type Industry = "peluqueria" | "barberia" | "spa" | "unas" | "estetica";
 
 export const INDUSTRIES: { id: Industry; label: string; emoji: string; description: string }[] = [
-  { id: "peluqueria", label: "Peluquería", emoji: "💇‍♀️", description: "Cortes, color, tratamientos" },
-  { id: "barberia", label: "Barbería", emoji: "💈", description: "Corte caballero, barba, afeitado" },
+  {
+    id: "peluqueria",
+    label: "Peluquería",
+    emoji: "💇‍♀️",
+    description: "Cortes, color, tratamientos",
+  },
+  {
+    id: "barberia",
+    label: "Barbería",
+    emoji: "💈",
+    description: "Corte caballero, barba, afeitado",
+  },
   { id: "spa", label: "Spa & Masajes", emoji: "🧖‍♀️", description: "Masajes, relajación, faciales" },
   { id: "unas", label: "Uñas", emoji: "💅", description: "Manicure, pedicure, nail art" },
   { id: "estetica", label: "Estética", emoji: "✨", description: "Facial, depilación, pestañas" },

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { apptPriceCents, canChangeStatus, nextStatuses, statusOptions } from "./appointments";
-import { computeOverage, describeTransitionBlock, hasModule, MODULES_COMING_SOON, planTransitionBlock } from "./plans";
+import {
+  computeOverage,
+  describeTransitionBlock,
+  hasModule,
+  MODULES_COMING_SOON,
+  planTransitionBlock,
+} from "./plans";
 import { dayBoundsInTz, monthBoundsInTz, zonedToUtc } from "./tz";
 import { timeToMinutes, windowsFit } from "./manual-booking";
 
@@ -78,15 +84,22 @@ describe("zona horaria", () => {
   });
 
   it("respeta DST (Nueva York)", () => {
-    expect(zonedToUtc(2026, 1, 1, "America/New_York").toISOString()).toBe("2026-01-01T05:00:00.000Z");
-    expect(zonedToUtc(2026, 7, 1, "America/New_York").toISOString()).toBe("2026-07-01T04:00:00.000Z");
+    expect(zonedToUtc(2026, 1, 1, "America/New_York").toISOString()).toBe(
+      "2026-01-01T05:00:00.000Z",
+    );
+    expect(zonedToUtc(2026, 7, 1, "America/New_York").toISOString()).toBe(
+      "2026-07-01T04:00:00.000Z",
+    );
     const { start, end } = dayBoundsInTz(new Date("2026-03-08T12:00:00Z"), "America/New_York");
     expect((end.getTime() - start.getTime()) / 3_600_000).toBe(23);
   });
 });
 
 describe("horario de atención", () => {
-  const windows = [{ start_time: "09:00:00", end_time: "13:00:00" }, { start_time: "15:00", end_time: "19:00" }];
+  const windows = [
+    { start_time: "09:00:00", end_time: "13:00:00" },
+    { start_time: "15:00", end_time: "19:00" },
+  ];
   it("convierte horas a minutos", () => {
     expect(timeToMinutes("09:30:00")).toBe(570);
   });
@@ -106,7 +119,11 @@ describe("disponibilidad en la zona del negocio", () => {
   const base = { date: "2026-06-02", tz: "America/Lima", durationMinutes: 60, now };
 
   it("genera slots a partir de la hora de pared del negocio (Lima = UTC-5)", () => {
-    const slots = computeSlots({ ...base, windows: [{ start_time: "09:00", end_time: "12:00" }], busy: [] });
+    const slots = computeSlots({
+      ...base,
+      windows: [{ start_time: "09:00", end_time: "12:00" }],
+      busy: [],
+    });
     expect(slots.map((s) => s.startsAt)).toEqual([
       "2026-06-02T14:00:00.000Z",
       "2026-06-02T15:00:00.000Z",
@@ -120,7 +137,10 @@ describe("disponibilidad en la zona del negocio", () => {
       windows: [{ start_time: "09:00", end_time: "12:00" }],
       busy: [{ starts_at: "2026-06-02T15:00:00Z", ends_at: "2026-06-02T16:00:00Z" }],
     });
-    expect(slots.map((s) => s.startsAt)).toEqual(["2026-06-02T14:00:00.000Z", "2026-06-02T16:00:00.000Z"]);
+    expect(slots.map((s) => s.startsAt)).toEqual([
+      "2026-06-02T14:00:00.000Z",
+      "2026-06-02T16:00:00.000Z",
+    ]);
   });
 
   it("respeta la anticipación mínima y el máximo de días", () => {
@@ -133,15 +153,28 @@ describe("disponibilidad en la zona del negocio", () => {
       busy: [],
     });
     expect(today[0].startsAt).toBe("2026-06-01T13:00:00.000Z");
-    const far = computeSlots({ ...base, date: "2026-12-01", windows: [{ start_time: "09:00", end_time: "10:00" }], busy: [] });
+    const far = computeSlots({
+      ...base,
+      date: "2026-12-01",
+      windows: [{ start_time: "09:00", end_time: "10:00" }],
+      busy: [],
+    });
     expect(far).toEqual([]);
     expect(BOOKING_RULES.MAX_AHEAD_DAYS).toBe(90);
   });
 
   it("un slot reservado solo es válido si el servidor lo ofrece exactamente", () => {
-    const slots = computeSlots({ ...base, windows: [{ start_time: "09:00", end_time: "11:00" }], busy: [] });
-    expect(isSlotOffered(slots, new Date("2026-06-02T14:00:00Z"), new Date("2026-06-02T15:00:00Z"))).toBe(true);
-    expect(isSlotOffered(slots, new Date("2026-06-02T14:30:00Z"), new Date("2026-06-02T15:30:00Z"))).toBe(false);
+    const slots = computeSlots({
+      ...base,
+      windows: [{ start_time: "09:00", end_time: "11:00" }],
+      busy: [],
+    });
+    expect(
+      isSlotOffered(slots, new Date("2026-06-02T14:00:00Z"), new Date("2026-06-02T15:00:00Z")),
+    ).toBe(true);
+    expect(
+      isSlotOffered(slots, new Date("2026-06-02T14:30:00Z"), new Date("2026-06-02T15:30:00Z")),
+    ).toBe(false);
   });
 
   it("la fecha y el día de la semana salen de la zona del negocio", () => {
@@ -163,7 +196,9 @@ describe("reglas de reserva configurables por negocio", () => {
 
   it("sin configuración usa los valores por defecto", () => {
     expect(settingsFromBusiness(null)).toEqual(DEFAULT_BOOKING_SETTINGS);
-    expect(settingsFromBusiness({ booking_buffer_minutes: 15, booking_max_no_shows: 3 })).toMatchObject({
+    expect(
+      settingsFromBusiness({ booking_buffer_minutes: 15, booking_max_no_shows: 3 }),
+    ).toMatchObject({
       bufferMinutes: 15,
       maxNoShows: 3,
       minLeadMinutes: 30,
@@ -171,7 +206,12 @@ describe("reglas de reserva configurables por negocio", () => {
   });
 
   it("el intervalo entre horarios puede ser menor que la duración del servicio", () => {
-    const slots = computeSlots({ ...base, windows: win, busy: [], settings: { slotStepMinutes: 30 } });
+    const slots = computeSlots({
+      ...base,
+      windows: win,
+      busy: [],
+      settings: { slotStepMinutes: 30 },
+    });
     expect(slots.map((s) => s.startsAt)).toEqual([
       "2026-06-02T14:00:00.000Z",
       "2026-06-02T14:30:00.000Z",
@@ -184,21 +224,37 @@ describe("reglas de reserva configurables por negocio", () => {
   it("el margen entre citas bloquea horarios a ambos lados de una cita existente", () => {
     const busy = [{ starts_at: "2026-06-02T15:00:00Z", ends_at: "2026-06-02T16:00:00Z" }];
     // Sin margen: 14:00 y 16:00 quedan libres. Con 15 min: ambos chocan con el margen.
-    expect(computeSlots({ ...base, windows: win, busy }).map((s) => s.startsAt)).toEqual(["2026-06-02T14:00:00.000Z", "2026-06-02T16:00:00.000Z"]);
-    expect(computeSlots({ ...base, windows: win, busy, settings: { bufferMinutes: 15 } })).toEqual([]);
+    expect(computeSlots({ ...base, windows: win, busy }).map((s) => s.startsAt)).toEqual([
+      "2026-06-02T14:00:00.000Z",
+      "2026-06-02T16:00:00.000Z",
+    ]);
+    expect(computeSlots({ ...base, windows: win, busy, settings: { bufferMinutes: 15 } })).toEqual(
+      [],
+    );
   });
 
   it("varios tramos el mismo día modelan un descanso", () => {
     const slots = computeSlots({
       ...base,
-      windows: [{ start_time: "09:00", end_time: "10:00" }, { start_time: "15:00", end_time: "16:00" }],
+      windows: [
+        { start_time: "09:00", end_time: "10:00" },
+        { start_time: "15:00", end_time: "16:00" },
+      ],
       busy: [],
     });
-    expect(slots.map((s) => s.startsAt)).toEqual(["2026-06-02T14:00:00.000Z", "2026-06-02T20:00:00.000Z"]);
+    expect(slots.map((s) => s.startsAt)).toEqual([
+      "2026-06-02T14:00:00.000Z",
+      "2026-06-02T20:00:00.000Z",
+    ]);
   });
 
   it("anticipación y horizonte vienen del negocio", () => {
-    const tight = computeSlots({ ...base, windows: win, busy: [], settings: { minLeadMinutes: 48 * 60 } });
+    const tight = computeSlots({
+      ...base,
+      windows: win,
+      busy: [],
+      settings: { minLeadMinutes: 48 * 60 },
+    });
     expect(tight).toEqual([]);
     const short = computeSlots({ ...base, windows: win, busy: [], settings: { maxAheadDays: 0 } });
     expect(short).toEqual([]);
