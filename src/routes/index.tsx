@@ -68,7 +68,7 @@ function Header() {
   const scrolled = useScrolled();
   return (
     <header
-      className={`sticky top-0 z-50 backdrop-blur-xl border-b transition-all duration-300 ${
+      className={`sticky top-0 z-50 backdrop-blur-xl border-b transition-colors duration-300 ${
         scrolled ? "bg-background/90 border-border shadow-sm" : "bg-background/75 border-border/60"
       }`}
     >
@@ -112,17 +112,14 @@ function Hero() {
         }}
       />
       <div className="max-w-5xl mx-auto px-6 pt-20 md:pt-28 pb-20 md:pb-28 text-center">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-100 mb-10">
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75 animate-ping" />
-            <span className="relative inline-flex rounded-full size-2 bg-rose-500" />
-          </span>
-          <span className="text-[11px] uppercase tracking-[0.18em] text-rose-600 font-semibold">Agenda inteligente para salones</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-10">
+          <span className="inline-flex rounded-full size-2 bg-primary" aria-hidden />
+          <span className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">Agenda inteligente para salones</span>
         </div>
         <h1 className="font-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-[-0.035em] mb-8 font-bold">
           Tu salón merece{" "}
           <span className="text-primary italic font-normal">
-            <RotatingWord words={["libertad", "tiempo", "calma"]} />
+            <RotatingWord words={["libertad", "tiempo", "calma"]} finalWord="tiempo" />
           </span>,
           <br className="hidden sm:block" />
           {" "}no un cuaderno.
@@ -157,17 +154,17 @@ function TrustStrip() {
   const stats: { n: ReactNode; l: string }[] = [
     { n: <CountUp to={500} prefix="+" />, l: "Citas reservadas/día" },
     { n: <CountUp to={30} suffix="s" />, l: "Reserva promedio" },
-    { n: <CountUp to={0} />, l: "Doble bookings" },
+    { n: "0", l: "Dobles reservas" },
     { n: "24/7", l: "Disponibilidad" },
   ];
   return (
     <section className="border-y border-border/60">
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-y-8">
-        {stats.map((s, idx) => (
-          <Reveal key={s.l} delay={idx * 90} className="text-center space-y-1.5">
+        {stats.map((s) => (
+          <div key={s.l} className="text-center space-y-1.5">
             <div className="font-display text-4xl md:text-5xl font-bold text-primary tracking-tight">{s.n}</div>
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">{s.l}</div>
-          </Reveal>
+          </div>
         ))}
       </div>
     </section>
@@ -210,7 +207,7 @@ function Problem() {
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {items.map((i, idx) => (
-            <Reveal key={i.t} delay={idx * 120}>
+            <Reveal key={i.t} delay={idx * 60}>
             <div
               className={`h-full p-8 rounded-[2rem] border transition-all duration-500 ${
                 i.accent
@@ -276,7 +273,7 @@ function SolutionTeaser() {
               </div>
             </div>
             <div className="flex-1 w-full">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-3xl rotate-1 shadow-2xl">
+              <div className="bg-white/15 border border-white/20 p-3 rounded-3xl rotate-1 shadow-2xl">
                 <LiveAgenda />
               </div>
             </div>
@@ -297,23 +294,21 @@ function Features() {
     { i: Sparkles, t: "Cero fricción", d: "Diseñado para dueños de negocio, no para programadores." },
   ];
   return (
-    <section id="features" className="py-24 px-6 border-t border-border">
+    <section id="features" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <SectionLabel>La solución</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-16 max-w-2xl font-semibold tracking-tight">
           Todo lo que necesitas, <span className="text-primary">nada que no.</span>
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden border border-border shadow-soft">
-          {features.map(({ i: Icon, t, d }, idx) => (
-            <Reveal key={t} className="flex bg-card" delay={(idx % 3) * 90}>
-              <div className="flex-1 p-8 hover:bg-accent/30 transition group relative">
-                <div className="size-11 rounded-xl bg-foreground/5 grid place-items-center mb-5 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110 transition text-foreground/70">
-                  <Icon className="size-5" strokeWidth={1.5} />
-                </div>
-                <h3 className="font-display text-lg mb-2 font-semibold tracking-tight">{t}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{d}</p>
+          {features.map(({ i: Icon, t, d }) => (
+            <div key={t} className="bg-card p-8 hover:bg-accent/30 transition group relative">
+              <div className="size-11 rounded-xl bg-foreground/5 grid place-items-center mb-5 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110 transition text-foreground/70">
+                <Icon className="size-5" strokeWidth={1.5} />
               </div>
-            </Reveal>
+              <h3 className="font-display text-lg mb-2 font-semibold tracking-tight">{t}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{d}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -328,13 +323,13 @@ function HowItWorks() {
     { n: "3", t: "Atiende y cobra", d: "Tu agenda llena, sin levantar el teléfono." },
   ];
   return (
-    <section id="how" className="py-24 px-6 border-t border-border">
+    <section id="how" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-5xl mx-auto">
         <SectionLabel>Cómo funciona</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-16 font-semibold tracking-tight">Tres pasos. Listo.</h2>
         <div className="grid md:grid-cols-3 gap-6 relative">
           {steps.map((s, idx) => (
-            <Reveal key={s.n} className="flex" delay={idx * 140}>
+            <Reveal key={s.n} className="flex" delay={idx * 60}>
               <div className="flex-1 bg-card border border-border rounded-2xl p-8 relative overflow-hidden hover:shadow-soft hover:-translate-y-1 transition">
                 <div className="flex items-center justify-between mb-6">
                   <div className="size-9 rounded-full bg-foreground text-background grid place-items-center font-display text-sm font-semibold">{s.n}</div>
@@ -377,7 +372,7 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
     "Onboarding 1:1 y soporte dedicado",
   ];
   return (
-    <section id="pricing" className="py-24 px-6 border-t border-border">
+    <section id="pricing" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <SectionLabel>Precio</SectionLabel>
         <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">Empieza gratis. Crece cuando quieras.</h2>
@@ -501,7 +496,7 @@ function FAQ() {
     { q: "¿Mis clientes necesitan instalar algo?", a: "No. Solo abren tu link de reservas desde el navegador y agendan en 30 segundos." },
   ];
   return (
-    <section id="faq" className="py-24 px-6 border-t border-border">
+    <section id="faq" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-center"><SectionLabel>Preguntas</SectionLabel></div>
         <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight text-center">
