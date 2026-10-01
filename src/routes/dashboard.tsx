@@ -21,6 +21,7 @@ import {
   Sparkles,
   ShieldCheck,
   UsersRound,
+  BarChart3,
 } from "lucide-react";
 import { useEntityCounts } from "@/lib/entity-counts";
 import { canAccessPath, ROLE_LABELS, type Role } from "@/lib/permissions";
@@ -46,6 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
       { to: "/dashboard/citas", label: "Citas", icon: ClipboardList },
       { to: "/dashboard/clientes", label: "Clientes", icon: Users },
+      { to: "/dashboard/metricas", label: "Métricas", icon: BarChart3 },
     ],
   },
   {
