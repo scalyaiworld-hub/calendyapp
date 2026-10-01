@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -100,10 +101,7 @@ function Header() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Calendya" className="size-8 rounded-lg" />
-          <span className="font-display text-lg font-semibold tracking-tight">Calendya</span>
-        </div>
+        <Logo size={32} />
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">
             Funciones
@@ -701,10 +699,7 @@ function Footer() {
   return (
     <footer className="border-t border-border py-10 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Calendya" className="size-7 rounded-md" />
-          <span className="font-display font-semibold tracking-tight text-lg">Calendya</span>
-        </div>
+        <Logo size={28} />
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <Link to="/privacidad" className="hover:text-foreground">
             Privacidad

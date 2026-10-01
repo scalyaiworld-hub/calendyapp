@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -107,11 +108,8 @@ function DashboardLayout() {
   const SidebarInner = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
       <div className="px-5 py-5 border-b border-border">
-        <Link to="/" className="flex items-center gap-2" onClick={onNavigate}>
-          <div className="size-8 rounded-lg bg-foreground grid place-items-center shadow-soft">
-            <span className="font-display font-semibold text-background text-base">A</span>
-          </div>
-          <span className="font-display text-lg font-semibold tracking-tight">Calendya</span>
+        <Link to="/" className="flex items-center" onClick={onNavigate} aria-label="Calendya">
+          <Logo size={32} />
         </Link>
         {business && (
           <div className="mt-4 flex items-center justify-between gap-2">
@@ -217,11 +215,8 @@ function DashboardLayout() {
 
         {/* Mobile header */}
         <header className="md:hidden border-b border-border bg-card/80 backdrop-blur sticky top-0 z-40 px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="size-7 rounded-md bg-foreground grid place-items-center">
-              <span className="font-display font-semibold text-background text-sm">A</span>
-            </div>
-            <span className="font-display text-base font-semibold tracking-tight">Calendya</span>
+          <Link to="/" className="flex items-center" aria-label="Calendya">
+            <Logo size={28} />
           </Link>
           <button
             onClick={() => setMobileOpen(true)}

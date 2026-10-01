@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,9 +66,8 @@ function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:px-6 sm:py-12 bg-gradient-to-br from-background via-background to-primary/5">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <img src="/logo.png" alt="Calendya" className="h-10 w-10 rounded-xl" />
-            <span className="font-display text-3xl gradient-rose-text">Calendya</span>
+          <Link to="/" className="inline-flex items-center" aria-label="Calendya">
+            <Logo size={44} />
           </Link>
           <h1 className="font-display text-2xl mt-6 mb-2">Nueva contraseña</h1>
           <p className="text-sm text-muted-foreground">
