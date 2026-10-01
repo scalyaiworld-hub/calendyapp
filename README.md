@@ -80,6 +80,9 @@ Copia `.env.example` a `.env`. El archivo `.env` está en `.gitignore`; no lo su
 | `VITE_TURNSTILE_SITE_KEY` | Cliente | Clave pública de Cloudflare Turnstile para la página de reservas. Opcional: sin ella no se muestra captcha. |
 | `TURNSTILE_SECRET_KEY` | **Solo servidor, secreta** | Verifica el captcha en `createPublicBooking`. Si no está definida, no se exige (recomendado definirla en producción). |
 | `BOOKING_IP_SALT` | Solo servidor | Sal para guardar con hash las IP del límite de intentos de reserva. |
+| `RESEND_API_KEY` | **Solo servidor, secreta** | Envía el correo "recibimos tu reserva" cuando el cliente deja su email. Sin ella (o sin `EMAIL_FROM`) no se envía nada y la reserva funciona igual. |
+| `EMAIL_FROM` | Solo servidor | Remitente verificado en Resend, por ejemplo `Calendya <reservas@tu-dominio.com>`. |
+| `SITE_URL` | Solo servidor | Base de los enlaces `/cita/:token` de los correos. Si falta, se usa el host de la petición. |
 
 Reglas importantes:
 

@@ -99,6 +99,8 @@ function BookingPage() {
   const [slot, setSlot] = useState<{ starts_at: Date; ends_at: Date } | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const emailInvalid = email.trim() !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -209,6 +211,7 @@ function BookingPage() {
           name,
           phone,
           countryCode,
+          email: email.trim() || undefined,
           captchaToken: captchaToken ?? undefined,
         },
       });
@@ -240,7 +243,7 @@ function BookingPage() {
   const resetAll = () => {
     setStep(hasLocations ? "location" : "mode"); setLocationId(""); setMode(null);
     setProfessionalId(""); setServiceId(""); setSlot(null);
-    setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setManageToken(null);
+    setName(""); setPhone(""); setEmail(""); setCountryCode(DEFAULT_COUNTRY_CODE); setManageToken(null);
   };
 
   const stepIndex = step === "location" ? 0 : step === "mode" || step === "pickPro" || step === "pickSvc" ? 1 : step === "datetime" ? 2 : step === "client" ? 3 : 4;
@@ -643,16 +646,21 @@ function BookingPage() {
                 />
                 <p className="text-xs text-muted-foreground">Usaremos este número solo para confirmar tu cita.</p>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="booking-email">Email (opcional)</Label>
+                <Input id="booking-email" type="email" inputMode="email" autoComplete="email" maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Para recibir el resumen de tu reserva" />
+                {emailInvalid && <p className="text-xs text-destructive">Revisa el formato del email.</p>}
+              </div>
               <Turnstile key={captchaKey} onToken={setCaptchaToken} />
               {/* Desktop inline CTA */}
-              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending || (captchaRequired && !captchaToken)}>
+              <Button className="hidden lg:flex w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || emailInvalid || book.isPending || (captchaRequired && !captchaToken)}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
             </div>
             {/* Mobile sticky CTA */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4 z-50">
-              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || book.isPending || (captchaRequired && !captchaToken)}>
+              <Button className="w-full" size="lg" onClick={() => book.mutate()} disabled={!name || name.trim().length < 2 || !phone || emailInvalid || book.isPending || (captchaRequired && !captchaToken)}>
                 <Check className="size-4" />
                 {book.isPending ? "Reservando…" : "Confirmar reserva"}
               </Button>
