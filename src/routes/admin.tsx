@@ -135,8 +135,8 @@ function AdminPanel({ email }: { email: string }) {
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="hidden sm:inline">{email}</span>
-            <Link to="/dashboard" className="inline-flex items-center gap-1 hover:text-foreground py-2">
-              <ArrowLeft className="size-3.5" aria-hidden /> Dashboard
+            <Link to="/inicio" className="inline-flex items-center gap-1 hover:text-foreground py-2">
+              <ArrowLeft className="size-3.5" aria-hidden /> Inicio
             </Link>
           </div>
         </div>
