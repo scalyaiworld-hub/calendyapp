@@ -65,7 +65,14 @@ export type AdminOverview = {
   pageSize: number;
   preregistrations: AdminPreregistration[];
   upgradeRequests: AdminUpgradeRequest[];
-  totals: { businesses: number; free: number; pro: number; studio: number; preregistrations: number; upgradeRequests: number };
+  totals: {
+    businesses: number;
+    free: number;
+    pro: number;
+    studio: number;
+    preregistrations: number;
+    upgradeRequests: number;
+  };
 };
 
 export const getAdminStatus = createServerFn({ method: "POST" })
@@ -94,9 +101,17 @@ export const getAdminOverview = createServerFn({ method: "POST" })
     // Búsqueda, paginación, totales y conteo de citas del mes se resuelven en SQL:
     // sin los límites silenciosos de antes (500 negocios / 20 000 citas / 1000 usuarios).
     const [list, totalsRes, pre, upg] = await Promise.all([
-      sb.rpc("admin_list_businesses", { _search: data?.search || undefined, _limit: pageSize, _offset: page * pageSize }),
+      sb.rpc("admin_list_businesses", {
+        _search: data?.search || undefined,
+        _limit: pageSize,
+        _offset: page * pageSize,
+      }),
       sb.rpc("admin_totals"),
-      sb.from("pro_preregistrations").select("*").order("created_at", { ascending: false }).limit(200),
+      sb
+        .from("pro_preregistrations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200),
       sb.from("upgrade_requests").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
     if (list.error) throw new Error(list.error.message);
@@ -207,7 +222,11 @@ export const setBusinessPlan = createServerFn({ method: "POST" })
     const sb = await requireAdmin(context.userId);
     const { applyPlanChange } = await import("@/lib/plan-change.server");
     // Rechaza el cambio si el negocio excede los límites del plan destino; audita el cambio.
-    await applyPlanChange(sb, { businessId: data.businessId, plan: data.plan, actorId: context.userId });
+    await applyPlanChange(sb, {
+      businessId: data.businessId,
+      plan: data.plan,
+      actorId: context.userId,
+    });
 
     // La solicitud de upgrade abierta de ese plan queda como ganada.
     if (data.plan !== "free") {

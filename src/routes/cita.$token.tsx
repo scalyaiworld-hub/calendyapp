@@ -8,7 +8,9 @@ import { cancelBookingByToken, getBookingByToken } from "@/lib/api/manage-bookin
 import { formatTime } from "@/lib/format";
 
 export const Route = createFileRoute("/cita/$token")({
-  head: () => ({ meta: [{ title: "Tu reserva — Calendya" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "Tu reserva — Calendya" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
   component: ManageBookingPage,
 });
 
@@ -36,9 +38,16 @@ function ManageBookingPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (q.isLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+  if (q.isLoading)
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>
+    );
   if (!q.data?.found) {
-    return <div className="min-h-screen grid place-items-center text-muted-foreground px-6 text-center">No encontramos esta reserva.</div>;
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground px-6 text-center">
+        No encontramos esta reserva.
+      </div>
+    );
   }
   const b = q.data;
   const start = new Date(b.startsAt);
@@ -54,13 +63,29 @@ function ManageBookingPage() {
 
         <Card>
           <CardContent className="pt-6 space-y-3 text-sm">
-            <p className="flex items-center gap-2"><Scissors className="size-4 text-primary" /> {b.serviceName} · {b.durationMinutes} min</p>
+            <p className="flex items-center gap-2">
+              <Scissors className="size-4 text-primary" /> {b.serviceName} · {b.durationMinutes} min
+            </p>
             <p className="flex items-center gap-2">
               <CalendarClock className="size-4 text-primary" />
-              {start.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", timeZone: b.timezone })} · {formatTime(start, b.timezone)}
+              {start.toLocaleDateString("es-PE", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                timeZone: b.timezone,
+              })}{" "}
+              · {formatTime(start, b.timezone)}
             </p>
-            {b.professionalName && <p className="flex items-center gap-2"><User2 className="size-4 text-primary" /> {b.professionalName}</p>}
-            {b.locationName && <p className="flex items-center gap-2"><MapPin className="size-4 text-primary" /> {b.locationName}</p>}
+            {b.professionalName && (
+              <p className="flex items-center gap-2">
+                <User2 className="size-4 text-primary" /> {b.professionalName}
+              </p>
+            )}
+            {b.locationName && (
+              <p className="flex items-center gap-2">
+                <MapPin className="size-4 text-primary" /> {b.locationName}
+              </p>
+            )}
             {b.status === "cancelled" && b.cancelledReason && (
               <p className="text-muted-foreground">Motivo: {b.cancelledReason}</p>
             )}
@@ -73,7 +98,8 @@ function ManageBookingPage() {
             className="w-full"
             disabled={cancel.isPending}
             onClick={() => {
-              if (confirm("¿Cancelar esta reserva? Esta acción no se puede deshacer.")) cancel.mutate();
+              if (confirm("¿Cancelar esta reserva? Esta acción no se puede deshacer."))
+                cancel.mutate();
             }}
           >
             {cancel.isPending ? "Cancelando…" : "Cancelar mi reserva"}
@@ -81,13 +107,16 @@ function ManageBookingPage() {
         ) : (
           (b.status === "pending" || b.status === "booked") && (
             <p className="text-xs text-muted-foreground text-center">
-              Ya no se puede cancelar en línea (hasta {b.cancelMinHours} h antes de la cita). Contacta directamente al negocio.
+              Ya no se puede cancelar en línea (hasta {b.cancelMinHours} h antes de la cita).
+              Contacta directamente al negocio.
             </p>
           )
         )}
 
         <p className="text-center">
-          <a href={`/b/${b.businessSlug}`} className="text-sm underline text-muted-foreground">Reservar otra cita</a>
+          <a href={`/b/${b.businessSlug}`} className="text-sm underline text-muted-foreground">
+            Reservar otra cita
+          </a>
         </p>
       </div>
     </div>

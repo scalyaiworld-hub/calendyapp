@@ -3,14 +3,21 @@ import { canAccessPath } from "./permissions";
 
 describe("canAccessPath", () => {
   it("el dueño entra a todo, incluidas rutas desconocidas", () => {
-    for (const p of ["/dashboard", "/dashboard/planes", "/dashboard/equipo", "/dashboard/ajustes", "/dashboard/lo-que-sea"]) {
+    for (const p of [
+      "/dashboard",
+      "/dashboard/planes",
+      "/dashboard/equipo",
+      "/dashboard/ajustes",
+      "/dashboard/lo-que-sea",
+    ]) {
       expect(canAccessPath("owner", p)).toBe(true);
     }
   });
   it("el administrador no entra a ajustes, planes ni equipo", () => {
     expect(canAccessPath("manager", "/dashboard/metricas")).toBe(true);
     expect(canAccessPath("manager", "/dashboard/servicios")).toBe(true);
-    for (const p of ["/dashboard/ajustes", "/dashboard/planes", "/dashboard/equipo"]) expect(canAccessPath("manager", p)).toBe(false);
+    for (const p of ["/dashboard/ajustes", "/dashboard/planes", "/dashboard/equipo"])
+      expect(canAccessPath("manager", p)).toBe(false);
   });
   it("recepción gestiona citas y clientes pero no catálogo ni métricas", () => {
     expect(canAccessPath("reception", "/dashboard/clientes")).toBe(true);
@@ -19,8 +26,14 @@ describe("canAccessPath", () => {
     expect(canAccessPath("reception", "/dashboard/metricas")).toBe(false);
   });
   it("el profesional solo ve resumen, agenda y citas", () => {
-    for (const p of ["/dashboard", "/dashboard/agenda", "/dashboard/citas"]) expect(canAccessPath("professional", p)).toBe(true);
-    for (const p of ["/dashboard/clientes", "/dashboard/metricas", "/dashboard/servicios", "/dashboard/ajustes"]) {
+    for (const p of ["/dashboard", "/dashboard/agenda", "/dashboard/citas"])
+      expect(canAccessPath("professional", p)).toBe(true);
+    for (const p of [
+      "/dashboard/clientes",
+      "/dashboard/metricas",
+      "/dashboard/servicios",
+      "/dashboard/ajustes",
+    ]) {
       expect(canAccessPath("professional", p)).toBe(false);
     }
   });

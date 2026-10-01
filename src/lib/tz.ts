@@ -1,6 +1,13 @@
 /** Utilidades de zona horaria sin dependencias externas (Intl). */
 
-type Parts = { year: number; month: number; day: number; hour: number; minute: number; second: number };
+type Parts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
 
 function partsInTz(date: Date, tz: string): Parts {
   const fmt = new Intl.DateTimeFormat("en-US", {
@@ -35,7 +42,14 @@ export function tzOffsetMs(date: Date, tz: string): number {
 }
 
 /** Instante UTC correspondiente a una hora de pared en `tz` (month es 1-12). */
-export function zonedToUtc(year: number, month: number, day: number, tz: string, hour = 0, minute = 0): Date {
+export function zonedToUtc(
+  year: number,
+  month: number,
+  day: number,
+  tz: string,
+  hour = 0,
+  minute = 0,
+): Date {
   const guess = Date.UTC(year, month - 1, day, hour, minute);
   let ts = guess - tzOffsetMs(new Date(guess), tz);
   // Segunda pasada: corrige cuando el offset cambia entre la estimación y el instante real (DST).

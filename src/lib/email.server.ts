@@ -10,7 +10,12 @@ const escapeHtml = (s: string) =>
  * Envía un correo con Resend. Si RESEND_API_KEY o EMAIL_FROM no están definidas no hace nada,
  * y un fallo del proveedor nunca debe romper la reserva: devuelve false y lo registra.
  */
-export async function sendEmail(opts: { to: string; subject: string; html: string; text: string }): Promise<boolean> {
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!apiKey || !from) return false;
@@ -18,7 +23,13 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [opts.to], subject: opts.subject, html: opts.html, text: opts.text }),
+      body: JSON.stringify({
+        from,
+        to: [opts.to],
+        subject: opts.subject,
+        html: opts.html,
+        text: opts.text,
+      }),
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) {
@@ -112,7 +123,13 @@ export const sendEmailOrThrow: EmailSender = async (email) => {
       "Content-Type": "application/json",
       "Idempotency-Key": email.idempotencyKey,
     },
-    body: JSON.stringify({ from, to: [email.to], subject: email.subject, html: email.html, text: email.text }),
+    body: JSON.stringify({
+      from,
+      to: [email.to],
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+    }),
   });
 
   if (!res.ok) {

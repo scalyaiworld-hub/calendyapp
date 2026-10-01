@@ -1,9 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { getPlan, hasModule, minPlanForModule, MODULE_LABELS, type ModuleKey, type PlanDef } from "@/lib/plans";
+import {
+  getPlan,
+  hasModule,
+  minPlanForModule,
+  MODULE_LABELS,
+  type ModuleKey,
+  type PlanDef,
+} from "@/lib/plans";
 
 export class PlanModuleError extends Error {
-  constructor(public module: ModuleKey, public requiredPlan: PlanDef) {
+  constructor(
+    public module: ModuleKey,
+    public requiredPlan: PlanDef,
+  ) {
     super(`El módulo "${MODULE_LABELS[module]}" requiere el plan ${requiredPlan.label}.`);
     this.name = "PlanModuleError";
   }

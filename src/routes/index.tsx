@@ -3,11 +3,23 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Reveal, RotatingWord, CountUp, LiveAgenda, useScrolled } from "@/components/landing-dynamic";
+import {
+  Reveal,
+  RotatingWord,
+  CountUp,
+  LiveAgenda,
+  useScrolled,
+} from "@/components/landing-dynamic";
 import {
   ArrowRight,
   Calendar,
@@ -27,9 +39,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Calendya — Tu negocio agenda sola" },
-      { name: "description", content: "Plataforma para negocios que convierte mensajes y clicks en citas confirmadas automáticamente. Adiós cuaderno." },
+      {
+        name: "description",
+        content:
+          "Plataforma para negocios que convierte mensajes y clicks en citas confirmadas automáticamente. Adiós cuaderno.",
+      },
       { property: "og:title", content: "Calendya — Tu negocio agenda sola" },
-      { property: "og:description", content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes." },
+      {
+        property: "og:description",
+        content: "Convierte mensajes en citas confirmadas. Sin cuaderno, sin perder clientes.",
+      },
     ],
   }),
   component: Index,
@@ -84,13 +103,26 @@ function Header() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Logo size={32} />
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <a href="#features" className="hover:text-foreground transition-colors">Funciones</a>
-          <a href="#how" className="hover:text-foreground transition-colors">Cómo funciona</a>
-          <a href="#pricing" className="hover:text-foreground transition-colors">Precios</a>
-          <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
+          <a href="#features" className="hover:text-foreground transition-colors">
+            Funciones
+          </a>
+          <a href="#how" className="hover:text-foreground transition-colors">
+            Cómo funciona
+          </a>
+          <a href="#pricing" className="hover:text-foreground transition-colors">
+            Precios
+          </a>
+          <a href="#faq" className="hover:text-foreground transition-colors">
+            FAQ
+          </a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">Ingresar</Link>
+          <Link
+            to="/auth"
+            className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline"
+          >
+            Ingresar
+          </Link>
           <Link
             to="/auth"
             search={{ mode: "signup" }}
@@ -120,18 +152,21 @@ function Hero() {
       <div className="max-w-5xl mx-auto px-6 pt-20 md:pt-28 pb-20 md:pb-28 text-center">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-10">
           <span className="inline-flex rounded-full size-2 bg-primary" aria-hidden />
-          <span className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">Agenda inteligente para salones</span>
+          <span className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">
+            Agenda inteligente para salones
+          </span>
         </div>
         <h1 className="font-display text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[6.5rem] leading-[0.9] tracking-[-0.035em] mb-8 font-bold">
           Tu salón merece{" "}
           <span className="text-primary italic font-normal">
             <RotatingWord words={["libertad", "tiempo", "calma"]} finalWord="tiempo" />
-          </span>,
-          <br className="hidden sm:block" />
-          {" "}no un cuaderno.
+          </span>
+          ,
+          <br className="hidden sm:block" /> no un cuaderno.
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-          Digitaliza tus reservas 24/7 y recupera 10 horas semanales de gestión manual. Deja que Calendya atienda el WhatsApp por ti.
+          Digitaliza tus reservas 24/7 y recupera 10 horas semanales de gestión manual. Deja que
+          Calendya atienda el WhatsApp por ti.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -142,14 +177,23 @@ function Hero() {
             Comenzar prueba gratis
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
-          <a href="#how" className="px-8 py-4 rounded-2xl border border-border bg-card/80 backdrop-blur hover:bg-accent transition font-semibold text-base text-muted-foreground hover:text-foreground">
+          <a
+            href="#how"
+            className="px-8 py-4 rounded-2xl border border-border bg-card/80 backdrop-blur hover:bg-accent transition font-semibold text-base text-muted-foreground hover:text-foreground"
+          >
             Ver cómo funciona
           </a>
         </div>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> Sin tarjeta</span>
-          <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> 10 minutos</span>
-          <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-primary" /> Cancela cuando quieras</span>
+          <span className="inline-flex items-center gap-1.5">
+            <Check className="size-3.5 text-primary" /> Sin tarjeta
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Check className="size-3.5 text-primary" /> 10 minutos
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Check className="size-3.5 text-primary" /> Cancela cuando quieras
+          </span>
         </div>
       </div>
     </section>
@@ -168,8 +212,12 @@ function TrustStrip() {
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-y-8">
         {stats.map((s) => (
           <div key={s.l} className="text-center space-y-1.5">
-            <div className="font-display text-4xl md:text-5xl font-bold text-primary tracking-tight">{s.n}</div>
-            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">{s.l}</div>
+            <div className="font-display text-4xl md:text-5xl font-bold text-primary tracking-tight">
+              {s.n}
+            </div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-medium">
+              {s.l}
+            </div>
           </div>
         ))}
       </div>
@@ -214,26 +262,32 @@ function Problem() {
         <div className="grid md:grid-cols-3 gap-6">
           {items.map((i, idx) => (
             <Reveal key={i.t} delay={idx * 60}>
-            <div
-              className={`h-full p-8 rounded-[2rem] border transition-all duration-500 ${
-                i.accent
-                  ? "border-rose-100 bg-rose-50/40 hover:bg-card hover:shadow-2xl hover:shadow-rose-100 md:-translate-y-4"
-                  : "border-border bg-card/60 hover:bg-card hover:shadow-2xl hover:shadow-primary/10"
-              }`}
-            >
               <div
-                className={`size-12 mb-6 rounded-xl grid place-items-center ${
-                  i.accent ? "bg-rose-100 text-rose-500" : "bg-primary/10 text-primary"
+                className={`h-full p-8 rounded-[2rem] border transition-all duration-500 ${
+                  i.accent
+                    ? "border-rose-100 bg-rose-50/40 hover:bg-card hover:shadow-2xl hover:shadow-rose-100 md:-translate-y-4"
+                    : "border-border bg-card/60 hover:bg-card hover:shadow-2xl hover:shadow-primary/10"
                 }`}
               >
-                {i.accent ? <Clock className="size-6" strokeWidth={1.75} /> : <MessageCircle className="size-6" strokeWidth={1.75} />}
+                <div
+                  className={`size-12 mb-6 rounded-xl grid place-items-center ${
+                    i.accent ? "bg-rose-100 text-rose-500" : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {i.accent ? (
+                    <Clock className="size-6" strokeWidth={1.75} />
+                  ) : (
+                    <MessageCircle className="size-6" strokeWidth={1.75} />
+                  )}
+                </div>
+                <h3
+                  className={`font-display text-2xl mb-4 font-bold tracking-tight ${i.accent ? "text-rose-950" : ""}`}
+                >
+                  {i.t}
+                </h3>
+                <p className="text-muted-foreground italic leading-relaxed">{i.q}</p>
+                <p className="text-muted-foreground leading-relaxed mt-2">{i.d}</p>
               </div>
-              <h3 className={`font-display text-2xl mb-4 font-bold tracking-tight ${i.accent ? "text-rose-950" : ""}`}>
-                {i.t}
-              </h3>
-              <p className="text-muted-foreground italic leading-relaxed">{i.q}</p>
-              <p className="text-muted-foreground leading-relaxed mt-2">{i.d}</p>
-            </div>
             </Reveal>
           ))}
         </div>
@@ -247,8 +301,14 @@ function SolutionTeaser() {
     <section className="px-6 pb-24 md:pb-32">
       <div className="max-w-6xl mx-auto">
         <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3rem] bg-primary p-10 md:p-20">
-          <div aria-hidden className="absolute -top-20 -right-20 size-72 rounded-full bg-white/10 blur-3xl" />
-          <div aria-hidden className="absolute -bottom-20 -left-20 size-72 rounded-full bg-rose-400/25 blur-3xl" />
+          <div
+            aria-hidden
+            className="absolute -top-20 -right-20 size-72 rounded-full bg-white/10 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-20 -left-20 size-72 rounded-full bg-rose-400/25 blur-3xl"
+          />
           <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
             <div className="flex-1 space-y-6">
               <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-[1.05] tracking-tight">
@@ -259,7 +319,8 @@ function SolutionTeaser() {
                 tu trabajo.
               </h2>
               <p className="text-primary-foreground/80 text-lg leading-relaxed max-w-lg">
-                Calendya no es solo un software: es tu recepcionista estrella que nunca duerme, no comete errores y fideliza a tus clientes.
+                Calendya no es solo un software: es tu recepcionista estrella que nunca duerme, no
+                comete errores y fideliza a tus clientes.
               </p>
               <div className="flex flex-wrap gap-3 pt-2">
                 <Link
@@ -292,12 +353,36 @@ function SolutionTeaser() {
 
 function Features() {
   const features = [
-    { i: Calendar, t: "Agenda inteligente", d: "Tu calendario se actualiza solo. Sin doble booking, jamás." },
-    { i: Link2, t: "Link de reservas", d: "Comparte un link y tus clientes agendan en 30 segundos." },
-    { i: Building2, t: "Multi-sucursal", d: "Gestiona varias sucursales y profesionales desde un solo lugar." },
-    { i: Users, t: "Clientes guardados", d: "Cada cliente con su historial. Sin libreta, sin Excel." },
-    { i: Palette, t: "Marca personalizada", d: "Colores, tipografía y logo a tu medida en tu página pública." },
-    { i: Sparkles, t: "Cero fricción", d: "Diseñado para dueños de negocio, no para programadores." },
+    {
+      i: Calendar,
+      t: "Agenda inteligente",
+      d: "Tu calendario se actualiza solo. Sin doble booking, jamás.",
+    },
+    {
+      i: Link2,
+      t: "Link de reservas",
+      d: "Comparte un link y tus clientes agendan en 30 segundos.",
+    },
+    {
+      i: Building2,
+      t: "Multi-sucursal",
+      d: "Gestiona varias sucursales y profesionales desde un solo lugar.",
+    },
+    {
+      i: Users,
+      t: "Clientes guardados",
+      d: "Cada cliente con su historial. Sin libreta, sin Excel.",
+    },
+    {
+      i: Palette,
+      t: "Marca personalizada",
+      d: "Colores, tipografía y logo a tu medida en tu página pública.",
+    },
+    {
+      i: Sparkles,
+      t: "Cero fricción",
+      d: "Diseñado para dueños de negocio, no para programadores.",
+    },
   ];
   return (
     <section id="features" className="py-24 px-6 border-t border-border scroll-mt-20">
@@ -332,14 +417,20 @@ function HowItWorks() {
     <section id="how" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-5xl mx-auto">
         <SectionLabel>Cómo funciona</SectionLabel>
-        <h2 className="font-display text-4xl md:text-5xl mb-16 font-semibold tracking-tight">Tres pasos. Listo.</h2>
+        <h2 className="font-display text-4xl md:text-5xl mb-16 font-semibold tracking-tight">
+          Tres pasos. Listo.
+        </h2>
         <div className="grid md:grid-cols-3 gap-6 relative">
           {steps.map((s, idx) => (
             <Reveal key={s.n} className="flex" delay={idx * 60}>
               <div className="flex-1 bg-card border border-border rounded-2xl p-8 relative overflow-hidden hover:shadow-soft hover:-translate-y-1 transition">
                 <div className="flex items-center justify-between mb-6">
-                  <div className="size-9 rounded-full bg-foreground text-background grid place-items-center font-display text-sm font-semibold">{s.n}</div>
-                  {idx < steps.length - 1 && <ArrowRight className="size-4 text-muted-foreground/40 hidden md:block" />}
+                  <div className="size-9 rounded-full bg-foreground text-background grid place-items-center font-display text-sm font-semibold">
+                    {s.n}
+                  </div>
+                  {idx < steps.length - 1 && (
+                    <ArrowRight className="size-4 text-muted-foreground/40 hidden md:block" />
+                  )}
                 </div>
                 <h3 className="font-display text-xl mb-2 font-semibold tracking-tight">{s.t}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{s.d}</p>
@@ -381,7 +472,9 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
     <section id="pricing" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <SectionLabel>Precio</SectionLabel>
-        <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">Empieza gratis. Crece cuando quieras.</h2>
+        <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight">
+          Empieza gratis. Crece cuando quieras.
+        </h2>
         <div className="grid md:grid-cols-3 gap-5 items-stretch">
           {/* Free plan */}
           <PricingCard
@@ -391,7 +484,11 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
             tagline="Para empezar y probar sin compromiso."
             features={free}
             cta={
-              <Link to="/auth" search={{ mode: "signup" }} className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-medium transition">
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="mt-auto inline-block text-center px-6 py-3 rounded-lg border border-border bg-background hover:bg-accent font-medium transition"
+              >
                 Crear cuenta gratis
               </Link>
             }
@@ -409,7 +506,8 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
                 onClick={onProClick}
                 className="group mt-auto inline-flex items-center justify-center gap-2 text-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition shadow-soft"
               >
-                Preregistro <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                Preregistro{" "}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </button>
             }
           />
@@ -432,7 +530,8 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
           />
         </div>
         <p className="mt-8 text-xs text-muted-foreground text-center inline-flex items-center justify-center gap-2 w-full">
-          <ShieldCheck className="size-3.5" /> Sin tarjeta para empezar · Cambia de plan cuando quieras
+          <ShieldCheck className="size-3.5" /> Sin tarjeta para empezar · Cambia de plan cuando
+          quieras
         </p>
       </div>
     </section>
@@ -442,16 +541,31 @@ function Pricing({ onProClick }: { onProClick: () => void }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/15">
-      <span className="text-[11px] uppercase tracking-[0.2em] text-primary font-semibold">{children}</span>
+      <span className="text-[11px] uppercase tracking-[0.2em] text-primary font-semibold">
+        {children}
+      </span>
     </div>
   );
 }
 
 function PricingCard({
-  tier, price, period, tagline, features, cta, highlight, dark,
+  tier,
+  price,
+  period,
+  tagline,
+  features,
+  cta,
+  highlight,
+  dark,
 }: {
-  tier: string; price: string; period: string; tagline: string;
-  features: string[]; cta: React.ReactNode; highlight?: boolean; dark?: boolean;
+  tier: string;
+  price: string;
+  period: string;
+  tagline: string;
+  features: string[];
+  cta: React.ReactNode;
+  highlight?: boolean;
+  dark?: boolean;
 }) {
   const base = "rounded-2xl p-8 flex flex-col relative transition";
   const variant = highlight
@@ -459,7 +573,11 @@ function PricingCard({
     : dark
       ? "bg-foreground text-background border border-foreground"
       : "bg-card border border-border hover:border-foreground/20";
-  const labelColor = highlight ? "text-primary" : dark ? "text-background/60" : "text-muted-foreground";
+  const labelColor = highlight
+    ? "text-primary"
+    : dark
+      ? "text-background/60"
+      : "text-muted-foreground";
   const taglineColor = dark ? "text-background/70" : "text-muted-foreground";
   const checkBg = highlight
     ? "bg-primary/10 text-primary"
@@ -473,7 +591,9 @@ function PricingCard({
           Recomendado
         </div>
       )}
-      <div className={`text-[11px] uppercase tracking-[0.22em] font-semibold mb-4 ${labelColor}`}>{tier}</div>
+      <div className={`text-[11px] uppercase tracking-[0.22em] font-semibold mb-4 ${labelColor}`}>
+        {tier}
+      </div>
       <div className="font-display text-5xl mb-2 font-semibold tracking-tight flex items-baseline gap-1.5">
         <span>{price}</span>
         <span className={`text-sm font-normal ${taglineColor}`}>{period}</span>
@@ -482,7 +602,9 @@ function PricingCard({
       <ul className="text-left space-y-3 mb-10 text-sm">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-3">
-            <span className={`mt-0.5 size-5 rounded-full grid place-items-center shrink-0 ${checkBg}`}>
+            <span
+              className={`mt-0.5 size-5 rounded-full grid place-items-center shrink-0 ${checkBg}`}
+            >
               <Check className="size-3" strokeWidth={2.5} />
             </span>
             <span>{f}</span>
@@ -496,15 +618,29 @@ function PricingCard({
 
 function FAQ() {
   const items = [
-    { q: "¿Necesito tarjeta para empezar?", a: "No. Puedes crear tu cuenta y configurar todo gratis. Solo pagas cuando decides activar el plan." },
-    { q: "¿Funciona para cualquier rubro?", a: "Sí. Está pensado para salones, spas, barberías, estéticas, masajes, podología, tatuajes y cualquier negocio que agende citas." },
-    { q: "¿Puedo cancelar cuando quiera?", a: "Sí. Sin contratos ni permanencia. Cancelas con un click desde tu panel." },
-    { q: "¿Mis clientes necesitan instalar algo?", a: "No. Solo abren tu link de reservas desde el navegador y agendan en 30 segundos." },
+    {
+      q: "¿Necesito tarjeta para empezar?",
+      a: "No. Puedes crear tu cuenta y configurar todo gratis. Solo pagas cuando decides activar el plan.",
+    },
+    {
+      q: "¿Funciona para cualquier rubro?",
+      a: "Sí. Está pensado para salones, spas, barberías, estéticas, masajes, podología, tatuajes y cualquier negocio que agende citas.",
+    },
+    {
+      q: "¿Puedo cancelar cuando quiera?",
+      a: "Sí. Sin contratos ni permanencia. Cancelas con un click desde tu panel.",
+    },
+    {
+      q: "¿Mis clientes necesitan instalar algo?",
+      a: "No. Solo abren tu link de reservas desde el navegador y agendan en 30 segundos.",
+    },
   ];
   return (
     <section id="faq" className="py-24 px-6 border-t border-border scroll-mt-20">
       <div className="max-w-3xl mx-auto">
-        <div className="flex justify-center"><SectionLabel>Preguntas</SectionLabel></div>
+        <div className="flex justify-center">
+          <SectionLabel>Preguntas</SectionLabel>
+        </div>
         <h2 className="font-display text-4xl md:text-5xl mb-12 font-semibold tracking-tight text-center">
           Lo que más nos preguntan.
         </h2>
@@ -533,11 +669,12 @@ function CTA() {
   return (
     <section className="py-24 px-6 border-t border-border">
       <div className="max-w-4xl mx-auto">
-        <div
-          className="relative overflow-hidden rounded-3xl p-12 md:p-20 text-center bg-foreground"
-        >
+        <div className="relative overflow-hidden rounded-3xl p-12 md:p-20 text-center bg-foreground">
           <div aria-hidden className="absolute inset-0 bg-dot opacity-30 pointer-events-none" />
-          <div aria-hidden className="absolute -top-20 -right-20 size-72 rounded-full bg-primary/30 blur-3xl" />
+          <div
+            aria-hidden
+            className="absolute -top-20 -right-20 size-72 rounded-full bg-primary/30 blur-3xl"
+          />
           <h2 className="relative font-display text-4xl md:text-6xl text-background font-semibold tracking-[-0.03em] mb-5">
             Empieza hoy. Cobra mañana.
           </h2>
@@ -564,8 +701,12 @@ function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <Logo size={28} />
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <Link to="/privacidad" className="hover:text-foreground">Privacidad</Link>
-          <Link to="/terminos" className="hover:text-foreground">Términos</Link>
+          <Link to="/privacidad" className="hover:text-foreground">
+            Privacidad
+          </Link>
+          <Link to="/terminos" className="hover:text-foreground">
+            Términos
+          </Link>
           <span>© 2026 Calendya · Hecho en Perú.</span>
         </div>
       </div>
@@ -573,7 +714,13 @@ function Footer() {
   );
 }
 
-function ProPreregisterDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function ProPreregisterDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [negocio, setNegocio] = useState("");
@@ -599,7 +746,10 @@ function ProPreregisterDialog({ open, onOpenChange }: { open: boolean; onOpenCha
       return;
     }
     toast.success("¡Listo! Te avisamos cuando abramos Pro.");
-    setNombre(""); setEmail(""); setNegocio(""); setTelefono("");
+    setNombre("");
+    setEmail("");
+    setNegocio("");
+    setTelefono("");
     onOpenChange(false);
   }
 
@@ -609,25 +759,49 @@ function ProPreregisterDialog({ open, onOpenChange }: { open: boolean; onOpenCha
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Preregistro Pro</DialogTitle>
           <DialogDescription>
-            Déjanos tus datos y serás de los primeros en activar el plan Pro con un descuento de lanzamiento.
+            Déjanos tus datos y serás de los primeros en activar el plan Pro con un descuento de
+            lanzamiento.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
             <Label htmlFor="pre-nombre">Nombre *</Label>
-            <Input id="pre-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" required />
+            <Input
+              id="pre-nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Tu nombre"
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pre-email">Email *</Label>
-            <Input id="pre-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" required />
+            <Input
+              id="pre-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@correo.com"
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pre-negocio">Negocio</Label>
-            <Input id="pre-negocio" value={negocio} onChange={(e) => setNegocio(e.target.value)} placeholder="Nombre de tu negocio" />
+            <Input
+              id="pre-negocio"
+              value={negocio}
+              onChange={(e) => setNegocio(e.target.value)}
+              placeholder="Nombre de tu negocio"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="pre-telefono">Teléfono / WhatsApp</Label>
-            <Input id="pre-telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+51 999 999 999" />
+            <Input
+              id="pre-telefono"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="+51 999 999 999"
+            />
           </div>
           <button
             type="submit"

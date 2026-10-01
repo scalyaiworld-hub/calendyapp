@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, User, Search, Scissors, MapPin, Phone, Users } from "lucide-react";
@@ -29,7 +35,9 @@ function ProfesionalesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl">Profesionales</h1>
-        <p className="text-muted-foreground">Gestiona tu equipo y los servicios que ofrece cada persona.</p>
+        <p className="text-muted-foreground">
+          Gestiona tu equipo y los servicios que ofrece cada persona.
+        </p>
       </div>
       <ProsTab />
     </div>
@@ -47,7 +55,15 @@ function ProsTab() {
   const { data: pros, isLoading } = useQuery({
     queryKey: ["pros-full", businessId],
     enabled: !!businessId,
-    queryFn: async () => (await supabase.from("professionals").select("*").eq("business_id", businessId!).is("deleted_at", null).order("created_at")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("professionals")
+          .select("*")
+          .eq("business_id", businessId!)
+          .is("deleted_at", null)
+          .order("created_at")
+      ).data ?? [],
   });
 
   const proIds = (pros ?? []).map((p) => p.id);
@@ -55,9 +71,14 @@ function ProsTab() {
     queryKey: ["pro-svc-counts", businessId, proIds.join(",")],
     enabled: proIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("professional_services").select("professional_id").in("professional_id", proIds);
+      const { data } = await supabase
+        .from("professional_services")
+        .select("professional_id")
+        .in("professional_id", proIds);
       const map: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => { map[r.professional_id] = (map[r.professional_id] ?? 0) + 1; });
+      (data ?? []).forEach((r: any) => {
+        map[r.professional_id] = (map[r.professional_id] ?? 0) + 1;
+      });
       return map;
     },
   });
@@ -65,16 +86,24 @@ function ProsTab() {
     queryKey: ["pro-loc-counts", businessId, proIds.join(",")],
     enabled: proIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("location_professionals").select("professional_id").in("professional_id", proIds);
+      const { data } = await supabase
+        .from("location_professionals")
+        .select("professional_id")
+        .in("professional_id", proIds);
       const map: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => { map[r.professional_id] = (map[r.professional_id] ?? 0) + 1; });
+      (data ?? []).forEach((r: any) => {
+        map[r.professional_id] = (map[r.professional_id] ?? 0) + 1;
+      });
       return map;
     },
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("professionals").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase
+        .from("professionals")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -106,16 +135,31 @@ function ProsTab() {
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar profesional…" className="pl-9" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar profesional…"
+            className="pl-9"
+          />
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground px-2">
-          <span className="flex items-center gap-1.5"><Users className="size-3.5" />{pros?.length ?? 0} total</span>
+          <span className="flex items-center gap-1.5">
+            <Users className="size-3.5" />
+            {pros?.length ?? 0} total
+          </span>
           <span className="hidden sm:flex items-center gap-1.5 text-primary">
             <span className="size-1.5 rounded-full bg-primary" />
             {pros?.filter((p) => p.is_active !== false).length ?? 0} activos
           </span>
         </div>
-        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Nuevo profesional</Button>
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
+          <Plus className="size-4 mr-1.5" /> Nuevo profesional
+        </Button>
       </div>
 
       {isLoading ? (
@@ -123,70 +167,127 @@ function ProsTab() {
       ) : !pros?.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center space-y-3">
-            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><User className="size-6 text-primary" /></div>
+            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto">
+              <User className="size-6 text-primary" />
+            </div>
             <div>
               <p className="font-medium">Aún no tienes profesionales</p>
-              <p className="text-sm text-muted-foreground">Agrega a tu equipo para asignarles servicios y sucursales.</p>
+              <p className="text-sm text-muted-foreground">
+                Agrega a tu equipo para asignarles servicios y sucursales.
+              </p>
             </div>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="size-4 mr-1.5" /> Agregar profesional</Button>
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+            >
+              <Plus className="size-4 mr-1.5" /> Agregar profesional
+            </Button>
           </CardContent>
         </Card>
-      ) : (() => {
-        const q = search.trim().toLowerCase();
-        const filtered = q ? pros.filter((p) => p.name?.toLowerCase().includes(q)) : pros;
-        if (!filtered.length) return <p className="text-sm text-muted-foreground text-center py-6">Sin resultados.</p>;
-        return (
-          <div className="grid gap-3 md:grid-cols-2">
-            {filtered.map((p) => (
-              <Card key={p.id} className={cn("transition-all hover:shadow-md hover:border-primary/40", p.is_active === false && "opacity-60")}>
-                <CardContent className="pt-4 pb-4 flex gap-3">
-                  <div className="size-14 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center text-primary font-medium">
-                    {p.avatar_url ? (
-                      <SmartImage src={p.avatar_url} alt={p.name} width={56} height={56} />
-                    ) : (
-                      <span className="text-lg">{p.name?.charAt(0)?.toUpperCase() ?? <User className="size-5" />}</span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">{p.name}</p>
-                      {p.is_active === false && (
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Inactivo</span>
+      ) : (
+        (() => {
+          const q = search.trim().toLowerCase();
+          const filtered = q ? pros.filter((p) => p.name?.toLowerCase().includes(q)) : pros;
+          if (!filtered.length)
+            return (
+              <p className="text-sm text-muted-foreground text-center py-6">Sin resultados.</p>
+            );
+          return (
+            <div className="grid gap-3 md:grid-cols-2">
+              {filtered.map((p) => (
+                <Card
+                  key={p.id}
+                  className={cn(
+                    "transition-all hover:shadow-md hover:border-primary/40",
+                    p.is_active === false && "opacity-60",
+                  )}
+                >
+                  <CardContent className="pt-4 pb-4 flex gap-3">
+                    <div className="size-14 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center text-primary font-medium">
+                      {p.avatar_url ? (
+                        <SmartImage src={p.avatar_url} alt={p.name} width={56} height={56} />
+                      ) : (
+                        <span className="text-lg">
+                          {p.name?.charAt(0)?.toUpperCase() ?? <User className="size-5" />}
+                        </span>
                       )}
                     </div>
-                    {p.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="size-3" /> {p.phone_country_code} {p.phone}</p>}
-                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                      <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
-                        <Scissors className="size-3" /> {svcCounts?.[p.id] ?? 0} servicios
-                      </span>
-                      <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
-                        <MapPin className="size-3" /> {locCounts?.[p.id] ?? 0} sucursales
-                      </span>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">{p.name}</p>
+                        {p.is_active === false && (
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
+                      {p.phone && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Phone className="size-3" /> {p.phone_country_code} {p.phone}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                          <Scissors className="size-3" /> {svcCounts?.[p.id] ?? 0} servicios
+                        </span>
+                        <span className="text-[11px] inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full">
+                          <MapPin className="size-3" /> {locCounts?.[p.id] ?? 0} sucursales
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <Switch
-                      checked={p.is_active !== false}
-                      onCheckedChange={(v) => toggleActive.mutate({ id: p.id, is_active: v })}
-                      aria-label="Activo"
-                    />
-                    <div className="flex">
-                      <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="size-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("¿Eliminar profesional?")) del.mutate(p.id); }}><Trash2 className="size-4" /></Button>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Switch
+                        checked={p.is_active !== false}
+                        onCheckedChange={(v) => toggleActive.mutate({ id: p.id, is_active: v })}
+                        aria-label="Activo"
+                      />
+                      <div className="flex">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditing(p);
+                            setOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            if (confirm("¿Eliminar profesional?")) del.mutate(p.id);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        );
-      })()}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          );
+        })()
+      )}
       <ProDialog open={open} onOpenChange={setOpen} businessId={businessId} editing={editing} />
     </div>
   );
 }
 
-function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean; onOpenChange: (o: boolean) => void; businessId?: string; editing: any }) {
+function ProDialog({
+  open,
+  onOpenChange,
+  businessId,
+  editing,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  businessId?: string;
+  editing: any;
+}) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -197,12 +298,25 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
   const { data: services } = useQuery({
     queryKey: ["services-for-pro", businessId],
     enabled: !!businessId,
-    queryFn: async () => (await supabase.from("services").select("id,name").eq("business_id", businessId!).is("deleted_at", null).eq("is_active", true).order("display_order")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("services")
+          .select("id,name")
+          .eq("business_id", businessId!)
+          .is("deleted_at", null)
+          .eq("is_active", true)
+          .order("display_order")
+      ).data ?? [],
   });
 
   useEffect(() => {
     if (!open) {
-      setName(""); setPhone(""); setCountryCode(DEFAULT_COUNTRY_CODE); setAvatarUrl(null); setSelectedServices(new Set());
+      setName("");
+      setPhone("");
+      setCountryCode(DEFAULT_COUNTRY_CODE);
+      setAvatarUrl(null);
+      setSelectedServices(new Set());
       return;
     }
     if (!editing) return;
@@ -211,7 +325,10 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
     setCountryCode(editing.phone_country_code ?? DEFAULT_COUNTRY_CODE);
     setAvatarUrl(editing.avatar_url ?? null);
     (async () => {
-      const { data } = await supabase.from("professional_services").select("service_id").eq("professional_id", editing.id);
+      const { data } = await supabase
+        .from("professional_services")
+        .select("service_id")
+        .eq("professional_id", editing.id);
       setSelectedServices(new Set((data ?? []).map((x: any) => x.service_id)));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,22 +340,38 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
       if (!name.trim()) throw new Error("Nombre requerido");
       let id = editing?.id as string | undefined;
       if (id) {
-        const { error } = await supabase.from("professionals").update({
-          name, phone: phone || null, phone_country_code: phone ? countryCode : null, avatar_url: avatarUrl,
-        }).eq("id", id);
+        const { error } = await supabase
+          .from("professionals")
+          .update({
+            name,
+            phone: phone || null,
+            phone_country_code: phone ? countryCode : null,
+            avatar_url: avatarUrl,
+          })
+          .eq("id", id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("professionals").insert({
-          business_id: businessId, name, phone: phone || null, phone_country_code: phone ? countryCode : null, avatar_url: avatarUrl,
-        }).select().single();
+        const { data, error } = await supabase
+          .from("professionals")
+          .insert({
+            business_id: businessId,
+            name,
+            phone: phone || null,
+            phone_country_code: phone ? countryCode : null,
+            avatar_url: avatarUrl,
+          })
+          .select()
+          .single();
         if (error) throw error;
         id = data.id;
       }
       await supabase.from("professional_services").delete().eq("professional_id", id!);
       if (selectedServices.size) {
-        const { error } = await supabase.from("professional_services").insert(
-          Array.from(selectedServices).map((sid) => ({ professional_id: id!, service_id: sid }))
-        );
+        const { error } = await supabase
+          .from("professional_services")
+          .insert(
+            Array.from(selectedServices).map((sid) => ({ professional_id: id!, service_id: sid })),
+          );
         if (error) throw error;
       }
     },
@@ -256,12 +389,24 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{editing ? "Editar profesional" : "Nuevo profesional"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Editar profesional" : "Nuevo profesional"}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-4">
-          <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana Pérez" /></div>
+          <div>
+            <Label>Nombre</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana Pérez" />
+          </div>
           <div>
             <Label>Teléfono (opcional)</Label>
-            <div className="mt-1.5"><PhoneInput countryCode={countryCode} number={phone} onCountryCodeChange={setCountryCode} onNumberChange={setPhone} /></div>
+            <div className="mt-1.5">
+              <PhoneInput
+                countryCode={countryCode}
+                number={phone}
+                onCountryCodeChange={setCountryCode}
+                onNumberChange={setPhone}
+              />
+            </div>
           </div>
           <ImagePicker
             value={avatarUrl}
@@ -274,12 +419,23 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
           <div>
             <Label className="mb-2 block">Servicios que ofrece</Label>
             {!services?.length ? (
-              <p className="text-sm text-muted-foreground">No hay servicios activos. Crea servicios primero.</p>
+              <p className="text-sm text-muted-foreground">
+                No hay servicios activos. Crea servicios primero.
+              </p>
             ) : (
               <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
                 {services.map((s) => (
                   <label key={s.id} className="flex items-center gap-2 text-sm">
-                    <Checkbox checked={selectedServices.has(s.id)} onCheckedChange={(v) => setSelectedServices((set) => { const n = new Set(set); v ? n.add(s.id) : n.delete(s.id); return n; })} />
+                    <Checkbox
+                      checked={selectedServices.has(s.id)}
+                      onCheckedChange={(v) =>
+                        setSelectedServices((set) => {
+                          const n = new Set(set);
+                          v ? n.add(s.id) : n.delete(s.id);
+                          return n;
+                        })
+                      }
+                    />
                     {s.name}
                   </label>
                 ))}
@@ -288,8 +444,12 @@ function ProDialog({ open, onOpenChange, businessId, editing }: { open: boolean;
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Guardando…" : "Guardar"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Guardando…" : "Guardar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

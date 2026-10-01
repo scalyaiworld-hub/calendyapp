@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,9 +57,14 @@ function ServicesPage() {
     queryKey: ["svc-pro-counts", businessId, serviceIds.join(",")],
     enabled: serviceIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("professional_services").select("service_id").in("service_id", serviceIds);
+      const { data } = await supabase
+        .from("professional_services")
+        .select("service_id")
+        .in("service_id", serviceIds);
       const map: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => { map[r.service_id] = (map[r.service_id] ?? 0) + 1; });
+      (data ?? []).forEach((r: any) => {
+        map[r.service_id] = (map[r.service_id] ?? 0) + 1;
+      });
       return map;
     },
   });
@@ -60,14 +72,25 @@ function ServicesPage() {
   const upsert = useMutation({
     mutationFn: async (s: any) => {
       if (s.id) {
-        const { error } = await supabase.from("services").update({
-          name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents, is_active: s.is_active, description: s.description ?? null,
-        }).eq("id", s.id);
+        const { error } = await supabase
+          .from("services")
+          .update({
+            name: s.name,
+            duration_minutes: s.duration_minutes,
+            price_cents: s.price_cents,
+            is_active: s.is_active,
+            description: s.description ?? null,
+          })
+          .eq("id", s.id);
         if (error) throw error;
       } else {
         if (!businessId) throw new Error("Sin negocio");
         const { error } = await supabase.from("services").insert({
-          business_id: businessId, name: s.name, duration_minutes: s.duration_minutes, price_cents: s.price_cents, description: s.description ?? null,
+          business_id: businessId,
+          name: s.name,
+          duration_minutes: s.duration_minutes,
+          price_cents: s.price_cents,
+          description: s.description ?? null,
         });
         if (error) throw error;
       }
@@ -85,7 +108,10 @@ function ServicesPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("services").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase
+        .from("services")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -142,7 +168,9 @@ function ServicesPage() {
   if (!business) return <p className="text-muted-foreground">Primero crea tu salón.</p>;
 
   const activeCount = services?.filter((s) => s.is_active).length ?? 0;
-  const avgPrice = services?.length ? Math.round(services.reduce((a, s) => a + (s.price_cents ?? 0), 0) / services.length) : 0;
+  const avgPrice = services?.length
+    ? Math.round(services.reduce((a, s) => a + (s.price_cents ?? 0), 0) / services.length)
+    : 0;
   const q = search.trim().toLowerCase();
   const filtered = (services ?? []).filter((s) => {
     if (!showInactive && !s.is_active) return false;
@@ -158,8 +186,18 @@ function ServicesPage() {
           <p className="text-muted-foreground">Lo que ofreces a tus clientes.</p>
         </div>
         <div className="flex gap-2">
-          <CatalogDialog defaultIndustry={(business as any)?.industry as Industry | undefined} onAdd={(sel) => addCatalog.mutate(sel)} />
-          <ServiceDialog onSave={(s) => upsert.mutate(s)} trigger={<Button><Plus className="size-4" /> Nuevo</Button>} />
+          <CatalogDialog
+            defaultIndustry={(business as any)?.industry as Industry | undefined}
+            onAdd={(sel) => addCatalog.mutate(sel)}
+          />
+          <ServiceDialog
+            onSave={(s) => upsert.mutate(s)}
+            trigger={
+              <Button>
+                <Plus className="size-4" /> Nuevo
+              </Button>
+            }
+          />
         </div>
       </div>
 
@@ -171,29 +209,73 @@ function ServicesPage() {
       ) : !services?.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center space-y-3">
-            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto"><Scissors className="size-6 text-primary" /></div>
+            <div className="size-14 rounded-2xl bg-primary/10 grid place-items-center mx-auto">
+              <Scissors className="size-6 text-primary" />
+            </div>
             <div>
               <p className="font-medium">Aún no tienes servicios</p>
-              <p className="text-sm text-muted-foreground">Crea uno desde cero o explora plantillas de tu rubro.</p>
+              <p className="text-sm text-muted-foreground">
+                Crea uno desde cero o explora plantillas de tu rubro.
+              </p>
             </div>
             <div className="flex gap-2 justify-center pt-1">
-              <CatalogDialog defaultIndustry={(business as any)?.industry as Industry | undefined} onAdd={(sel) => addCatalog.mutate(sel)} />
-              <ServiceDialog onSave={(s) => upsert.mutate(s)} trigger={<Button><Plus className="size-4" /> Nuevo</Button>} />
+              <CatalogDialog
+                defaultIndustry={(business as any)?.industry as Industry | undefined}
+                onAdd={(sel) => addCatalog.mutate(sel)}
+              />
+              <ServiceDialog
+                onSave={(s) => upsert.mutate(s)}
+                trigger={
+                  <Button>
+                    <Plus className="size-4" /> Nuevo
+                  </Button>
+                }
+              />
             </div>
           </CardContent>
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-2">
-            <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">Activos</p><p className="font-display text-2xl">{activeCount}<span className="text-sm text-muted-foreground font-sans">/{services.length}</span></p></CardContent></Card>
-            <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">Precio promedio</p><p className="font-display text-2xl text-primary">{formatPriceCents(avgPrice)}</p></CardContent></Card>
-            <Card><CardContent className="py-3 px-4"><p className="text-xs text-muted-foreground">Duración promedio</p><p className="font-display text-2xl">{Math.round((services.reduce((a, s) => a + (s.duration_minutes ?? 0), 0)) / services.length)}<span className="text-sm text-muted-foreground font-sans"> min</span></p></CardContent></Card>
+            <Card>
+              <CardContent className="py-3 px-4">
+                <p className="text-xs text-muted-foreground">Activos</p>
+                <p className="font-display text-2xl">
+                  {activeCount}
+                  <span className="text-sm text-muted-foreground font-sans">
+                    /{services.length}
+                  </span>
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="py-3 px-4">
+                <p className="text-xs text-muted-foreground">Precio promedio</p>
+                <p className="font-display text-2xl text-primary">{formatPriceCents(avgPrice)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="py-3 px-4">
+                <p className="text-xs text-muted-foreground">Duración promedio</p>
+                <p className="font-display text-2xl">
+                  {Math.round(
+                    services.reduce((a, s) => a + (s.duration_minutes ?? 0), 0) / services.length,
+                  )}
+                  <span className="text-sm text-muted-foreground font-sans"> min</span>
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar servicio…" className="pl-9" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar servicio…"
+                className="pl-9"
+              />
             </div>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <Switch checked={showInactive} onCheckedChange={setShowInactive} />
@@ -206,14 +288,27 @@ function ServicesPage() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((s) => (
-                <Card key={s.id} className={cn("group transition-all hover:shadow-md hover:border-primary/40", !s.is_active && "opacity-60")}>
+                <Card
+                  key={s.id}
+                  className={cn(
+                    "group transition-all hover:shadow-md hover:border-primary/40",
+                    !s.is_active && "opacity-60",
+                  )}
+                >
                   <CardContent className="pt-5 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-medium truncate">{s.name}</p>
-                        {s.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{s.description}</p>}
+                        {s.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                            {s.description}
+                          </p>
+                        )}
                       </div>
-                      <Switch checked={s.is_active} onCheckedChange={(v) => toggleActive.mutate({ id: s.id, is_active: v })} />
+                      <Switch
+                        checked={s.is_active}
+                        onCheckedChange={(v) => toggleActive.mutate({ id: s.id, is_active: v })}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex gap-1.5">
@@ -224,15 +319,27 @@ function ServicesPage() {
                           <Users className="size-3" /> {proCounts?.[s.id] ?? 0}
                         </span>
                       </div>
-                      <span className="font-semibold text-primary">{formatPriceCents(s.price_cents)}</span>
+                      <span className="font-semibold text-primary">
+                        {formatPriceCents(s.price_cents)}
+                      </span>
                     </div>
                     <div className="flex gap-1 pt-1 border-t border-border/50 -mx-6 px-6 pt-3">
                       <ServiceDialog
                         initial={s}
                         onSave={(v) => upsert.mutate({ ...v, id: s.id })}
-                        trigger={<Button variant="ghost" size="sm" className="flex-1"><Pencil className="size-3.5 mr-1" /> Editar</Button>}
+                        trigger={
+                          <Button variant="ghost" size="sm" className="flex-1">
+                            <Pencil className="size-3.5 mr-1" /> Editar
+                          </Button>
+                        }
                       />
-                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("¿Eliminar este servicio?")) del.mutate(s.id); }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (confirm("¿Eliminar este servicio?")) del.mutate(s.id);
+                        }}
+                      >
                         <Trash2 className="size-3.5" />
                       </Button>
                     </div>
@@ -247,7 +354,15 @@ function ServicesPage() {
   );
 }
 
-function ServiceDialog({ initial, onSave, trigger }: { initial?: any; onSave: (s: any) => void; trigger: React.ReactNode }) {
+function ServiceDialog({
+  initial,
+  onSave,
+  trigger,
+}: {
+  initial?: any;
+  onSave: (s: any) => void;
+  trigger: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initial?.name ?? "");
   const [duration, setDuration] = useState(initial?.duration_minutes ?? 30);
@@ -256,16 +371,36 @@ function ServiceDialog({ initial, onSave, trigger }: { initial?: any; onSave: (s
   const [description, setDescription] = useState<string>(initial?.description ?? "");
 
   return (
-    <Dialog open={open} onOpenChange={(v) => {
-      setOpen(v);
-      if (v && initial) { setName(initial.name); setDuration(initial.duration_minutes); setPrice(initial.price_cents/100); setActive(initial.is_active); setDescription(initial.description ?? ""); }
-      if (v && !initial) { setName(""); setDuration(30); setPrice(0); setActive(true); setDescription(""); }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v && initial) {
+          setName(initial.name);
+          setDuration(initial.duration_minutes);
+          setPrice(initial.price_cents / 100);
+          setActive(initial.is_active);
+          setDescription(initial.description ?? "");
+        }
+        if (v && !initial) {
+          setName("");
+          setDuration(30);
+          setPrice(0);
+          setActive(true);
+          setDescription("");
+        }
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{initial ? "Editar servicio" : "Nuevo servicio"}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{initial ? "Editar servicio" : "Nuevo servicio"}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
-          <div><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div>
+            <Label>Nombre</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
           <div>
             <Label>Descripción (opcional)</Label>
             <Textarea
@@ -277,12 +412,42 @@ function ServiceDialog({ initial, onSave, trigger }: { initial?: any; onSave: (s
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Duración (min)</Label><Input type="number" min={5} step={5} value={duration} onChange={(e) => setDuration(Number(e.target.value))} /></div>
-            <div><Label>Precio (S/.)</Label><Input type="number" min={0} step={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} /></div>
+            <div>
+              <Label>Duración (min)</Label>
+              <Input
+                type="number"
+                min={5}
+                step={5}
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label>Precio (S/.)</Label>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={() => { onSave({ name, duration_minutes: duration, price_cents: Math.round(price * 100), is_active: active, description: description.trim() || null }); setOpen(false); }} disabled={!name || duration < 1}>
+          <Button
+            onClick={() => {
+              onSave({
+                name,
+                duration_minutes: duration,
+                price_cents: Math.round(price * 100),
+                is_active: active,
+                description: description.trim() || null,
+              });
+              setOpen(false);
+            }}
+            disabled={!name || duration < 1}
+          >
             Guardar
           </Button>
         </DialogFooter>
@@ -291,7 +456,13 @@ function ServiceDialog({ initial, onSave, trigger }: { initial?: any; onSave: (s
   );
 }
 
-function CatalogDialog({ defaultIndustry, onAdd }: { defaultIndustry?: Industry; onAdd: (sel: { industry: Industry; name: string }[]) => void }) {
+function CatalogDialog({
+  defaultIndustry,
+  onAdd,
+}: {
+  defaultIndustry?: Industry;
+  onAdd: (sel: { industry: Industry; name: string }[]) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Industry>(defaultIndustry ?? "peluqueria");
   const [sel, setSel] = useState<Set<string>>(new Set());
@@ -305,15 +476,28 @@ function CatalogDialog({ defaultIndustry, onAdd }: { defaultIndustry?: Industry;
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSel(new Set()); if (v && defaultIndustry) setTab(defaultIndustry); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setSel(new Set());
+        if (v && defaultIndustry) setTab(defaultIndustry);
+      }}
+    >
       <DialogTrigger asChild>
-        <Button variant="outline"><Sparkles className="size-4" /> Plantillas</Button>
+        <Button variant="outline">
+          <Sparkles className="size-4" /> Plantillas
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Plantillas de servicios por rubro</DialogTitle>
         </DialogHeader>
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Industry)} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as Industry)}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
           <TabsList className="flex-wrap h-auto justify-start">
             {INDUSTRIES.map((ind) => (
               <TabsTrigger key={ind.id} value={ind.id} className="gap-1.5">
@@ -333,10 +517,15 @@ function CatalogDialog({ defaultIndustry, onAdd }: { defaultIndustry?: Industry;
                       key={s.name}
                       type="button"
                       onClick={() => toggle(ind.id, s.name)}
-                      className={"text-left rounded-md border p-3 transition-colors " + (checked ? "border-primary bg-primary/5" : "border-border hover:bg-accent")}
+                      className={
+                        "text-left rounded-md border p-3 transition-colors " +
+                        (checked ? "border-primary bg-primary/5" : "border-border hover:bg-accent")
+                      }
                     >
                       <p className="font-medium text-sm">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">{s.duration_minutes} min · {formatPriceCents(s.price_cents)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.duration_minutes} min · {formatPriceCents(s.price_cents)}
+                      </p>
                     </button>
                   );
                 })}
@@ -345,14 +534,17 @@ function CatalogDialog({ defaultIndustry, onAdd }: { defaultIndustry?: Industry;
           ))}
         </Tabs>
         <DialogFooter>
-          <Button disabled={sel.size === 0} onClick={() => {
-            const list = Array.from(sel).map((k) => {
-              const [ind, name] = k.split("::");
-              return { industry: ind as Industry, name };
-            });
-            onAdd(list);
-            setOpen(false);
-          }}>
+          <Button
+            disabled={sel.size === 0}
+            onClick={() => {
+              const list = Array.from(sel).map((k) => {
+                const [ind, name] = k.split("::");
+                return { industry: ind as Industry, name };
+              });
+              onAdd(list);
+              setOpen(false);
+            }}
+          >
             Importar {sel.size} servicio{sel.size === 1 ? "" : "s"}
           </Button>
         </DialogFooter>

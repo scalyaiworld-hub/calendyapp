@@ -60,7 +60,10 @@ function OnboardingPage() {
     // Ignore the temporary placeholder name we save in step 1 (e.g. "salon-ab12cd"
     // before the user has typed a real name in step 2).
     const isPlaceholderName =
-      business.name && business.slug && business.name === business.slug && /^salon-[a-z0-9]{4,8}$/.test(business.name);
+      business.name &&
+      business.slug &&
+      business.name === business.slug &&
+      /^salon-[a-z0-9]{4,8}$/.test(business.name);
     if (business.name && !isPlaceholderName) setName(business.name);
     if (business.industry) {
       const known = INDUSTRIES.some((i) => i.id === business.industry);
@@ -71,13 +74,14 @@ function OnboardingPage() {
         setCustomIndustry(business.industry);
       }
     }
-    if (business.onboarding_step) setStep(Math.max(1, Math.min(3, business.onboarding_step)) as 1 | 2 | 3);
+    if (business.onboarding_step)
+      setStep(Math.max(1, Math.min(3, business.onboarding_step)) as 1 | 2 | 3);
   }, [business]);
 
   const isKnownIndustry = industry && industry !== "other" && industry in SERVICE_TEMPLATES;
   const templates = useMemo(
     () => (isKnownIndustry ? SERVICE_TEMPLATES[industry as Industry] : []),
-    [industry, isKnownIndustry]
+    [industry, isKnownIndustry],
   );
 
   const saveStep1 = useMutation({
@@ -115,22 +119,31 @@ function OnboardingPage() {
       } else {
         // Placeholder slug; final slug set on step 2 when we have a name.
         const placeholder = `salon-${Math.random().toString(36).slice(2, 8)}`;
-        const { data, error } = await supabase.from("businesses").insert({
-          owner_id: user.id,
-          name: placeholder,
-          slug: placeholder,
-          whatsapp_country_code: countryCode,
-          whatsapp_number: waNumber.trim(),
-          phone: `${countryCode} ${waNumber.trim()}`,
-          onboarding_step: 2,
-        }).select("*").maybeSingle();
+        const { data, error } = await supabase
+          .from("businesses")
+          .insert({
+            owner_id: user.id,
+            name: placeholder,
+            slug: placeholder,
+            whatsapp_country_code: countryCode,
+            whatsapp_number: waNumber.trim(),
+            phone: `${countryCode} ${waNumber.trim()}`,
+            onboarding_step: 2,
+          })
+          .select("*")
+          .maybeSingle();
         if (error) throw error;
         return data;
       }
     },
     onSuccess: async (newBusiness) => {
       if (newBusiness && user) {
-        qc.setQueryData(["my-business", user.id], newBusiness ? { ...newBusiness, my_role: "owner", my_professional_id: null } : newBusiness);
+        qc.setQueryData(
+          ["my-business", user.id],
+          newBusiness
+            ? { ...newBusiness, my_role: "owner", my_professional_id: null }
+            : newBusiness,
+        );
       }
       await qc.invalidateQueries({ queryKey: ["my-business"] });
       setStep(2);
@@ -215,14 +228,19 @@ function OnboardingPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (loading || bizLoading) return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+  if (loading || bizLoading)
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>
+    );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 px-4 py-8">
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Logo size={30} />
-          <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">Cerrar sesión</button>
+          <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground">
+            Cerrar sesión
+          </button>
         </div>
 
         <Stepper current={step} />
@@ -232,7 +250,9 @@ function OnboardingPage() {
             <div className="space-y-5">
               <div>
                 <h2 className="font-display text-2xl">¿Cuál es tu WhatsApp?</h2>
-                <p className="text-sm text-muted-foreground mt-1">Lo usarás para coordinar con tus clientes.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Lo usarás para coordinar con tus clientes.
+                </p>
               </div>
               <div>
                 <Label>Número de WhatsApp</Label>
@@ -245,7 +265,11 @@ function OnboardingPage() {
                   />
                 </div>
               </div>
-              <Button className="w-full h-11" onClick={() => saveStep1.mutate()} disabled={!waNumber.trim() || saveStep1.isPending}>
+              <Button
+                className="w-full h-11"
+                onClick={() => saveStep1.mutate()}
+                disabled={!waNumber.trim() || saveStep1.isPending}
+              >
                 {saveStep1.isPending ? "Guardando…" : "Continuar"}
                 <ChevronRight className="size-4" />
               </Button>
@@ -260,7 +284,12 @@ function OnboardingPage() {
               </div>
               <div>
                 <Label>Nombre del salón</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Spa Rosé" className="mt-1.5 h-11" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ej. Spa Rosé"
+                  className="mt-1.5 h-11"
+                />
                 {name && (
                   <p className="text-xs text-muted-foreground mt-1.5">
                     Tu página: /b/{slugify(name)}
@@ -277,7 +306,9 @@ function OnboardingPage() {
                       onClick={() => setIndustry(ind.id)}
                       className={cn(
                         "p-3 rounded-md border text-left transition-colors",
-                        industry === ind.id ? "border-primary bg-primary/10" : "border-border hover:bg-accent"
+                        industry === ind.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:bg-accent",
                       )}
                     >
                       <div className="text-2xl">{ind.emoji}</div>
@@ -290,7 +321,9 @@ function OnboardingPage() {
                     onClick={() => setIndustry("other")}
                     className={cn(
                       "p-3 rounded-md border text-left transition-colors",
-                      industry === "other" ? "border-primary bg-primary/10" : "border-border hover:bg-accent"
+                      industry === "other"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-accent",
                     )}
                   >
                     <div className="text-2xl">✨</div>
@@ -346,14 +379,23 @@ function OnboardingPage() {
                       }}
                       className={cn(
                         "w-full text-left p-3 rounded-md border flex items-center justify-between gap-3 transition-colors",
-                        checked ? "border-primary bg-primary/5" : "border-border hover:bg-accent"
+                        checked ? "border-primary bg-primary/5" : "border-border hover:bg-accent",
                       )}
                     >
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.duration_minutes} min · {formatPriceCents(t.price_cents)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.duration_minutes} min · {formatPriceCents(t.price_cents)}
+                        </p>
                       </div>
-                      <span className={cn("size-5 rounded border flex items-center justify-center shrink-0", checked ? "bg-primary border-primary text-primary-foreground" : "border-border")}>
+                      <span
+                        className={cn(
+                          "size-5 rounded border flex items-center justify-center shrink-0",
+                          checked
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "border-border",
+                        )}
+                      >
                         {checked && <Check className="size-3.5" />}
                       </span>
                     </button>
@@ -361,11 +403,24 @@ function OnboardingPage() {
                 })}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 h-11" onClick={() => finish.mutate({ withServices: false })} disabled={finish.isPending}>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-11"
+                  onClick={() => finish.mutate({ withServices: false })}
+                  disabled={finish.isPending}
+                >
                   Omitir por ahora
                 </Button>
-                <Button className="flex-1 h-11" onClick={() => finish.mutate({ withServices: true })} disabled={finish.isPending}>
-                  {finish.isPending ? "Creando…" : selected.size > 0 ? `Agregar ${selected.size} y terminar` : "Terminar"}
+                <Button
+                  className="flex-1 h-11"
+                  onClick={() => finish.mutate({ withServices: true })}
+                  disabled={finish.isPending}
+                >
+                  {finish.isPending
+                    ? "Creando…"
+                    : selected.size > 0
+                      ? `Agregar ${selected.size} y terminar`
+                      : "Terminar"}
                 </Button>
               </div>
             </div>
@@ -386,14 +441,29 @@ function Stepper({ current }: { current: number }) {
         const done = n < current;
         return (
           <div key={label} className="flex-1 flex items-center gap-2">
-            <div className={cn(
-              "size-7 rounded-full grid place-items-center text-xs font-semibold shrink-0",
-              done ? "bg-primary text-primary-foreground" : active ? "bg-primary/15 text-primary border border-primary" : "bg-muted text-muted-foreground"
-            )}>
+            <div
+              className={cn(
+                "size-7 rounded-full grid place-items-center text-xs font-semibold shrink-0",
+                done
+                  ? "bg-primary text-primary-foreground"
+                  : active
+                    ? "bg-primary/15 text-primary border border-primary"
+                    : "bg-muted text-muted-foreground",
+              )}
+            >
               {done ? <Check className="size-3.5" /> : n}
             </div>
-            <span className={cn("text-xs font-medium hidden sm:inline", active ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-            {i < steps.length - 1 && <div className={cn("flex-1 h-px", done ? "bg-primary" : "bg-border")} />}
+            <span
+              className={cn(
+                "text-xs font-medium hidden sm:inline",
+                active ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </span>
+            {i < steps.length - 1 && (
+              <div className={cn("flex-1 h-px", done ? "bg-primary" : "bg-border")} />
+            )}
           </div>
         );
       })}

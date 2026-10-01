@@ -12,7 +12,12 @@ import {
   REMINDER_MIN_LEAD_MS,
 } from "@/lib/reminders";
 
-export type ReminderRunResult = { candidates: number; sent: number; failed: number; skipped: number };
+export type ReminderRunResult = {
+  candidates: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+};
 
 type Admin = SupabaseClient<Database>;
 
@@ -24,7 +29,11 @@ type Admin = SupabaseClient<Database>;
  *   solo una "reclama" la fila y envía.
  * - Fallos: hasta 3 intentos; un "sending" colgado más de 15 min se reintenta.
  */
-export async function sendDueReminders(admin: Admin, sendEmail: EmailSender, now = new Date()): Promise<ReminderRunResult> {
+export async function sendDueReminders(
+  admin: Admin,
+  sendEmail: EmailSender,
+  now = new Date(),
+): Promise<ReminderRunResult> {
   const result: ReminderRunResult = { candidates: 0, sent: 0, failed: 0, skipped: 0 };
 
   const from = new Date(now.getTime() + REMINDER_MIN_LEAD_MS).toISOString();
@@ -68,11 +77,19 @@ export async function sendDueReminders(admin: Admin, sendEmail: EmailSender, now
     .from("appointment_reminders")
     .select("id, appointment_id, status, attempts, updated_at")
     .eq("channel", "email")
-    .in("appointment_id", due.map((a) => a.id));
+    .in(
+      "appointment_id",
+      due.map((a) => a.id),
+    );
   if (exErr) throw new Error(exErr.message);
   const existingByAppt = new Map((existing ?? []).map((r) => [r.appointment_id, r]));
 
-  type Claim = { reminderId: string; attempts: number; resume: boolean; appt: (typeof due)[number] };
+  type Claim = {
+    reminderId: string;
+    attempts: number;
+    resume: boolean;
+    appt: (typeof due)[number];
+  };
   const claims: Claim[] = [];
 
   for (const appt of due) {
@@ -89,7 +106,13 @@ export async function sendDueReminders(admin: Admin, sendEmail: EmailSender, now
       const { data: inserted, error } = await admin
         .from("appointment_reminders")
         .upsert(
-          { appointment_id: appt.id, business_id: appt.business_id, channel: "email", status: "sending", attempts: 1 },
+          {
+            appointment_id: appt.id,
+            business_id: appt.business_id,
+            channel: "email",
+            status: "sending",
+            attempts: 1,
+          },
           { onConflict: "appointment_id,channel", ignoreDuplicates: true },
         )
         .select("id")
@@ -115,7 +138,12 @@ export async function sendDueReminders(admin: Admin, sendEmail: EmailSender, now
         result.skipped++;
         continue;
       }
-      claims.push({ reminderId: prev.id, attempts: prev.attempts + 1, resume: prev.status === "sending", appt });
+      claims.push({
+        reminderId: prev.id,
+        attempts: prev.attempts + 1,
+        resume: prev.status === "sending",
+        appt,
+      });
     }
   }
 
@@ -135,11 +163,19 @@ export async function sendDueReminders(admin: Admin, sendEmail: EmailSender, now
         timezone: biz.timezone,
       });
       // Si retomamos un "sending" caído, reusamos la clave para que Resend no duplique el correo.
-      const idempotencyKey = claim.resume ? `reminder-${claim.reminderId}` : `reminder-${claim.reminderId}-a${claim.attempts}`;
+      const idempotencyKey = claim.resume
+        ? `reminder-${claim.reminderId}`
+        : `reminder-${claim.reminderId}-a${claim.attempts}`;
       const { id } = await sendEmail({ to: client.email!.trim(), ...mail, idempotencyKey });
       await admin
         .from("appointment_reminders")
-        .update({ status: "sent", provider_id: id, sent_at: new Date().toISOString(), error: null, updated_at: new Date().toISOString() })
+        .update({
+          status: "sent",
+          provider_id: id,
+          sent_at: new Date().toISOString(),
+          error: null,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", claim.reminderId);
       result.sent++;
     } catch (e) {

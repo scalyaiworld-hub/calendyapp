@@ -46,8 +46,18 @@ const stripControl = (s: string) => s.replace(/[\u0000-\u001f\u007f]+/g, " ").tr
 
 export function formatInTimezone(date: Date, timezone: string): { day: string; time: string } {
   const make = (tz: string) => ({
-    day: new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long", timeZone: tz }).format(date),
-    time: new Intl.DateTimeFormat("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }).format(date),
+    day: new Intl.DateTimeFormat("es-PE", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: tz,
+    }).format(date),
+    time: new Intl.DateTimeFormat("es-PE", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: tz,
+    }).format(date),
   });
   try {
     return make(timezone);
@@ -65,7 +75,11 @@ export type ReminderEmailInput = {
   timezone: string;
 };
 
-export function buildReminderEmail(input: ReminderEmailInput): { subject: string; html: string; text: string } {
+export function buildReminderEmail(input: ReminderEmailInput): {
+  subject: string;
+  html: string;
+  text: string;
+} {
   const business = stripControl(input.businessName);
   const client = stripControl(input.clientName);
   const service = stripControl(input.serviceName);
@@ -81,7 +95,9 @@ export function buildReminderEmail(input: ReminderEmailInput): { subject: string
     `Fecha: ${day}`,
     `Hora: ${time}`,
     "",
-    phone ? `Si necesitas reprogramar o cancelar, contáctanos: ${phone}.` : "Si necesitas reprogramar o cancelar, contáctanos con anticipación.",
+    phone
+      ? `Si necesitas reprogramar o cancelar, contáctanos: ${phone}.`
+      : "Si necesitas reprogramar o cancelar, contáctanos con anticipación.",
     "",
     `— ${business}`,
   ].join("\n");

@@ -30,7 +30,11 @@ export const downgradeToFreePlan = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { applyPlanChange } = await import("@/lib/plan-change.server");
-    await applyPlanChange(supabaseAdmin, { businessId: data.businessId, plan: "free", actorId: userId });
+    await applyPlanChange(supabaseAdmin, {
+      businessId: data.businessId,
+      plan: "free",
+      actorId: userId,
+    });
 
     return { plan: "free" as const };
   });

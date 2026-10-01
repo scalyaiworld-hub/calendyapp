@@ -1,7 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { STATUS_LABELS, statusOptions, type ApptStatus } from "@/lib/appointments";
@@ -18,7 +31,11 @@ export function StatusSelect({
 }) {
   const options = statusOptions(status, startsAt);
   return (
-    <Select value={status} onValueChange={(v) => onChange(v as ApptStatus)} disabled={options.length <= 1}>
+    <Select
+      value={status}
+      onValueChange={(v) => onChange(v as ApptStatus)}
+      disabled={options.length <= 1}
+    >
       <SelectTrigger>
         <SelectValue />
       </SelectTrigger>
@@ -54,7 +71,9 @@ export function CancelReasonDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Cancelar cita</DialogTitle>
-          <DialogDescription>La cancelación no se puede deshacer. Puedes indicar el motivo (opcional).</DialogDescription>
+          <DialogDescription>
+            La cancelación no se puede deshacer. Puedes indicar el motivo (opcional).
+          </DialogDescription>
         </DialogHeader>
         <div>
           <Label>Motivo</Label>
@@ -91,7 +110,10 @@ export type StatusChange = { id: string; status: ApptStatus; reason?: string };
  * Centraliza los cambios de estado: cancelar pasa por el diálogo de motivo,
  * el resto se aplica directamente.
  */
-export function useStatusChange(apply: (v: StatusChange) => void): { request: (id: string, status: ApptStatus) => void; dialog: ReactNode } {
+export function useStatusChange(apply: (v: StatusChange) => void): {
+  request: (id: string, status: ApptStatus) => void;
+  dialog: ReactNode;
+} {
   const [cancelId, setCancelId] = useState<string | null>(null);
   const request = (id: string, status: ApptStatus) => {
     if (status === "cancelled") setCancelId(id);

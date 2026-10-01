@@ -6,7 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
-import { CalendarDays, Scissors, Users, Plus, Link2, ArrowRight, Clock3, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  CalendarDays,
+  Scissors,
+  Users,
+  Plus,
+  Link2,
+  ArrowRight,
+  Clock3,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getPlan, MODULE_LABELS, MODULES_COMING_SOON } from "@/lib/plans";
@@ -37,10 +47,27 @@ function DashboardHome() {
     );
   }
   if (!business) return null;
-  return <Summary businessId={business.id} businessName={business.name} slug={business.slug} plan={(business as any).plan ?? "free"} />;
+  return (
+    <Summary
+      businessId={business.id}
+      businessName={business.name}
+      slug={business.slug}
+      plan={(business as any).plan ?? "free"}
+    />
+  );
 }
 
-function Summary({ businessId, businessName, slug, plan: planId }: { businessId: string; businessName: string; slug: string; plan: string }) {
+function Summary({
+  businessId,
+  businessName,
+  slug,
+  plan: planId,
+}: {
+  businessId: string;
+  businessName: string;
+  slug: string;
+  plan: string;
+}) {
   const plan = getPlan(planId);
   const { data: today, isLoading: loadingToday } = useQuery({
     queryKey: ["today-appts", businessId],
@@ -67,11 +94,33 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
     staleTime: 30_000,
     queryFn: async () => {
       const [services, clients, pros, locs, pending] = await Promise.all([
-        supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null),
-        supabase.from("clients").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null),
-        supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null).eq("is_active", true),
-        supabase.from("locations").select("id", { count: "exact", head: true }).eq("business_id", businessId).is("deleted_at", null).eq("is_active", true),
-        supabase.from("appointments").select("id", { count: "exact", head: true }).eq("business_id", businessId).eq("status", "pending"),
+        supabase
+          .from("services")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .is("deleted_at", null),
+        supabase
+          .from("clients")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .is("deleted_at", null),
+        supabase
+          .from("professionals")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .is("deleted_at", null)
+          .eq("is_active", true),
+        supabase
+          .from("locations")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .is("deleted_at", null)
+          .eq("is_active", true),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", businessId)
+          .eq("status", "pending"),
       ]);
       return {
         services: services.count ?? 0,
@@ -105,7 +154,8 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
   const upcoming = (today ?? []).find((a: any) => new Date(a.ends_at) >= now);
   const completedToday = (today ?? []).filter((a: any) => a.status === "completed").length;
   const isReady = (counts?.pros ?? 0) > 0 && (counts?.services ?? 0) > 0 && (counts?.locs ?? 0) > 0;
-  const bookingUrl = typeof window !== "undefined" ? `${window.location.origin}/b/${slug}` : `/b/${slug}`;
+  const bookingUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/b/${slug}` : `/b/${slug}`;
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Buenos días";
@@ -118,15 +168,25 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
       <PageHeader
         eyebrow={greeting}
         title={businessName}
-        description={new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        description={new Date().toLocaleDateString("es-PE", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}
         actions={
           <>
             <Button asChild variant="outline">
-              <Link to="/dashboard/agenda" search={{ nueva: true }}><Plus className="size-4" /> Nueva cita</Link>
+              <Link to="/dashboard/agenda" search={{ nueva: true }}>
+                <Plus className="size-4" /> Nueva cita
+              </Link>
             </Button>
             <Button
               disabled={!isReady}
-              onClick={() => { navigator.clipboard.writeText(bookingUrl); toast.success("Link copiado"); }}
+              onClick={() => {
+                navigator.clipboard.writeText(bookingUrl);
+                toast.success("Link copiado");
+              }}
               title={isReady ? undefined : "Completa sucursal, profesional y servicio"}
             >
               <Link2 className="size-4" /> Copiar link de reservas
@@ -143,12 +203,28 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
               <div className="flex items-start gap-3">
                 <AlertCircle className="size-5 text-primary mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <p className="font-medium mb-1">Termina de configurar para activar tu link de reservas</p>
-                  <p className="text-sm text-muted-foreground mb-4">Necesitas al menos una sucursal, un profesional y un servicio.</p>
+                  <p className="font-medium mb-1">
+                    Termina de configurar para activar tu link de reservas
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Necesitas al menos una sucursal, un profesional y un servicio.
+                  </p>
                   <div className="flex flex-wrap gap-2">
-                    <ChecklistItem done={(counts?.locs ?? 0) > 0} label="Sucursal" to="/dashboard/sucursales" />
-                    <ChecklistItem done={(counts?.pros ?? 0) > 0} label="Profesional" to="/dashboard/profesionales" />
-                    <ChecklistItem done={(counts?.services ?? 0) > 0} label="Servicio" to="/dashboard/servicios" />
+                    <ChecklistItem
+                      done={(counts?.locs ?? 0) > 0}
+                      label="Sucursal"
+                      to="/dashboard/sucursales"
+                    />
+                    <ChecklistItem
+                      done={(counts?.pros ?? 0) > 0}
+                      label="Profesional"
+                      to="/dashboard/profesionales"
+                    />
+                    <ChecklistItem
+                      done={(counts?.services ?? 0) > 0}
+                      label="Servicio"
+                      to="/dashboard/servicios"
+                    />
                   </div>
                 </div>
               </div>
@@ -161,8 +237,18 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
           <StatGridSkeleton count={4} />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Stat icon={CalendarDays} label="Citas hoy" value={today?.length ?? 0} hint={completedToday > 0 ? `${completedToday} completadas` : undefined} />
-            <Stat icon={Clock3} label="Pendientes" value={counts?.pending ?? 0} accent={(counts?.pending ?? 0) > 0} />
+            <Stat
+              icon={CalendarDays}
+              label="Citas hoy"
+              value={today?.length ?? 0}
+              hint={completedToday > 0 ? `${completedToday} completadas` : undefined}
+            />
+            <Stat
+              icon={Clock3}
+              label="Pendientes"
+              value={counts?.pending ?? 0}
+              accent={(counts?.pending ?? 0) > 0}
+            />
             <Stat icon={Scissors} label="Servicios" value={counts?.services ?? 0} />
             <Stat icon={Users} label="Clientes" value={counts?.clients ?? 0} />
           </div>
@@ -182,18 +268,26 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
           {/* Next up */}
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle className="font-display text-base text-muted-foreground font-medium">Próxima cita</CardTitle>
+              <CardTitle className="font-display text-base text-muted-foreground font-medium">
+                Próxima cita
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {upcoming ? (
                 <div className="space-y-3">
-                  <p className="font-display text-3xl tracking-tight">{formatTime(upcoming.starts_at)}</p>
+                  <p className="font-display text-3xl tracking-tight">
+                    {formatTime(upcoming.starts_at)}
+                  </p>
                   <div>
                     <p className="font-medium">{upcoming.clients?.name}</p>
-                    <p className="text-sm text-muted-foreground">{upcoming.services?.name} · {upcoming.services?.duration_minutes} min</p>
+                    <p className="text-sm text-muted-foreground">
+                      {upcoming.services?.name} · {upcoming.services?.duration_minutes} min
+                    </p>
                   </div>
                   <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link to="/dashboard/agenda">Ver agenda <ArrowRight className="size-3.5" /></Link>
+                    <Link to="/dashboard/agenda">
+                      Ver agenda <ArrowRight className="size-3.5" />
+                    </Link>
                   </Button>
                 </div>
               ) : (
@@ -201,7 +295,9 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
                   <Clock3 className="size-8 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground mb-3">Sin citas próximas hoy</p>
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/dashboard/agenda" search={{ nueva: true }}><Plus className="size-3.5" /> Crear cita</Link>
+                    <Link to="/dashboard/agenda" search={{ nueva: true }}>
+                      <Plus className="size-3.5" /> Crear cita
+                    </Link>
                   </Button>
                 </div>
               )}
@@ -213,10 +309,15 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
             <CardHeader className="flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle className="font-display text-xl">Citas de hoy</CardTitle>
-                <CardDescription>{today?.length ?? 0} {today?.length === 1 ? "cita programada" : "citas programadas"}</CardDescription>
+                <CardDescription>
+                  {today?.length ?? 0}{" "}
+                  {today?.length === 1 ? "cita programada" : "citas programadas"}
+                </CardDescription>
               </div>
               <Button asChild variant="ghost" size="sm">
-                <Link to="/dashboard/agenda">Abrir agenda <ArrowRight className="size-3.5" /></Link>
+                <Link to="/dashboard/agenda">
+                  Abrir agenda <ArrowRight className="size-3.5" />
+                </Link>
               </Button>
             </CardHeader>
             <CardContent>
@@ -224,9 +325,13 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
                 <div className="text-center py-10 border border-dashed border-border rounded-lg">
                   <CalendarDays className="size-10 text-muted-foreground/40 mx-auto mb-3" />
                   <p className="font-medium mb-1">No hay citas hoy</p>
-                  <p className="text-sm text-muted-foreground mb-4">Crea una desde la agenda o comparte tu link público.</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Crea una desde la agenda o comparte tu link público.
+                  </p>
                   <Button asChild size="sm">
-                    <Link to="/dashboard/agenda" search={{ nueva: true }}><Plus className="size-3.5" /> Crear cita</Link>
+                    <Link to="/dashboard/agenda" search={{ nueva: true }}>
+                      <Plus className="size-3.5" /> Crear cita
+                    </Link>
                   </Button>
                 </div>
               ) : (
@@ -235,11 +340,15 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
                     <li key={a.id} className="py-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="size-10 rounded-md bg-muted grid place-items-center shrink-0">
-                          <span className="font-display text-xs text-muted-foreground">{formatTime(a.starts_at)}</span>
+                          <span className="font-display text-xs text-muted-foreground">
+                            {formatTime(a.starts_at)}
+                          </span>
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium truncate">{a.clients?.name}</p>
-                          <p className="text-sm text-muted-foreground truncate">{a.services?.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {a.services?.name}
+                          </p>
                         </div>
                       </div>
                       <StatusPill status={a.status} />
@@ -255,13 +364,30 @@ function Summary({ businessId, businessName, slug, plan: planId }: { businessId:
   );
 }
 
-function Stat({ icon: Icon, label, value, hint, accent }: { icon: any; label: string; value: number; hint?: string; accent?: boolean }) {
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  hint?: string;
+  accent?: boolean;
+}) {
   return (
     <Card className={cn(accent && "border-primary/40")}>
       <CardContent className="pt-5 pb-5">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
-          <Icon className={cn("size-4", accent ? "text-primary" : "text-muted-foreground/60")} strokeWidth={1.75} />
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+            {label}
+          </p>
+          <Icon
+            className={cn("size-4", accent ? "text-primary" : "text-muted-foreground/60")}
+            strokeWidth={1.75}
+          />
         </div>
         <p className="font-display text-3xl tracking-tight leading-none">{value}</p>
         {hint && <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>}
@@ -278,10 +404,14 @@ function ChecklistItem({ done, label, to }: { done: boolean; label: string; to: 
         "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-colors",
         done
           ? "border-primary/30 bg-primary/10 text-foreground"
-          : "border-border bg-background hover:bg-accent"
+          : "border-border bg-background hover:bg-accent",
       )}
     >
-      {done ? <CheckCircle2 className="size-3.5 text-primary" /> : <span className="size-3.5 rounded-full border border-muted-foreground/40" />}
+      {done ? (
+        <CheckCircle2 className="size-3.5 text-primary" />
+      ) : (
+        <span className="size-3.5 rounded-full border border-muted-foreground/40" />
+      )}
       {label}
     </Link>
   );
@@ -296,7 +426,16 @@ function StatusPill({ status }: { status: string }) {
     no_show: { label: "No-show", cls: "bg-muted text-muted-foreground border-border" },
   };
   const s = map[status] ?? map.pending;
-  return <span className={cn("text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>;
+  return (
+    <span
+      className={cn(
+        "text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full border",
+        s.cls,
+      )}
+    >
+      {s.label}
+    </span>
+  );
 }
 
 function PlanCard({
@@ -307,7 +446,11 @@ function PlanCard({
   usage: { appointmentsMonth: number; locations: number; professionals: number };
 }) {
   const items: { label: string; used: number; limit: number | null }[] = [
-    { label: "Citas este mes", used: usage.appointmentsMonth, limit: plan.limits.appointmentsPerMonth },
+    {
+      label: "Citas este mes",
+      used: usage.appointmentsMonth,
+      limit: plan.limits.appointmentsPerMonth,
+    },
     { label: "Sucursales activas", used: usage.locations, limit: plan.limits.locations },
     { label: "Profesionales activos", used: usage.professionals, limit: plan.limits.professionals },
   ];
@@ -317,10 +460,16 @@ function PlanCard({
     <Card>
       <CardHeader className="flex-row items-start justify-between space-y-0 gap-4">
         <div className="flex items-start gap-3 min-w-0">
-          <div className={cn(
-            "size-10 rounded-lg grid place-items-center shrink-0",
-            plan.id === "studio" ? "bg-foreground text-background" : plan.id === "pro" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-          )}>
+          <div
+            className={cn(
+              "size-10 rounded-lg grid place-items-center shrink-0",
+              plan.id === "studio"
+                ? "bg-foreground text-background"
+                : plan.id === "pro"
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-muted-foreground",
+            )}
+          >
             <Icon className="size-5" strokeWidth={1.75} />
           </div>
           <div className="min-w-0">
@@ -330,7 +479,9 @@ function PlanCard({
         </div>
         {plan.id !== "studio" && (
           <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard/planes">Mejorar plan <ArrowRight className="size-3.5" /></Link>
+            <Link to="/dashboard/planes">
+              Mejorar plan <ArrowRight className="size-3.5" />
+            </Link>
           </Button>
         )}
       </CardHeader>
@@ -338,7 +489,9 @@ function PlanCard({
         <div className="grid sm:grid-cols-3 gap-3 mb-6">
           {items.map((it) => {
             const isUnlimited = it.limit === null;
-            const pct = isUnlimited ? 0 : Math.min(100, Math.round((it.used / Math.max(1, it.limit!)) * 100));
+            const pct = isUnlimited
+              ? 0
+              : Math.min(100, Math.round((it.used / Math.max(1, it.limit!)) * 100));
             const reached = !isUnlimited && it.used >= (it.limit ?? 0);
             const warn = !isUnlimited && pct >= 80 && !reached;
             return (
@@ -354,7 +507,13 @@ function PlanCard({
                   <div
                     className={cn(
                       "h-full transition-all",
-                      isUnlimited ? "bg-primary/40 w-full" : reached ? "bg-rose-500" : warn ? "bg-amber-500" : "bg-primary"
+                      isUnlimited
+                        ? "bg-primary/40 w-full"
+                        : reached
+                          ? "bg-rose-500"
+                          : warn
+                            ? "bg-amber-500"
+                            : "bg-primary",
                     )}
                     style={isUnlimited ? undefined : { width: `${pct}%` }}
                   />
@@ -366,20 +525,35 @@ function PlanCard({
           })}
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Módulos incluidos</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Módulos incluidos
+          </p>
           <ul className="grid sm:grid-cols-2 gap-y-1.5 gap-x-4">
             {moduleKeys.map((k) => {
               const on = plan.modules[k];
               return (
-                <li key={k} className={cn("flex items-center gap-2 text-sm", !on && "text-muted-foreground/70")}>
+                <li
+                  key={k}
+                  className={cn(
+                    "flex items-center gap-2 text-sm",
+                    !on && "text-muted-foreground/70",
+                  )}
+                >
                   {on ? (
                     <CheckCircle2 className="size-4 text-primary shrink-0" strokeWidth={2} />
                   ) : (
-                    <Lock className="size-3.5 text-muted-foreground/50 shrink-0" strokeWidth={1.75} />
+                    <Lock
+                      className="size-3.5 text-muted-foreground/50 shrink-0"
+                      strokeWidth={1.75}
+                    />
                   )}
-                  <span className={cn(!on && "line-through decoration-muted-foreground/30")}>{MODULE_LABELS[k]}</span>
+                  <span className={cn(!on && "line-through decoration-muted-foreground/30")}>
+                    {MODULE_LABELS[k]}
+                  </span>
                   {on && MODULES_COMING_SOON.has(k) && (
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Próximamente</span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Próximamente
+                    </span>
                   )}
                 </li>
               );

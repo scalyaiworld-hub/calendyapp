@@ -15,7 +15,15 @@ export function useModuleAccess(module: ModuleKey) {
  * Renderiza `children` si el plan del negocio incluye el módulo; si no, un CTA a /dashboard/planes.
  * Es solo UX: la protección real va en el servidor con `assertModule`.
  */
-export function PlanGate({ module, children, fallback }: { module: ModuleKey; children: ReactNode; fallback?: ReactNode }) {
+export function PlanGate({
+  module,
+  children,
+  fallback,
+}: {
+  module: ModuleKey;
+  children: ReactNode;
+  fallback?: ReactNode;
+}) {
   const { allowed, isLoading } = useModuleAccess(module);
   if (isLoading) return null;
   if (allowed) return <>{children}</>;
@@ -27,8 +35,12 @@ export function PlanGate({ module, children, fallback }: { module: ModuleKey; ch
       <div className="mx-auto mb-4 size-10 rounded-full bg-muted grid place-items-center text-muted-foreground">
         <Lock className="size-5" strokeWidth={1.75} />
       </div>
-      <h2 className="font-display text-xl font-semibold tracking-tight mb-1">{MODULE_LABELS[module]}</h2>
-      <p className="text-sm text-muted-foreground mb-5">Disponible desde el plan {required.label}.</p>
+      <h2 className="font-display text-xl font-semibold tracking-tight mb-1">
+        {MODULE_LABELS[module]}
+      </h2>
+      <p className="text-sm text-muted-foreground mb-5">
+        Disponible desde el plan {required.label}.
+      </p>
       <Button asChild>
         <Link to="/dashboard/planes">Ver planes</Link>
       </Button>

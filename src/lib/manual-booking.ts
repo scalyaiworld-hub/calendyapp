@@ -9,7 +9,9 @@ export function timeToMinutes(t: string): number {
 
 /** ¿El rango [startMin, endMin] cabe completo dentro de alguna ventana de atención? */
 export function windowsFit(startMin: number, endMin: number, windows: Window[]): boolean {
-  return windows.some((w) => startMin >= timeToMinutes(w.start_time) && endMin <= timeToMinutes(w.end_time));
+  return windows.some(
+    (w) => startMin >= timeToMinutes(w.start_time) && endMin <= timeToMinutes(w.end_time),
+  );
 }
 
 /**
@@ -58,7 +60,8 @@ export async function validateManualAppointment(opts: {
       .eq("professional_id", professionalId)
       .eq("service_id", serviceId)
       .limit(1);
-    if (!offers || offers.length === 0) throw new Error("Ese profesional no ofrece el servicio elegido.");
+    if (!offers || offers.length === 0)
+      throw new Error("Ese profesional no ofrece el servicio elegido.");
 
     if (locationId) {
       const { data: atLoc } = await supabase
@@ -67,7 +70,8 @@ export async function validateManualAppointment(opts: {
         .eq("location_id", locationId)
         .eq("professional_id", professionalId)
         .limit(1);
-      if (!atLoc || atLoc.length === 0) throw new Error("Ese profesional no atiende en la sucursal elegida.");
+      if (!atLoc || atLoc.length === 0)
+        throw new Error("Ese profesional no atiende en la sucursal elegida.");
     }
   }
 
@@ -75,12 +79,19 @@ export async function validateManualAppointment(opts: {
   const dow = startsAt.getDay();
   let windows: Window[] = [];
   if (locationId) {
-    const { data } = await supabase.from("location_hours").select("start_time,end_time").eq("location_id", locationId).eq("day_of_week", dow);
+    const { data } = await supabase
+      .from("location_hours")
+      .select("start_time,end_time")
+      .eq("location_id", locationId)
+      .eq("day_of_week", dow);
     windows = data ?? [];
   }
   let hasAnySchedule = windows.length > 0;
   if (windows.length === 0) {
-    const { data: all } = await supabase.from("availability_rules").select("day_of_week,start_time,end_time").eq("business_id", businessId);
+    const { data: all } = await supabase
+      .from("availability_rules")
+      .select("day_of_week,start_time,end_time")
+      .eq("business_id", businessId);
     hasAnySchedule = (all?.length ?? 0) > 0;
     windows = (all ?? []).filter((r) => r.day_of_week === dow);
   }
@@ -90,7 +101,9 @@ export async function validateManualAppointment(opts: {
     const endMin = endsAt.getHours() * 60 + endsAt.getMinutes();
     const sameDay = startsAt.toDateString() === endsAt.toDateString();
     if (windows.length === 0 || !sameDay || !windowsFit(startMin, endMin, windows)) {
-      throw new Error("La cita queda fuera del horario de atención. Revisa Horarios o elige otra hora.");
+      throw new Error(
+        "La cita queda fuera del horario de atención. Revisa Horarios o elige otra hora.",
+      );
     }
   }
 

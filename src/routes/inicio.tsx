@@ -8,7 +8,9 @@ import { rememberAdminChoice } from "@/lib/admin-choice";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/inicio")({
-  head: () => ({ meta: [{ title: "Inicio — Calendya" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "Inicio — Calendya" }, { name: "robots", content: "noindex, nofollow" }],
+  }),
   component: InicioPage,
 });
 
@@ -25,7 +27,9 @@ function InicioPage() {
   }, [loading, user, adminLoading, isAdmin, navigate]);
 
   if (loading || !user || adminLoading || bizLoading || !isAdmin) {
-    return <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>;
+    return (
+      <div className="min-h-screen grid place-items-center text-muted-foreground">Cargando…</div>
+    );
   }
 
   const hasBusiness = !!business?.onboarding_completed;
@@ -51,9 +55,15 @@ function InicioPage() {
           >
             <ShieldCheck className="size-6 mb-3" aria-hidden />
             <p className="font-medium">Panel de administración</p>
-            <p className="text-sm text-muted-foreground mt-1">Ver y gestionar todos los negocios, planes y solicitudes.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Ver y gestionar todos los negocios, planes y solicitudes.
+            </p>
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium">
-              Entrar <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              Entrar{" "}
+              <ChevronRight
+                className="size-4 transition-transform group-hover:translate-x-0.5"
+                aria-hidden
+              />
             </span>
           </button>
 
@@ -65,20 +75,22 @@ function InicioPage() {
             <Building2 className="size-6 mb-3" aria-hidden />
             <p className="font-medium">{hasBusiness ? "Mi negocio" : "Crear mi negocio"}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {hasBusiness ? `Ir al dashboard de ${business?.name}.` : "También puedes tener tu propio negocio en Calendya."}
+              {hasBusiness
+                ? `Ir al dashboard de ${business?.name}.`
+                : "También puedes tener tu propio negocio en Calendya."}
             </p>
             <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium">
-              {hasBusiness ? "Entrar" : "Empezar"} <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              {hasBusiness ? "Entrar" : "Empezar"}{" "}
+              <ChevronRight
+                className="size-4 transition-transform group-hover:translate-x-0.5"
+                aria-hidden
+              />
             </span>
           </button>
         </div>
 
         <div className="text-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut()}
-          >
+          <Button variant="ghost" size="sm" onClick={() => signOut()}>
             Cerrar sesión
           </Button>
         </div>

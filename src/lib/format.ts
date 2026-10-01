@@ -9,7 +9,12 @@ export function formatPriceCents(cents: number): string {
 
 export function formatTime(d: Date | string, timeZone?: string): string {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone });
+  return date.toLocaleTimeString("es-PE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone,
+  });
 }
 
 export function formatDate(d: Date | string): string {

@@ -16,17 +16,34 @@ type Props = {
   previewClassName?: string;
 };
 
-export function ImagePicker({ value, onChange, templates = [], label = "Imagen", shape = "rounded", previewClassName }: Props) {
+export function ImagePicker({
+  value,
+  onChange,
+  templates = [],
+  label = "Imagen",
+  shape = "rounded",
+  previewClassName,
+}: Props) {
   const [url, setUrl] = useState(value ?? "");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const shapeCls =
-    shape === "circle" ? "rounded-full aspect-square" : shape === "square" ? "rounded-md aspect-square" : "rounded-lg aspect-[16/9]";
+    shape === "circle"
+      ? "rounded-full aspect-square"
+      : shape === "square"
+        ? "rounded-md aspect-square"
+        : "rounded-lg aspect-[16/9]";
 
   async function handleFile(file: File) {
-    if (!file.type.startsWith("image/")) { toast.error("El archivo debe ser una imagen"); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen debe pesar menos de 5MB"); return; }
+    if (!file.type.startsWith("image/")) {
+      toast.error("El archivo debe ser una imagen");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen debe pesar menos de 5MB");
+      return;
+    }
     setUploading(true);
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
@@ -40,7 +57,9 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
       });
       if (upErr) throw upErr;
       // Private bucket → use a long-lived signed URL (10 years)
-      const { data: signed, error: signErr } = await supabase.storage.from("business-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("business-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
       if (signErr || !signed?.signedUrl) throw signErr || new Error("No se pudo generar la URL");
       onChange(signed.signedUrl);
       setUrl(signed.signedUrl);
@@ -54,15 +73,26 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
 
   return (
     <div className="space-y-3">
-      <Label className="block">{label} <span className="text-xs text-muted-foreground font-normal">(opcional)</span></Label>
+      <Label className="block">
+        {label} <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+      </Label>
 
-      <div className={cn("relative w-full bg-muted/40 border border-dashed border-border overflow-hidden flex items-center justify-center", shapeCls, previewClassName)}>
+      <div
+        className={cn(
+          "relative w-full bg-muted/40 border border-dashed border-border overflow-hidden flex items-center justify-center",
+          shapeCls,
+          previewClassName,
+        )}
+      >
         {value ? (
           <>
             <img src={value} alt="" decoding="async" className="w-full h-full object-cover" />
             <button
               type="button"
-              onClick={() => { onChange(null); setUrl(""); }}
+              onClick={() => {
+                onChange(null);
+                setUrl("");
+              }}
               className="absolute top-2 right-2 size-7 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-background"
               aria-label="Quitar imagen"
             >
@@ -82,7 +112,11 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+          e.target.value = "";
+        }}
       />
       <Button
         type="button"
@@ -91,7 +125,17 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
       >
-        {uploading ? (<><Loader2 className="size-4 mr-2 animate-spin" />Subiendo…</>) : (<><Upload className="size-4 mr-2" />Subir desde mi computadora</>)}
+        {uploading ? (
+          <>
+            <Loader2 className="size-4 mr-2 animate-spin" />
+            Subiendo…
+          </>
+        ) : (
+          <>
+            <Upload className="size-4 mr-2" />
+            Subir desde mi computadora
+          </>
+        )}
       </Button>
 
       <div className="flex gap-2">
@@ -103,7 +147,9 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
         <Button
           type="button"
           variant="outline"
-          onClick={() => { if (url.trim()) onChange(url.trim()); }}
+          onClick={() => {
+            if (url.trim()) onChange(url.trim());
+          }}
           disabled={!url.trim() || url.trim() === value}
         >
           Usar
@@ -118,14 +164,25 @@ export function ImagePicker({ value, onChange, templates = [], label = "Imagen",
               <button
                 key={t}
                 type="button"
-                onClick={() => { onChange(t); setUrl(t); }}
+                onClick={() => {
+                  onChange(t);
+                  setUrl(t);
+                }}
                 className={cn(
                   "relative overflow-hidden border transition-all",
                   shape === "circle" ? "rounded-full aspect-square" : "rounded-md aspect-square",
-                  value === t ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/60"
+                  value === t
+                    ? "border-primary ring-2 ring-primary/30"
+                    : "border-border hover:border-primary/60",
                 )}
               >
-                <img src={t} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                <img
+                  src={t}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>
