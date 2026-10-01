@@ -57,6 +57,20 @@
   --font-display: var(--brand-font, "Fraunces"), "Space Grotesk", Georgia, serif;
   --font-sans: var(--brand-font-body, "DM Sans"), system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  /* Landing pública (index) */
+  --color-lp-navy: #16276b;
+  --color-lp-blue: #2a4fd0;
+  --color-lp-sky: #5b83ee;
+  --color-lp-coral: #f2845f;
+  --color-lp-rust: #b8431f;
+  --color-lp-ink: #16203a;
+  --color-lp-soft: #55607a;
+  --color-lp-mist: #f3f5f9;
+  --color-lp-tint: #e6ecfb;
+  --color-lp-line: #d9dfec;
+  --font-serif-lp: "Instrument Serif", Georgia, serif;
+  --font-mono-lp: "DM Mono", ui-monospace, monospace;
 }
 
 :root {
