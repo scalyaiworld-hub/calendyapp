@@ -107,10 +107,6 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   prioritySupport: "Soporte prioritario",
 };
 
-export function hasModule(plan: string | null | undefined, module: keyof PlanDef["modules"]): boolean {
-  return getPlan(plan).modules[module];
-}
-
 /**
  * Módulos que forman parte del plan pero todavía no están construidos.
  * La UI los muestra como "Próximamente" en vez de prometerlos como activos.
