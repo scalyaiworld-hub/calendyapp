@@ -678,6 +678,10 @@ export type Database = {
     }
     Functions: {
       is_business_owner: { Args: { _business_id: string }; Returns: boolean }
+      is_slug_available: {
+        Args: { _slug: string; _exclude_id?: string }
+        Returns: boolean
+      }
       normalize_phone: { Args: { p: string }; Returns: string }
       plan_limit: {
         Args: { _plan: string; _resource: string }

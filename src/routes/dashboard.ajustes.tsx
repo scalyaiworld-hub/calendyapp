@@ -60,14 +60,12 @@ function AjustesPage() {
         throw new Error("El link debe tener entre 3 y 60 caracteres: letras, números y guiones.");
       }
       if (cleanSlug !== business!.slug) {
-        const { data: dup } = await supabase
-          .from("businesses")
-          .select("id")
-          .eq("slug", cleanSlug)
-          .neq("id", business!.id)
-          .is("deleted_at", null)
-          .maybeSingle();
-        if (dup) throw new Error("Ese link ya está en uso. Elige otro.");
+        const { data: available, error: slugErr } = await supabase.rpc("is_slug_available", {
+          _slug: cleanSlug,
+          _exclude_id: business!.id,
+        });
+        if (slugErr) throw slugErr;
+        if (!available) throw new Error("Ese link ya está en uso. Elige otro.");
       }
       const { error } = await supabase
         .from("businesses")

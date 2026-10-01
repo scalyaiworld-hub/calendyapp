@@ -16,6 +16,15 @@ dist-ssr
 .nitro
 *.local
 
+# Variables de entorno (usa .env.example como plantilla)
+.env
+.env.*
+!.env.example
+
+# Archivos locales de herramientas
+.claude/
+supabase/.temp/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

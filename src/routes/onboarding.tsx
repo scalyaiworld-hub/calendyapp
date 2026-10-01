@@ -147,13 +147,11 @@ function OnboardingPage() {
       const baseSlug = slugify(name) || `salon-${Math.random().toString(36).slice(2, 7)}`;
       // Best-effort uniqueness: append short suffix if needed
       let slug = baseSlug;
-      const { data: existing } = await supabase
-        .from("businesses")
-        .select("id")
-        .eq("slug", slug)
-        .neq("id", business.id)
-        .maybeSingle();
-      if (existing) slug = `${baseSlug}-${Math.random().toString(36).slice(2, 5)}`;
+      const { data: available } = await supabase.rpc("is_slug_available", {
+        _slug: slug,
+        _exclude_id: business.id,
+      });
+      if (available === false) slug = `${baseSlug}-${Math.random().toString(36).slice(2, 5)}`;
 
       const { error } = await supabase
         .from("businesses")

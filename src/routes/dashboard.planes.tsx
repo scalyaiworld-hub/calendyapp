@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyBusiness } from "@/lib/business";
+import { downgradeToFreePlan } from "@/lib/api/plan.functions";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,8 +67,10 @@ function PlanesPage() {
   const changePlan = useMutation({
     mutationFn: async (planId: PlanId) => {
       if (!business) throw new Error("Sin negocio");
-      const { error } = await supabase.from("businesses").update({ plan: planId } as any).eq("id", business.id);
-      if (error) throw error;
+      // El plan ya no se escribe desde el navegador: solo se puede bajar a Free.
+      // Los planes de pago se activan desde el servidor tras la solicitud.
+      if (planId !== "free") throw new Error("Los planes de pago se activan al enviar la solicitud.");
+      await downgradeToFreePlan({ data: { businessId: business.id } });
       return planId;
     },
     onSuccess: (planId) => {
