@@ -27,6 +27,7 @@ import { Route as DashboardCitasRouteImport } from './routes/dashboard.citas'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard.clientes'
 import { Route as DashboardEquipoRouteImport } from './routes/dashboard.equipo'
 import { Route as DashboardHorariosRouteImport } from './routes/dashboard.horarios'
+import { Route as DashboardMetricasRouteImport } from './routes/dashboard.metricas'
 import { Route as DashboardPlanesRouteImport } from './routes/dashboard.planes'
 import { Route as DashboardProfesionalesRouteImport } from './routes/dashboard.profesionales'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
@@ -123,6 +124,11 @@ const DashboardHorariosRoute = DashboardHorariosRouteImport.update({
   path: '/horarios',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardMetricasRoute = DashboardMetricasRouteImport.update({
+  id: '/metricas',
+  path: '/metricas',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardPlanesRoute = DashboardPlanesRouteImport.update({
   id: '/planes',
   path: '/planes',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/equipo': typeof DashboardEquipoRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/metricas': typeof DashboardMetricasRoute
   '/dashboard/planes': typeof DashboardPlanesRoute
   '/dashboard/profesionales': typeof DashboardProfesionalesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/equipo': typeof DashboardEquipoRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/metricas': typeof DashboardMetricasRoute
   '/dashboard/planes': typeof DashboardPlanesRoute
   '/dashboard/profesionales': typeof DashboardProfesionalesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/dashboard/clientes': typeof DashboardClientesRoute
   '/dashboard/equipo': typeof DashboardEquipoRoute
   '/dashboard/horarios': typeof DashboardHorariosRoute
+  '/dashboard/metricas': typeof DashboardMetricasRoute
   '/dashboard/planes': typeof DashboardPlanesRoute
   '/dashboard/profesionales': typeof DashboardProfesionalesRoute
   '/dashboard/servicios': typeof DashboardServiciosRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/equipo'
     | '/dashboard/horarios'
+    | '/dashboard/metricas'
     | '/dashboard/planes'
     | '/dashboard/profesionales'
     | '/dashboard/servicios'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/equipo'
     | '/dashboard/horarios'
+    | '/dashboard/metricas'
     | '/dashboard/planes'
     | '/dashboard/profesionales'
     | '/dashboard/servicios'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/equipo'
     | '/dashboard/horarios'
+    | '/dashboard/metricas'
     | '/dashboard/planes'
     | '/dashboard/profesionales'
     | '/dashboard/servicios'
@@ -444,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardHorariosRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/metricas': {
+      id: '/dashboard/metricas'
+      path: '/metricas'
+      fullPath: '/dashboard/metricas'
+      preLoaderRoute: typeof DashboardMetricasRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/planes': {
       id: '/dashboard/planes'
       path: '/planes'
@@ -489,6 +508,7 @@ interface DashboardRouteChildren {
   DashboardClientesRoute: typeof DashboardClientesRoute
   DashboardEquipoRoute: typeof DashboardEquipoRoute
   DashboardHorariosRoute: typeof DashboardHorariosRoute
+  DashboardMetricasRoute: typeof DashboardMetricasRoute
   DashboardPlanesRoute: typeof DashboardPlanesRoute
   DashboardProfesionalesRoute: typeof DashboardProfesionalesRoute
   DashboardServiciosRoute: typeof DashboardServiciosRoute
@@ -503,6 +523,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardClientesRoute: DashboardClientesRoute,
   DashboardEquipoRoute: DashboardEquipoRoute,
   DashboardHorariosRoute: DashboardHorariosRoute,
+  DashboardMetricasRoute: DashboardMetricasRoute,
   DashboardPlanesRoute: DashboardPlanesRoute,
   DashboardProfesionalesRoute: DashboardProfesionalesRoute,
   DashboardServiciosRoute: DashboardServiciosRoute,
