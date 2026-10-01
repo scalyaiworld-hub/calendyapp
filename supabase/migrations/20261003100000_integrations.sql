@@ -1,5 +1,7 @@
 -- Integraciones (módulo "integrations", plan Studio): claves de API, webhooks y feed de calendario (ICS).
--- NO aplicar sin revisar. Va después de 20261001170000_team_roles.sql.
+-- NO aplicar sin revisar. Va después de las migraciones 20261002* (P0/P1/P2 y revocaciones).
+-- Esta migración se llamó 20261001180000_integrations.sql; se renumeró para que su versión sea
+-- posterior a la última migración ya fusionada y se pueda aplicar en orden en cualquier entorno.
 --
 -- Todas las tablas son SOLO de servidor: RLS activado, sin políticas y sin grants para
 -- anon/authenticated. El navegador nunca las lee ni escribe; pasa por server functions que
