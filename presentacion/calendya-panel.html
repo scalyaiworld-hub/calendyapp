@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Calendya — Panel interno con el design system</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  :root {
+    --blue-900:#16276b; --blue-700:#2a4fd0; --blue-500:#5b83ee; --blue-300:#a9c0f7; --blue-100:#e6ecfb;
+    --coral:#f2845f; --coral-deep:#b8431f; --ink:#16203a; --ink-2:#55607a; --bg:#f3f5f9; --line:#d9dfec;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { background:#fff; }
+  body { zoom:.8822; } /* 900px de diseño -> 794px = A4 vertical */
+  body { font-family:"Outfit",system-ui,sans-serif; color:var(--ink); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .slide { width:900px; height:1272px; padding:56px 56px 64px; justify-content:flex-start; position:relative; overflow:hidden; page-break-after:always; break-after:page; background:var(--bg); display:flex; flex-direction:column; }
+  .slide:last-child { page-break-after:auto; break-after:auto; }
+  .dark { background:var(--blue-900); color:#fff; }
+  .eyebrow { font-family:"DM Mono",monospace; font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:var(--blue-700); margin-bottom:18px; }
+  .dark .eyebrow { color:var(--blue-300); }
+  h1,h2,h3 { font-family:"Instrument Serif",Georgia,serif; font-weight:400; letter-spacing:-.015em; line-height:1.04; }
+  h1 { font-size:76px; } h2 { font-size:40px; margin-bottom:10px; } h3 { font-size:24px; margin-bottom:6px; }
+  .lead { font-size:19px; color:var(--ink-2); max-width:760px; line-height:1.4; }
+  .dark .lead { color:var(--blue-300); }
+  em { font-style:italic; color:var(--blue-700); } .dark em { color:var(--coral); }
+  .foot { position:absolute; left:56px; right:56px; bottom:28px; display:flex; justify-content:space-between; font-family:"DM Mono",monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); }
+  .dark .foot { color:var(--blue-300); }
+  .dot { display:inline-block; width:.22em; height:.22em; border-radius:50%; background:var(--coral); margin-left:.04em; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:24px; padding:20px; box-shadow:0 1px 2px -1px rgba(22,32,58,.1),0 4px 16px -8px rgba(22,32,58,.08); }
+  .grid { display:grid; gap:20px; } .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);}
+  .body { flex:1; display:flex; flex-direction:column; justify-content:center; }
+  p.s { font-size:14.5px; color:var(--ink-2); line-height:1.45; }
+  .chip { display:inline-block; font-family:"DM Mono",monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; padding:5px 12px; border-radius:99px; background:var(--blue-100); color:var(--blue-900); }
+  .chip.coral { background:#fde7df; color:var(--coral-deep); }
+  ul.l { list-style:none; } ul.l li { font-size:16px; padding:8px 0 8px 26px; position:relative; border-bottom:1px solid var(--line); }
+  ul.l li::before { content:""; position:absolute; left:4px; top:16px; width:10px; height:10px; border-radius:50%; background:var(--coral); }
+  .num { font-family:"Instrument Serif",serif; font-size:56px; line-height:1; color:var(--blue-700); }
+  .sw { border-radius:16px; padding:12px; height:110px; display:flex; flex-direction:column; justify-content:flex-end; font-family:"DM Mono",monospace; font-size:13px; }
+  /* mock del panel */
+  .mock { display:flex; border-radius:20px; overflow:hidden; border:1px solid var(--line); background:var(--bg); box-shadow:0 12px 40px -12px rgba(22,32,58,.25); }
+  .mside { width:190px; background:#fff; border-right:1px solid var(--line); padding:16px 12px; font-size:13px; }
+  .mside .grp { font-family:"DM Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2); margin:12px 8px 6px; }
+  .mside .it { height:32px; display:flex; align-items:center; padding:0 10px; border-radius:8px; color:var(--ink-2); }
+  .mside .it.on { background:var(--blue-100); color:var(--blue-700); font-weight:600; }
+  .mmain { flex:1; padding:22px 26px; }
+  .mtitle { font-family:"Instrument Serif",serif; font-size:34px; line-height:1; margin:4px 0 14px; }
+  .mstat { background:#fff; border:1px solid var(--line); border-radius:16px; padding:12px 14px; }
+  .mstat b { font-family:"Instrument Serif",serif; font-weight:400; font-size:30px; display:block; }
+  .mstat span { font-size:11px; color:var(--ink-2); }
+  .mrow { display:flex; gap:10px; align-items:center; background:#fff; border:1px solid var(--line); border-radius:12px; padding:9px 12px; font-size:12px; margin-top:8px; }
+  .mrow .t { font-family:"DM Mono",monospace; color:var(--blue-700); }
+  .old { background:#fafbfc; } .old .mside { background:#f6f7f8; } .old .mside .it.on { background:#eef0f2; color:#111; border-left:2px solid #111; border-radius:0 6px 6px 0; }
+  .old .mtitle { font-family:Georgia,serif; font-size:30px; } .old .mstat, .old .mrow { border-radius:10px; }
+  table.t { width:100%; border-collapse:collapse; font-size:15px; }
+  table.t td, table.t th { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); }
+  table.t th { font-family:"DM Mono",monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2); font-weight:400; }
+  code { font-family:"DM Mono",monospace; font-size:15px; background:var(--blue-100); padding:2px 8px; border-radius:6px; }
+</style>
+</head>
+<body>
+<style>
+  .shot { border-radius:16px; overflow:hidden; border:1px solid var(--line); background:#fff; box-shadow:0 14px 40px -14px rgba(22,32,58,.35); }
+  .shot .bar { height:28px; background:#eef1f7; display:flex; align-items:center; gap:6px; padding:0 12px; border-bottom:1px solid var(--line); }
+  .shot .bar i { width:9px; height:9px; border-radius:50%; background:#cfd6e6; display:block; }
+  .shot .bar span { font-family:"DM Mono",monospace; font-size:10px; color:var(--ink-2); margin-left:10px; }
+  .shot img { display:block; width:100%; }
+  .pt { display:flex; gap:14px; align-items:flex-start; padding:20px 0; border-bottom:1px solid var(--line); }
+  .pt:last-child { border-bottom:0; }
+  .pt b { font-family:"Instrument Serif",serif; font-weight:400; font-size:30px; color:var(--coral-deep); line-height:1; min-width:30px; }
+  .pt h4 { font-size:17px; font-weight:600; margin-bottom:2px; } .pt p { font-size:14.5px; color:var(--ink-2); line-height:1.4; }
+</style>
+
+<!-- HOJA 1 -->
+<section class="slide">
+  <div style="margin:-56px -56px 0;padding:56px 56px 44px;background:var(--blue-900);color:#fff">
+    <div class="eyebrow" style="color:var(--blue-300)">Calendya · Octubre 2026</div>
+    <h1>Un panel que se ve y suena a <em style="color:var(--coral)">calendya</em><span class="dot" style="font-size:76px"></span></h1>
+    <p class="lead" style="margin-top:20px;color:var(--blue-300);max-width:640px">Tu agenda llena, sin levantar el teléfono. Así se ve ahora el espacio donde trabajas cada día.</p>
+  </div>
+
+  <div class="eyebrow" style="margin-top:36px">01 · Bienvenida</div>
+  <h2>Entras y sabes <em>a dónde ir.</em></h2>
+  <p class="lead" style="margin-bottom:18px">Después de iniciar sesión, eliges entre administrar la plataforma o crear tu propio negocio. Dos opciones, una decisión.</p>
+  <div class="shot"><div class="bar"><i></i><i></i><i></i><span>calendya.app/inicio</span></div><img src="img/inicio.png" /></div>
+
+  <div class="grid g2" style="margin-top:26px;gap:14px">
+    <div class="card"><span class="chip">Administrar</span><h3 style="margin-top:12px">Panel de administración</h3><p class="s">Ver y gestionar todos los negocios, planes y solicitudes.</p></div>
+    <div class="card"><span class="chip coral">Emprender</span><h3 style="margin-top:12px">Crear mi negocio</h3><p class="s">También puedes tener tu propio negocio en Calendya.</p></div>
+  </div>
+  <div class="foot"><span>calendya</span><span>1 / 3</span></div>
+</section>
+
+<!-- HOJA 2 -->
+<section class="slide">
+  <div class="eyebrow">02 · Panel de administración</div>
+  <h2>Todos tus negocios, <em>de un vistazo.</em></h2>
+  <p class="lead" style="margin-bottom:18px">Cifras arriba, lista abajo. Busca, cambia el plan y revisa el estado de cada negocio sin salir de la pantalla.</p>
+  <div class="shot" style="margin-top:6px"><div class="bar"><i></i><i></i><i></i><span>calendya.app/admin</span></div><img src="img/admin.png" /></div>
+
+  <div style="margin-top:34px">
+    <div class="pt"><b>1</b><div><h4>Resumen en seis cifras</h4><p>Negocios, planes, upgrades y solicitudes visibles al abrir la pantalla.</p></div></div>
+    <div class="pt"><b>2</b><div><h4>Tres pestañas, un solo lugar</h4><p>Negocios, Upgrades y Solicitudes organizados sin cambiar de página.</p></div></div>
+    <div class="pt"><b>3</b><div><h4>Búsqueda y cambio de plan en la fila</h4><p>Encuentra un negocio por nombre, link o correo y ajusta su plan al instante.</p></div></div>
+    <div class="pt"><b>4</b><div><h4>Estados que se entienden</h4><p>Etiquetas como "Sin terminar onboarding" avisan qué negocio necesita atención.</p></div></div>
+  </div>
+  <div class="foot"><span>calendya</span><span>2 / 3</span></div>
+</section>
+
+<!-- HOJA 3 -->
+<section class="slide">
+  <div class="eyebrow">03 · Identidad</div>
+  <h2>Serif para decir, <em>sans para hacer.</em></h2>
+  <p class="lead" style="margin-bottom:20px">Tres voces tipográficas, cada una con un trabajo claro. Las cifras destacan y los botones se entienden.</p>
+  <div class="grid" style="gap:14px">
+    <div class="card" style="padding:22px"><div class="eyebrow" style="font-size:12px;margin-bottom:8px">Instrument Serif · títulos y cifras</div><div style="font-family:'Instrument Serif';font-size:58px;line-height:1">Tu salón merece tiempo</div></div>
+    <div class="card" style="padding:22px"><div class="eyebrow" style="font-size:12px;margin-bottom:8px">Outfit · cuerpo, botones y menú</div><div style="font-size:26px;font-weight:600;line-height:1.3">Tus clientes reservan solos, 24/7.</div></div>
+    <div class="card" style="padding:22px"><div class="eyebrow" style="font-size:12px;margin-bottom:8px">DM Mono · horas y etiquetas</div><div style="font-family:'DM Mono';font-size:26px;line-height:1.4">09:00 · Corte + tinte</div></div>
+  </div>
+
+<div class="eyebrow" style="margin-top:44px">04 · Pensado para todos</div>
+  <div class="grid g4" style="gap:12px">
+    <div class="card" style="padding:14px"><div class="num">44</div><h3 style="font-size:19px">px táctiles</h3><p class="s">Botones cómodos en móvil</p></div>
+    <div class="card" style="padding:14px"><div class="num">3</div><h3 style="font-size:19px">px de foco</h3><p class="s">Visible con teclado</p></div>
+    <div class="card" style="padding:14px"><div class="num">4.5</div><h3 style="font-size:19px">:1 contraste</h3><p class="s">Texto siempre legible</p></div>
+    <div class="card" style="padding:14px"><div class="num">150</div><h3 style="font-size:19px">ms de transición</h3><p class="s">Respeta reducir movimiento</p></div>
+  </div>
+
+  <div style="margin:44px -56px 0;padding:36px 56px;background:var(--blue-900);color:#fff">
+    <div class="eyebrow" style="color:var(--blue-300);margin-bottom:10px">05 · Lo que sigue</div>
+    <div class="grid g3" style="gap:12px">
+      <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff;padding:14px"><span class="chip coral">Móvil</span><p class="s" style="margin-top:8px;color:var(--blue-300)">Botón fijo con la acción principal.</p></div>
+      <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff;padding:14px"><span class="chip coral">Estados</span><p class="s" style="margin-top:8px;color:var(--blue-300)">Pantallas vacías, de carga y de error con nuestra voz.</p></div>
+      <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff;padding:14px"><span class="chip coral">Agenda</span><p class="s" style="margin-top:8px;color:var(--blue-300)">Citas, clientes y métricas con el mismo orden.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>calendya</span><span>3 / 3</span></div>
+</section>
+
+</body>
+</html>
