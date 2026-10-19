@@ -260,3 +260,40 @@ describe("reglas de reserva configurables por negocio", () => {
     expect(short).toEqual([]);
   });
 });
+
+describe("computeSlots con valores inválidos (no debe colgarse)", () => {
+  const now = new Date("2026-06-01T12:00:00Z");
+  const base = {
+    date: "2026-06-02",
+    tz: "America/Lima",
+    now,
+    windows: [{ start_time: "09:00", end_time: "12:00" }],
+    busy: [],
+  };
+
+  it("usa la duración como paso si el paso configurado es 0", () => {
+    const slots = computeSlots({ ...base, durationMinutes: 60, settings: { slotStepMinutes: 0 } });
+    expect(slots).toHaveLength(3);
+  });
+
+  it("usa la duración como paso si el paso configurado es negativo o no es un número", () => {
+    for (const slotStepMinutes of [-30, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const slots = computeSlots({ ...base, durationMinutes: 60, settings: { slotStepMinutes } });
+      expect(slots).toHaveLength(3);
+    }
+  });
+
+  it("respeta un paso válido menor que la duración", () => {
+    const slots = computeSlots({ ...base, durationMinutes: 60, settings: { slotStepMinutes: 30 } });
+    expect(slots).toHaveLength(5); // 09:00, 09:30, ... 11:00
+  });
+
+  it("devuelve [] si la duración es 0, negativa o no es un número", () => {
+    for (const durationMinutes of [0, -60, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(computeSlots({ ...base, durationMinutes })).toEqual([]);
+      expect(computeSlots({ ...base, durationMinutes, settings: { slotStepMinutes: 0 } })).toEqual(
+        [],
+      );
+    }
+  });
+});
