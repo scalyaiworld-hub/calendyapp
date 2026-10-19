@@ -4,6 +4,7 @@ import { CalendarCheck, MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getChatAvailability, sendChatMessage } from "@/lib/api/ai-chat.functions";
 import { AI_CHAT_MAX_CHARS, AI_CHAT_MAX_MESSAGES } from "@/lib/ai-chat";
+import { Turnstile, TURNSTILE_SITE_KEY } from "@/components/Turnstile";
 
 type Msg = {
   role: "user" | "assistant";
@@ -30,6 +31,10 @@ export function AiChatWidget({ slug }: { slug: string }) {
   const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: GREETING }]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  // Captcha anti-bots: el token es de un solo uso, así que se remonta el widget tras cada mensaje.
+  const captchaRequired = !!TURNSTILE_SITE_KEY;
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,7 +49,8 @@ export function AiChatWidget({ slug }: { slug: string }) {
 
   const send = async () => {
     const text = draft.trim();
-    if (!text || busy) return;
+    if (!text || busy || (captchaRequired && !captchaToken)) return;
+    const token = captchaToken ?? undefined;
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     setDraft("");
@@ -56,7 +62,7 @@ export function AiChatWidget({ slug }: { slug: string }) {
         .slice(1)
         .slice(-AI_CHAT_MAX_MESSAGES)
         .map(({ role, content }) => ({ role, content }));
-      const res = await sendChatMessage({ data: { slug, messages: history } });
+      const res = await sendChatMessage({ data: { slug, messages: history, captchaToken: token } });
       setMessages((cur) => [
         ...cur,
         res.ok
@@ -74,6 +80,9 @@ export function AiChatWidget({ slug }: { slug: string }) {
       ]);
     } finally {
       setBusy(false);
+      // El token ya se consumió: se pide uno nuevo para el siguiente mensaje.
+      setCaptchaToken(null);
+      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -174,12 +183,13 @@ export function AiChatWidget({ slug }: { slug: string }) {
               <Button
                 type="submit"
                 size="icon"
-                disabled={busy || !draft.trim()}
+                disabled={busy || !draft.trim() || (captchaRequired && !captchaToken)}
                 aria-label="Enviar mensaje"
               >
                 <Send className="size-4" />
               </Button>
             </div>
+            {captchaRequired && <Turnstile key={captchaKey} onToken={setCaptchaToken} />}
             <p className="text-[10px] text-muted-foreground">
               La IA puede equivocarse: el negocio confirmará tu reserva. No compartas datos
               sensibles.

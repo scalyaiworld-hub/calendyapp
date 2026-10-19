@@ -48,7 +48,8 @@ export async function getSiteOrigin(): Promise<string | null> {
   if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
   const { getRequestHeader } = await import("@tanstack/react-start/server");
   const host = getRequestHeader("host");
-  return host ? `https://${host}` : null;
+  // El Host lo manda el cliente: solo se acepta si parece un nombre de host normal (sin rutas ni credenciales).
+  return host && /^[a-z0-9.-]+(:\d{1,5})?$/i.test(host) ? `https://${host}` : null;
 }
 
 export type BookingEmailInput = {

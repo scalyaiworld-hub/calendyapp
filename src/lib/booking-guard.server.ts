@@ -11,13 +11,20 @@ export const BOOKING_LIMITS = {
   MAX_PENDING_PER_CLIENT: 3,
 } as const;
 
+/**
+ * IP del visitante para los límites anti-abuso. Solo se confía en las cabeceras que pone la
+ * plataforma (Vercel las sobrescribe; el cliente no puede falsearlas). `cf-connecting-ip` solo es
+ * fiable si hay Cloudflare delante, así que se ignora salvo que TRUST_CF_CONNECTING_IP=1.
+ */
 export async function getClientIp(): Promise<string> {
   const { getRequestHeader } = await import("@tanstack/react-start/server");
+  const trustCloudflare = process.env.TRUST_CF_CONNECTING_IP === "1";
   const fwd = getRequestHeader("x-forwarded-for");
   return (
-    getRequestHeader("cf-connecting-ip") ??
-    (fwd ? fwd.split(",")[0].trim() : undefined) ??
+    (trustCloudflare ? getRequestHeader("cf-connecting-ip") : undefined) ??
+    getRequestHeader("x-vercel-forwarded-for") ??
     getRequestHeader("x-real-ip") ??
+    (fwd ? fwd.split(",")[0].trim() : undefined) ??
     "unknown"
   );
 }

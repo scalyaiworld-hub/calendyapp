@@ -8,6 +8,8 @@ const chatSchema = slugSchema.extend({
     .array(z.object({ role: z.string().max(20), content: z.string().max(5000) }))
     .min(1)
     .max(60),
+  // Token de Cloudflare Turnstile (un solo uso, uno por mensaje); solo se exige si el servidor lo tiene configurado.
+  captchaToken: z.string().max(2048).optional(),
 });
 
 /** ¿Muestra la página pública el botón del asistente? Solo si el plan lo incluye y el dueño lo activó. */
@@ -38,13 +40,27 @@ export const sendChatMessage = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<ChatReply> => {
     if (!process.env.ANTHROPIC_API_KEY)
       return { ok: false, error: "El asistente no está disponible por ahora." };
-    const [{ supabaseAdmin }, { handleChatRequest }, { getClientIp }, { default: Anthropic }] =
-      await Promise.all([
-        import("@/integrations/supabase/client.server"),
-        import("@/lib/ai-chat.server"),
-        import("@/lib/booking-guard.server"),
-        import("@anthropic-ai/sdk"),
-      ]);
+    const [
+      { supabaseAdmin },
+      { handleChatRequest },
+      { getClientIp, verifyCaptcha },
+      { BookingError },
+      { default: Anthropic },
+    ] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/lib/ai-chat.server"),
+      import("@/lib/booking-guard.server"),
+      import("@/lib/booking.server"),
+      import("@anthropic-ai/sdk"),
+    ]);
+    const ip = await getClientIp();
+    // Mismo captcha que la reserva pública: sin él, el chat sería una vía para saltárselo.
+    try {
+      await verifyCaptcha(data.captchaToken, ip);
+    } catch (e) {
+      if (e instanceof BookingError) return { ok: false, error: e.message };
+      throw e;
+    }
     const client = new Anthropic({ maxRetries: 1, timeout: 45_000 });
     try {
       const res = await handleChatRequest({
@@ -53,7 +69,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
         modelName: process.env.AI_CHAT_MODEL || undefined,
         slug: data.slug,
         messages: data.messages,
-        ip: await getClientIp(),
+        ip,
       });
       return res.ok
         ? { ok: true, reply: res.reply, booking: res.booking }

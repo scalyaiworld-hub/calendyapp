@@ -10,7 +10,10 @@ const schema = z.object({
   phone: z.string().trim().max(40).optional(),
   industry: z.string().trim().min(1).max(80),
   message: z.string().trim().max(800).optional(),
-  details: z.record(z.string().max(200)).optional(),
+  details: z
+    .record(z.string().max(200))
+    .refine((o) => Object.keys(o).length <= 20, "Demasiados campos")
+    .optional(),
 });
 
 /**
