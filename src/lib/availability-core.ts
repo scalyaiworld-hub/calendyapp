@@ -84,8 +84,15 @@ export function computeSlots(opts: {
   const minStart = now + cfg.minLeadMinutes * 60_000;
   const maxStart = now + cfg.maxAheadDays * 86_400_000;
   const { year, month, day } = parseYmd(date);
+  // Una duración que no sea un número positivo no produce horarios (y un paso de 0 o negativo
+  // dejaría el bucle de abajo sin avanzar o retrocediendo para siempre).
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) return [];
   const duration = durationMinutes * 60_000;
-  const step = (cfg.slotStepMinutes ?? durationMinutes) * 60_000;
+  const stepMinutes =
+    cfg.slotStepMinutes != null && Number.isFinite(cfg.slotStepMinutes) && cfg.slotStepMinutes > 0
+      ? cfg.slotStepMinutes
+      : durationMinutes;
+  const step = stepMinutes * 60_000;
   const buffer = cfg.bufferMinutes * 60_000;
 
   // El margen se aplica a ambos lados de cada cita existente.
