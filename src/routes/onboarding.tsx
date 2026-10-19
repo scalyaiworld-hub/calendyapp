@@ -12,6 +12,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/countries";
 import { INDUSTRIES, SERVICE_TEMPLATES, type Industry } from "@/lib/service-templates";
 import { formatPriceCents, slugify } from "@/lib/format";
+import { DEFAULT_LOCATION_NAME, defaultProfessionalName } from "@/lib/onboarding-defaults";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Check, ChevronRight } from "lucide-react";
@@ -214,6 +215,37 @@ function OnboardingPage() {
         const { error } = await supabase.from("services").insert(rows);
         if (error) throw error;
       }
+
+      // El link público solo se activa con al menos una sucursal, un profesional y un servicio.
+      // Se crean aquí por defecto (si aún no existen) para que el dueño no se quede a medias;
+      // sin asignaciones, el profesional ofrece todos los servicios y atiende en todas las sucursales.
+      const { data: loc } = await supabase
+        .from("locations")
+        .select("id")
+        .eq("business_id", business.id)
+        .is("deleted_at", null)
+        .limit(1);
+      if (!loc?.length) {
+        const { error } = await supabase
+          .from("locations")
+          .insert({ business_id: business.id, name: DEFAULT_LOCATION_NAME });
+        if (error) throw error;
+      }
+      const { data: pro } = await supabase
+        .from("professionals")
+        .select("id")
+        .eq("business_id", business.id)
+        .is("deleted_at", null)
+        .limit(1);
+      if (!pro?.length) {
+        const meta = user?.user_metadata as { full_name?: string; name?: string } | undefined;
+        const { error } = await supabase.from("professionals").insert({
+          business_id: business.id,
+          name: defaultProfessionalName(meta?.full_name ?? meta?.name, business.name),
+        });
+        if (error) throw error;
+      }
+
       const { error } = await supabase
         .from("businesses")
         .update({ onboarding_completed: true, onboarding_step: 3 })
@@ -222,6 +254,8 @@ function OnboardingPage() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["my-business"] });
+      // El panel decide si se puede compartir el link con estos conteos (caché de 5 min): se refrescan.
+      await qc.invalidateQueries({ queryKey: ["entity-counts"] });
       toast.success("¡Listo! Bienvenido");
       navigate({ to: "/dashboard", replace: true });
     },
