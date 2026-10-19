@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { assertModule } from "@/lib/api/plan-guard";
+import { assertOwnerOrManager } from "@/lib/api/role-guard";
 import { computeMetrics, type MetricAppt, type Metrics, type Named } from "@/lib/metrics";
 import { toCsv } from "@/lib/csv";
 
@@ -53,7 +54,8 @@ export const getAdvancedMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => schema.parse(input))
   .handler(async ({ data, context }): Promise<AdvancedMetrics> => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertOwnerOrManager(supabase, userId, data.businessId);
     await assertModule(supabase, data.businessId, "advancedMetrics");
 
     const { timezone } = await loadBusiness(supabase, data.businessId);
@@ -104,7 +106,8 @@ export const exportAppointmentsCsv = createServerFn({ method: "POST" })
   .inputValidator((input) => schema.parse(input))
   .handler(
     async ({ data, context }): Promise<{ csv: string; rows: number; truncated: boolean }> => {
-      const { supabase } = context;
+      const { supabase, userId } = context;
+      await assertOwnerOrManager(supabase, userId, data.businessId);
       await assertModule(supabase, data.businessId, "exports");
 
       const { timezone } = await loadBusiness(supabase, data.businessId);
