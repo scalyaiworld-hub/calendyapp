@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertModule } from "@/lib/api/plan-guard";
+import { requireOwner } from "@/lib/api/owner-guard";
 import {
   MAX_API_KEYS,
   MAX_WEBHOOKS,
@@ -14,19 +14,6 @@ import {
 
 const base = z.object({ businessId: z.string().uuid() });
 const eventsSchema = z.array(z.enum(WEBHOOK_EVENTS)).min(1).max(WEBHOOK_EVENTS.length);
-
-/** Solo el dueño gestiona integraciones, y solo si su plan incluye el módulo. */
-async function requireOwner(context: { supabase: any; userId: string }, businessId: string) {
-  const { data, error } = await context.supabase
-    .from("businesses")
-    .select("id")
-    .eq("id", businessId)
-    .eq("owner_id", context.userId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Solo el dueño puede gestionar las integraciones.");
-  await assertModule(context.supabase, businessId, "integrations");
-}
 
 const admin = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 
