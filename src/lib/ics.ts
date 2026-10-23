@@ -9,6 +9,21 @@ export type IcsEvent = {
   status: "CONFIRMED" | "TENTATIVE";
 };
 
+/** Descripción de una cita en un calendario externo (feed ICS y Google Calendar comparten formato). */
+export function appointmentDescription(input: {
+  phone?: string | null;
+  professional?: string | null;
+  notes?: string | null;
+}): string {
+  return [
+    input.phone ? `Tel: ${input.phone}` : null,
+    input.professional ? `Profesional: ${input.professional}` : null,
+    input.notes ? `Notas: ${input.notes}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export function icsEscape(s: string): string {
   return s
     .replace(/\\/g, "\\\\")

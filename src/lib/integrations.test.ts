@@ -8,7 +8,7 @@ import {
   validateWebhookUrl,
   webhookBackoffMs,
 } from "./integrations";
-import { buildIcs, icsDate, icsEscape, icsFold } from "./ics";
+import { appointmentDescription, buildIcs, icsDate, icsEscape, icsFold } from "./ics";
 
 describe("claves de API", () => {
   it("genera claves únicas con prefijo, y el hash coincide con SHA-256", async () => {
@@ -125,5 +125,13 @@ describe("ICS", () => {
     expect(ics).toContain("UID:abc@calendya");
     expect(ics).toContain("DTSTART:20261002T150000Z");
     expect(ics.replace(/\r\n/g, "").includes("\n")).toBe(false);
+  });
+
+  it("arma la descripción de la cita omitiendo los datos vacíos", () => {
+    expect(
+      appointmentDescription({ phone: "+51 999", professional: "Ana", notes: "Traer receta" }),
+    ).toBe("Tel: +51 999\nProfesional: Ana\nNotas: Traer receta");
+    expect(appointmentDescription({ notes: "Solo notas" })).toBe("Notas: Solo notas");
+    expect(appointmentDescription({ phone: null, professional: "", notes: null })).toBe("");
   });
 });

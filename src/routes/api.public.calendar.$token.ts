@@ -12,11 +12,12 @@ export const Route = createFileRoute("/api/public/calendar/$token")({
         if (!token || token.length < 32 || token.length > 128 || !/^[A-Za-z0-9_-]+$/.test(token))
           return notFound();
 
-        const [{ supabaseAdmin }, { hasModule }, { buildIcs }] = await Promise.all([
-          import("@/integrations/supabase/client.server"),
-          import("@/lib/plans"),
-          import("@/lib/ics"),
-        ]);
+        const [{ supabaseAdmin }, { hasModule }, { appointmentDescription, buildIcs }] =
+          await Promise.all([
+            import("@/integrations/supabase/client.server"),
+            import("@/lib/plans"),
+            import("@/lib/ics"),
+          ]);
 
         const { data: feed } = await supabaseAdmin
           .from("calendar_feeds")
@@ -59,15 +60,11 @@ export const Route = createFileRoute("/api/public/calendar/$token")({
             startsAt: new Date(a.starts_at),
             endsAt: new Date(a.ends_at),
             summary: `${a.services?.name ?? "Cita"} — ${a.clients?.name ?? "Cliente"}`,
-            description: [
-              a.clients?.phone ? `Tel: ${a.clients.phone}` : null,
-              a.professional_id && names.get(a.professional_id)
-                ? `Profesional: ${names.get(a.professional_id)}`
-                : null,
-              a.notes ? `Notas: ${a.notes}` : null,
-            ]
-              .filter(Boolean)
-              .join("\n"),
+            description: appointmentDescription({
+              phone: a.clients?.phone,
+              professional: a.professional_id ? names.get(a.professional_id) : null,
+              notes: a.notes,
+            }),
             status: a.status === "pending" ? ("TENTATIVE" as const) : ("CONFIRMED" as const),
           })),
         });
