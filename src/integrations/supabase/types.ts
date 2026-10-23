@@ -655,6 +655,177 @@ export type Database = {
           },
         ]
       }
+      google_calendar_connections: {
+        Row: {
+          access_token_enc: string | null
+          access_token_expires_at: string | null
+          business_id: string
+          connected_at: string
+          connected_by: string | null
+          default_calendar_id: string
+          delete_events_on_disconnect: boolean
+          google_email: string
+          last_error: string | null
+          last_synced_at: string | null
+          refresh_token_enc: string
+          status: string
+        }
+        Insert: {
+          access_token_enc?: string | null
+          access_token_expires_at?: string | null
+          business_id: string
+          connected_at?: string
+          connected_by?: string | null
+          default_calendar_id?: string
+          delete_events_on_disconnect?: boolean
+          google_email: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          refresh_token_enc: string
+          status?: string
+        }
+        Update: {
+          access_token_enc?: string | null
+          access_token_expires_at?: string | null
+          business_id?: string
+          connected_at?: string
+          connected_by?: string | null
+          default_calendar_id?: string
+          delete_events_on_disconnect?: boolean
+          google_email?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          refresh_token_enc?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_connections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_events: {
+        Row: {
+          appointment_id: string
+          business_id: string
+          calendar_id: string
+          google_event_id: string
+          synced_at: string
+        }
+        Insert: {
+          appointment_id: string
+          business_id: string
+          calendar_id: string
+          google_event_id: string
+          synced_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          business_id?: string
+          calendar_id?: string
+          google_event_id?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_jobs: {
+        Row: {
+          action: string
+          appointment_id: string
+          attempts: number
+          business_id: string
+          created_at: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          next_attempt_at: string
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          action: string
+          appointment_id: string
+          attempts?: number
+          business_id: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          action?: string
+          appointment_id?: string
+          attempts?: number
+          business_id?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_jobs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_calendar_professional_map: {
+        Row: {
+          business_id: string
+          calendar_id: string
+          professional_id: string
+        }
+        Insert: {
+          business_id: string
+          calendar_id: string
+          professional_id: string
+        }
+        Update: {
+          business_id?: string
+          calendar_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_calendar_professional_map_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_calendar_professional_map_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: true
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_hours: {
         Row: {
           created_at: string
@@ -1274,6 +1445,18 @@ export type Database = {
       }
       plan_limit: {
         Args: { _plan: string; _resource: string }
+        Returns: number
+      }
+      google_calendar_enqueue: {
+        Args: { p_business_id: string; p_appointment_id: string; p_action: string }
+        Returns: undefined
+      }
+      google_calendar_enqueue_upcoming: {
+        Args: { p_business_id: string; p_mode: string; p_professional_id?: string }
+        Returns: number
+      }
+      google_calendar_enqueue_delete_all: {
+        Args: { p_business_id: string }
         Returns: number
       }
       recalc_client_counters: {
