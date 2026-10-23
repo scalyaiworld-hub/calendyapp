@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarSync, Copy, KeyRound, RefreshCw, Send, Trash2, Webhook } from "lucide-react";
 import { toast } from "sonner";
 import { useMyBusiness } from "@/lib/business";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BlockSkeleton } from "@/components/Skeletons";
+import { GoogleCalendarSyncCard } from "@/components/GoogleCalendarSyncCard";
 import { WEBHOOK_EVENTS } from "@/lib/integrations";
 import {
   createApiKey,
@@ -72,6 +73,19 @@ function IntegrationsBody() {
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["integrations", businessId] });
   const onError = (e: Error) => toast.error(e.message);
+
+  // Resultado de la conexión con Google (vuelve del callback con ?google=connected|error).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("google");
+    if (!result) return;
+    if (result === "connected")
+      toast.success("Google Calendar conectado. Tus próximas citas aparecerán en unos minutos.");
+    else toast.error("No se pudo conectar Google Calendar. Inténtalo de nuevo.");
+    params.delete("google");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, []);
 
   // Secretos que solo se muestran una vez (clave de API y secreto de firma).
   const [revealed, setRevealed] = useState<{ kind: "key" | "secret"; value: string } | null>(null);
@@ -192,17 +206,19 @@ function IntegrationsBody() {
 
       {d && (
         <>
+          {businessId && <GoogleCalendarSyncCard businessId={businessId} />}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <CalendarSync className="size-4" /> Google Calendar y otros calendarios
+                <CalendarSync className="size-4" /> Suscripción por URL (ICS)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Suscribe tu agenda como calendario de solo lectura. En Google Calendar:{" "}
-                <em>Otros calendarios → Desde URL</em>. Se actualiza solo (Google puede tardar
-                varias horas).
+                Alternativa para Apple Calendar, Outlook u otras apps: suscribe tu agenda como
+                calendario de solo lectura desde una URL. Se actualiza sola, pero con retraso
+                (Google puede tardar varias horas).
               </p>
               {feedUrl ? (
                 <>
