@@ -37,6 +37,15 @@ export const getGoogleCalendarStatus = createServerFn({ method: "POST" })
     await requireOwner(context, data.businessId);
     const db = await admin();
     const { isGoogleCalendarConfigured } = await sync();
+    // Sin configurar no se consultan las tablas: así desplegar antes de aplicar la migración no rompe la página.
+    if (!isGoogleCalendarConfigured())
+      return {
+        configured: false,
+        connection: null,
+        professionals: [],
+        pendingJobs: 0,
+        failedJobs: 0,
+      };
     const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
 
     const [conn, pros, map, pending, failed] = await Promise.all([
