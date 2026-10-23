@@ -33,8 +33,10 @@ import { Route as DashboardPlanesRouteImport } from './routes/dashboard.planes'
 import { Route as DashboardProfesionalesRouteImport } from './routes/dashboard.profesionales'
 import { Route as DashboardServiciosRouteImport } from './routes/dashboard.servicios'
 import { Route as DashboardSucursalesRouteImport } from './routes/dashboard.sucursales'
+import { Route as ApiGoogleCalendarCallbackRouteImport } from './routes/api.google-calendar.callback'
 import { Route as ApiPublicSendRemindersRouteImport } from './routes/api.public.send-reminders'
 import { Route as ApiPublicSendWebhooksRouteImport } from './routes/api.public.send-webhooks'
+import { Route as ApiPublicSyncGoogleCalendarRouteImport } from './routes/api.public.sync-google-calendar'
 import { Route as ApiPublicCalendarTokenRouteImport } from './routes/api.public.calendar.$token'
 import { Route as ApiPublicV1AppointmentsRouteImport } from './routes/api.public.v1.appointments'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api.public.v1.clients'
@@ -160,6 +162,12 @@ const DashboardSucursalesRoute = DashboardSucursalesRouteImport.update({
   path: '/sucursales',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiGoogleCalendarCallbackRoute =
+  ApiGoogleCalendarCallbackRouteImport.update({
+    id: '/api/google-calendar/callback',
+    path: '/api/google-calendar/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSendRemindersRoute = ApiPublicSendRemindersRouteImport.update({
   id: '/api/public/send-reminders',
   path: '/api/public/send-reminders',
@@ -170,6 +178,12 @@ const ApiPublicSendWebhooksRoute = ApiPublicSendWebhooksRouteImport.update({
   path: '/api/public/send-webhooks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSyncGoogleCalendarRoute =
+  ApiPublicSyncGoogleCalendarRouteImport.update({
+    id: '/api/public/sync-google-calendar',
+    path: '/api/public/sync-google-calendar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCalendarTokenRoute = ApiPublicCalendarTokenRouteImport.update({
   id: '/api/public/calendar/$token',
   path: '/api/public/calendar/$token',
@@ -216,8 +230,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/google-calendar/callback': typeof ApiGoogleCalendarCallbackRoute
   '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
   '/api/public/send-webhooks': typeof ApiPublicSendWebhooksRoute
+  '/api/public/sync-google-calendar': typeof ApiPublicSyncGoogleCalendarRoute
   '/api/public/calendar/$token': typeof ApiPublicCalendarTokenRoute
   '/api/public/v1/appointments': typeof ApiPublicV1AppointmentsRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -247,8 +263,10 @@ export interface FileRoutesByTo {
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/api/google-calendar/callback': typeof ApiGoogleCalendarCallbackRoute
   '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
   '/api/public/send-webhooks': typeof ApiPublicSendWebhooksRoute
+  '/api/public/sync-google-calendar': typeof ApiPublicSyncGoogleCalendarRoute
   '/api/public/calendar/$token': typeof ApiPublicCalendarTokenRoute
   '/api/public/v1/appointments': typeof ApiPublicV1AppointmentsRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -280,8 +298,10 @@ export interface FileRoutesById {
   '/dashboard/servicios': typeof DashboardServiciosRoute
   '/dashboard/sucursales': typeof DashboardSucursalesRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/google-calendar/callback': typeof ApiGoogleCalendarCallbackRoute
   '/api/public/send-reminders': typeof ApiPublicSendRemindersRoute
   '/api/public/send-webhooks': typeof ApiPublicSendWebhooksRoute
+  '/api/public/sync-google-calendar': typeof ApiPublicSyncGoogleCalendarRoute
   '/api/public/calendar/$token': typeof ApiPublicCalendarTokenRoute
   '/api/public/v1/appointments': typeof ApiPublicV1AppointmentsRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -314,8 +334,10 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard/'
+    | '/api/google-calendar/callback'
     | '/api/public/send-reminders'
     | '/api/public/send-webhooks'
+    | '/api/public/sync-google-calendar'
     | '/api/public/calendar/$token'
     | '/api/public/v1/appointments'
     | '/api/public/v1/clients'
@@ -345,8 +367,10 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard'
+    | '/api/google-calendar/callback'
     | '/api/public/send-reminders'
     | '/api/public/send-webhooks'
+    | '/api/public/sync-google-calendar'
     | '/api/public/calendar/$token'
     | '/api/public/v1/appointments'
     | '/api/public/v1/clients'
@@ -377,8 +401,10 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/sucursales'
     | '/dashboard/'
+    | '/api/google-calendar/callback'
     | '/api/public/send-reminders'
     | '/api/public/send-webhooks'
+    | '/api/public/sync-google-calendar'
     | '/api/public/calendar/$token'
     | '/api/public/v1/appointments'
     | '/api/public/v1/clients'
@@ -397,8 +423,10 @@ export interface RootRouteChildren {
   TerminosRoute: typeof TerminosRoute
   BSlugRoute: typeof BSlugRoute
   CitaTokenRoute: typeof CitaTokenRoute
+  ApiGoogleCalendarCallbackRoute: typeof ApiGoogleCalendarCallbackRoute
   ApiPublicSendRemindersRoute: typeof ApiPublicSendRemindersRoute
   ApiPublicSendWebhooksRoute: typeof ApiPublicSendWebhooksRoute
+  ApiPublicSyncGoogleCalendarRoute: typeof ApiPublicSyncGoogleCalendarRoute
   ApiPublicCalendarTokenRoute: typeof ApiPublicCalendarTokenRoute
   ApiPublicV1AppointmentsRoute: typeof ApiPublicV1AppointmentsRoute
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
@@ -575,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSucursalesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/google-calendar/callback': {
+      id: '/api/google-calendar/callback'
+      path: '/api/google-calendar/callback'
+      fullPath: '/api/google-calendar/callback'
+      preLoaderRoute: typeof ApiGoogleCalendarCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/send-reminders': {
       id: '/api/public/send-reminders'
       path: '/api/public/send-reminders'
@@ -587,6 +622,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/send-webhooks'
       fullPath: '/api/public/send-webhooks'
       preLoaderRoute: typeof ApiPublicSendWebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/sync-google-calendar': {
+      id: '/api/public/sync-google-calendar'
+      path: '/api/public/sync-google-calendar'
+      fullPath: '/api/public/sync-google-calendar'
+      preLoaderRoute: typeof ApiPublicSyncGoogleCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/calendar/$token': {
@@ -668,8 +710,10 @@ const rootRouteChildren: RootRouteChildren = {
   TerminosRoute: TerminosRoute,
   BSlugRoute: BSlugRoute,
   CitaTokenRoute: CitaTokenRoute,
+  ApiGoogleCalendarCallbackRoute: ApiGoogleCalendarCallbackRoute,
   ApiPublicSendRemindersRoute: ApiPublicSendRemindersRoute,
   ApiPublicSendWebhooksRoute: ApiPublicSendWebhooksRoute,
+  ApiPublicSyncGoogleCalendarRoute: ApiPublicSyncGoogleCalendarRoute,
   ApiPublicCalendarTokenRoute: ApiPublicCalendarTokenRoute,
   ApiPublicV1AppointmentsRoute: ApiPublicV1AppointmentsRoute,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
