@@ -19,6 +19,8 @@ export type GoogleResult<T> =
 export type TokenResponse = { access_token: string; expires_in: number; refresh_token?: string };
 export type GoogleCalendarItem = { id: string; summary: string; primary: boolean };
 
+type Json = Record<string, unknown> | null;
+
 type ApiError = {
   error?:
     string | { code?: number; message?: string; errors?: { reason?: string }[]; status?: string };
@@ -50,7 +52,7 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
   async function call<T>(
     url: string,
     init: { method: string; headers?: Record<string, string>; body?: string },
-    parse: (json: any) => T,
+    parse: (json: Json) => T,
   ): Promise<GoogleResult<T>> {
     let res: Response;
     try {
@@ -72,9 +74,10 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
       };
     }
     const text = await res.text().catch(() => "");
-    let json: any = null;
+    let json: Json = null;
     try {
-      json = text ? JSON.parse(text) : null;
+      const parsed: unknown = text ? JSON.parse(text) : null;
+      json = parsed && typeof parsed === "object" ? (parsed as Json) : null;
     } catch {
       json = null;
     }
@@ -93,8 +96,8 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
     return {
       ok: false,
       status: res.status,
-      reason: classify(res.status, json),
-      error: describe(res.status, json),
+      reason: classify(res.status, json as ApiError | null),
+      error: describe(res.status, json as ApiError | null),
     };
   }
 
@@ -111,7 +114,7 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
-  const parseToken = (j: any): TokenResponse => {
+  const parseToken = (j: Json): TokenResponse => {
     if (typeof j?.access_token !== "string") throw new Error("sin access_token");
     return {
       access_token: j.access_token,
@@ -119,9 +122,9 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
       ...(typeof j.refresh_token === "string" ? { refresh_token: j.refresh_token } : {}),
     };
   };
-  const parseEvent = (j: any) => {
+  const parseEvent = (j: Json) => {
     if (typeof j?.id !== "string") throw new Error("sin id");
-    return { id: j.id as string };
+    return { id: j.id };
   };
   const events = (calendarId: string) =>
     `${API}/calendars/${encodeURIComponent(calendarId)}/events`;
@@ -160,7 +163,7 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
     getPrimaryCalendarId: (accessToken: string) =>
       call(`${API}/users/me/calendarList/primary`, bearer(accessToken, "GET"), (j) => {
         if (typeof j?.id !== "string") throw new Error("sin id");
-        return j.id as string;
+        return j.id;
       }),
 
     listWritableCalendars: (accessToken: string) =>
@@ -168,10 +171,10 @@ export function createGoogleClient(fetchFn: typeof fetch = fetch) {
         `${API}/users/me/calendarList?minAccessRole=writer&maxResults=250`,
         bearer(accessToken, "GET"),
         (j): GoogleCalendarItem[] =>
-          ((j?.items ?? []) as any[])
+          (Array.isArray(j?.items) ? (j.items as Record<string, unknown>[]) : [])
             .filter((c) => typeof c?.id === "string")
             .map((c) => ({
-              id: c.id,
+              id: c.id as string,
               summary: String(c.summaryOverride ?? c.summary ?? c.id),
               primary: c.primary === true,
             })),

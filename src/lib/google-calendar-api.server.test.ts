@@ -20,7 +20,8 @@ const event = { summary: "Corte — Lucía" } as GoogleEventBody;
 function client(...responses: (Response | Error)[]) {
   const fetchFn = vi.fn();
   for (const r of responses)
-    r instanceof Error ? fetchFn.mockRejectedValueOnce(r) : fetchFn.mockResolvedValueOnce(r);
+    if (r instanceof Error) fetchFn.mockRejectedValueOnce(r);
+    else fetchFn.mockResolvedValueOnce(r);
   return { fetchFn, google: createGoogleClient(fetchFn as unknown as typeof fetch) };
 }
 const callOf = (fetchFn: ReturnType<typeof vi.fn>, i = 0) =>
