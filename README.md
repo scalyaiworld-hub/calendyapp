@@ -14,6 +14,7 @@ Aplicación de reservas en línea al estilo Calendly, pensada para negocios de s
 - [Rutas](#rutas)
 - [Autenticación y roles](#autenticación-y-roles)
 - [Base de datos y migraciones](#base-de-datos-y-migraciones)
+- [Sincronización con Google Calendar](#sincronización-con-google-calendar)
 - [Notas de seguridad (RLS)](#notas-de-seguridad-rls)
 - [Despliegue](#despliegue)
 
@@ -26,6 +27,7 @@ Aplicación de reservas en línea al estilo Calendly, pensada para negocios de s
 - Dashboard: agenda, citas, clientes, servicios, profesionales, sucursales, horarios, planes y ajustes.
 - Planes `free`, `pro` y `studio` con límites aplicados en base de datos.
 - Panel `/admin` para ver negocios, cambiar planes y revisar solicitudes de preregistro.
+- Integraciones (plan Studio): sincronización de citas con Google Calendar, feed ICS, API de lectura y webhooks.
 
 ## Stack
 
@@ -68,21 +70,24 @@ Después de crear el proyecto de Supabase:
 
 Copia `.env.example` a `.env`. El archivo `.env` está en `.gitignore`; no lo subas al repositorio.
 
-| Variable                        | Ámbito                     | Descripción                                                                                                                                         |
-| ------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_SUPABASE_URL`             | Cliente y servidor         | URL del proyecto Supabase.                                                                                                                          |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cliente y servidor         | Clave publishable (anon). Es pública.                                                                                                               |
-| `VITE_SUPABASE_PROJECT_ID`      | Cliente y servidor         | ID del proyecto Supabase.                                                                                                                           |
-| `SUPABASE_URL`                  | Servidor                   | URL del proyecto, usada por el cliente de servidor.                                                                                                 |
-| `SUPABASE_PUBLISHABLE_KEY`      | Servidor                   | Clave publishable para el middleware de autenticación.                                                                                              |
-| `SUPABASE_PROJECT_ID`           | Servidor                   | ID del proyecto Supabase.                                                                                                                           |
-| `SUPABASE_SERVICE_ROLE_KEY`     | **Solo servidor, secreta** | Clave con la que `src/integrations/supabase/client.server.ts` omite RLS. Se necesita para `/admin`, el cambio de plan y las reservas públicas.      |
-| `VITE_TURNSTILE_SITE_KEY`       | Cliente                    | Clave pública de Cloudflare Turnstile para la página de reservas. Opcional: sin ella no se muestra captcha.                                         |
-| `TURNSTILE_SECRET_KEY`          | **Solo servidor, secreta** | Verifica el captcha en `createPublicBooking`. Si no está definida, no se exige (recomendado definirla en producción).                               |
-| `BOOKING_IP_SALT`               | Solo servidor              | Sal para guardar con hash las IP del límite de intentos de reserva.                                                                                 |
-| `RESEND_API_KEY`                | **Solo servidor, secreta** | Envía el correo "recibimos tu reserva" cuando el cliente deja su email. Sin ella (o sin `EMAIL_FROM`) no se envía nada y la reserva funciona igual. |
-| `EMAIL_FROM`                    | Solo servidor              | Remitente verificado en Resend, por ejemplo `Calendya <reservas@tu-dominio.com>`.                                                                   |
-| `SITE_URL`                      | Solo servidor              | Base de los enlaces `/cita/:token` de los correos. Si falta, se usa el host de la petición.                                                         |
+| Variable                        | Ámbito                     | Descripción                                                                                                                                             |
+| ------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`             | Cliente y servidor         | URL del proyecto Supabase.                                                                                                                              |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Cliente y servidor         | Clave publishable (anon). Es pública.                                                                                                                   |
+| `VITE_SUPABASE_PROJECT_ID`      | Cliente y servidor         | ID del proyecto Supabase.                                                                                                                               |
+| `SUPABASE_URL`                  | Servidor                   | URL del proyecto, usada por el cliente de servidor.                                                                                                     |
+| `SUPABASE_PUBLISHABLE_KEY`      | Servidor                   | Clave publishable para el middleware de autenticación.                                                                                                  |
+| `SUPABASE_PROJECT_ID`           | Servidor                   | ID del proyecto Supabase.                                                                                                                               |
+| `SUPABASE_SERVICE_ROLE_KEY`     | **Solo servidor, secreta** | Clave con la que `src/integrations/supabase/client.server.ts` omite RLS. Se necesita para `/admin`, el cambio de plan y las reservas públicas.          |
+| `VITE_TURNSTILE_SITE_KEY`       | Cliente                    | Clave pública de Cloudflare Turnstile para la página de reservas. Opcional: sin ella no se muestra captcha.                                             |
+| `TURNSTILE_SECRET_KEY`          | **Solo servidor, secreta** | Verifica el captcha en `createPublicBooking`. Si no está definida, no se exige (recomendado definirla en producción).                                   |
+| `BOOKING_IP_SALT`               | Solo servidor              | Sal para guardar con hash las IP del límite de intentos de reserva.                                                                                     |
+| `RESEND_API_KEY`                | **Solo servidor, secreta** | Envía el correo "recibimos tu reserva" cuando el cliente deja su email. Sin ella (o sin `EMAIL_FROM`) no se envía nada y la reserva funciona igual.     |
+| `EMAIL_FROM`                    | Solo servidor              | Remitente verificado en Resend, por ejemplo `Calendya <reservas@tu-dominio.com>`.                                                                       |
+| `SITE_URL`                      | Solo servidor              | Base de los enlaces `/cita/:token` de los correos. Si falta, se usa el host de la petición.                                                             |
+| `GOOGLE_OAUTH_CLIENT_ID`        | Solo servidor              | Cliente OAuth de Google Cloud para la sincronización con Google Calendar. Sin las tres variables `GOOGLE_*` la integración aparece como no configurada. |
+| `GOOGLE_OAUTH_CLIENT_SECRET`    | **Solo servidor, secreta** | Secreto del cliente OAuth de Google.                                                                                                                    |
+| `GOOGLE_TOKEN_ENC_KEY`          | **Solo servidor, secreta** | 32 bytes en base64 con los que se cifran los tokens de Google guardados en la base. Si cambia, hay que volver a conectar las cuentas.                   |
 
 Reglas importantes:
 
@@ -210,6 +215,19 @@ Las dos migraciones más recientes cambian permisos y políticas de producción 
 - `20261001130000_admin_roles.sql`: crea `user_roles`, `has_role` y el primer admin.
 
 Revísalas y pruébalas en un entorno de staging antes de aplicarlas en producción.
+
+## Sincronización con Google Calendar
+
+Cada cita que se crea, cambia o cancela aparece como evento en el Google Calendar del negocio (solo en ese sentido: Calendya → Google). El dueño conecta su cuenta en _Integraciones_, elige un calendario de destino y, si quiere, uno distinto por profesional. Diseño completo en `docs/superpowers/specs/2026-10-23-google-calendar-sync-design.md`.
+
+Cómo funciona: un trigger en `appointments` encola el cambio en `google_calendar_jobs` y el cron llama cada minuto a `POST /api/public/sync-google-calendar`, que lo envía a la API de Google con reintentos. Los tokens se guardan cifrados (AES-GCM) en tablas solo de servidor.
+
+Puesta en marcha:
+
+1. En [Google Cloud Console](https://console.cloud.google.com/): habilita **Google Calendar API**, configura la pantalla de consentimiento con los scopes `.../auth/calendar.events` y `.../auth/calendar.calendarlist.readonly`, y crea un cliente OAuth de tipo _Aplicación web_ con la URI de redirección `https://TU-DOMINIO/api/google-calendar/callback` (en local, `http://localhost:8080/api/google-calendar/callback` con `SITE_URL=http://localhost:8080`).
+2. Define `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` y `GOOGLE_TOKEN_ENC_KEY`. Para generar la clave: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. También hace falta `SITE_URL` (o que el host de la petición sea el dominio público), porque con él se arma la URI de redirección.
+3. Aplica `supabase/migrations/20261023100000_google_calendar_sync.sql` y programa el cron que aparece comentado al final (usa el mismo `REMINDERS_CRON_SECRET` que los recordatorios y los webhooks).
+4. Mientras la app no pase la verificación de Google, solo pueden conectar los _usuarios de prueba_ añadidos en la pantalla de consentimiento (máximo 100). `calendar.events` es un scope sensible: para abrirlo a todos los clientes hay que solicitar la verificación (requiere política de privacidad y dominio verificado, y puede tardar semanas).
 
 ## Notas de seguridad (RLS)
 
